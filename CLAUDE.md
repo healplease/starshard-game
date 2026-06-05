@@ -93,6 +93,18 @@ Then hand off to: <role-slug or "human (project complete)">
 If the project is finished, instead of a handoff print a short **DONE** summary and tell the human
 how to play the game (`.\.venv\Scripts\python.exe workspace\game\main.py`).
 
+### Two extra handoff moves (added 2026-06-05, post-v8 retro)
+
+- **BLOCKER (route upstream).** The pipeline is normally linear, but if you hit an *upstream* defect you
+  can't fix in your lane — an unbuildable number, a copy/layout overflow, a placeholder value the spec
+  never resolved — don't silently absorb it. Emit a one-line BLOCKER and hand back UP:
+  `<n>. <date> — FROM <you> TO <upstream-role> — BLOCKER: <the one-line issue>` (in `handoffs.md`), and
+  print a normal HANDOFF block addressed to that upstream role. Fix it at the cheapest point, then resume.
+- **SKIP no-impact roles (orchestrator only).** When a kickoff (or an upstream role) confirms an increment
+  has **no impact** on a given lane — e.g. v8 had zero economy change — the Orchestrator may mark that
+  backlog row `skipped` and route past it instead of spending a full chat. The skipped role records a
+  one-line confirmation in its `history.md`; it does **not** need a `vN` spec file for a non-event.
+
 ---
 
 ## Project ground rules (apply to every role)

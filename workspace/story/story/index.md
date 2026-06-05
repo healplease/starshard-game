@@ -24,8 +24,27 @@
 - **Boss name / HUD label / WARNING intro / defeat line + reward popup** → `v7.md`
 - **Pause-screen heading + hints / CONTROLS_2 + GAMEOVER_KEYS rewrites** → `v8.md`
 
+## Copy-surface map (string → screen/state → render site)  *(added 2026-06-05 retro)*
+
+Every UI string and **where it is actually drawn**, so a control-scheme change can find every literal it
+invalidates and QA can confirm each is on screen. Keep this current when you add/rewrite a string.
+
+| Constant(s) | Screen / state | Render site |
+|-------------|----------------|-------------|
+| `TITLE`, `PITCH`, `CONTROLS_1`, `CONTROLS_2`, start prompt | START | `view/hud.py` start screen |
+| score / HP readout, bomb `×N`, active buff pills | PLAY HUD | `view/hud.py` |
+| boss label / `WARNING` / `MOTHERSHIP DOWN` + reward popup | PLAY (boss) | `view/hud.py` |
+| `PAUSE_TITLE` + 3 pause hints (resume/quit/restart) | PAUSE | `view/hud.py` `draw_pause()` |
+| Game-Over heading / score / best, `GAMEOVER_KEYS` | GAME_OVER | `view/hud.py` |
+| collect popups (`+40`, `+1 BOMB`, `+{points}`) | PLAY (transient) | `view/hud.py` / fx |
+
+> **No in-game controls overlay exists** (PLAY HUD = score + HP + bomb readout only) — recorded so nobody
+> re-derives it per increment. Mark any string that **replaces** a shipped one with `⚠ REWRITE` (delete the
+> old literal in place, don't append).
+
 ## Updating this spec
 - **New increment:** add `vN.md` (`# vN increment — …`) + a row + topic-map entry; flag any string it
-  *rewrites* (like `CONTROLS_1`). One-line the why in `../history.md`.
+  *rewrites* (like `CONTROLS_1`) with `⚠ REWRITE`, and update the copy-surface map above. One-line the why
+  in `../history.md`.
 - **Fix shipped copy:** edit that version's file **in place** and keep the string matching what's pasted
   in `workspace/game/` (config/view). Record the why in `../history.md`.

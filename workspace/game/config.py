@@ -244,16 +244,48 @@ BONUS_WEIGHTS = (
 # ── Smoke-test seeding (GDD §V2.5 / level_spec §V2.5) ────────────────────────
 SMOKE_FRAMES = 120
 SMOKE_SEED = 1234
+
+# ── SMOKE_TIMELINE — the single source of truth for every headless seed frame +
+# their ordering (v9 process-hardening, retro T4/A12). `app.run()` iterates THIS
+# table; no other code hard-codes a smoke seed frame. Each row is
+# (frame, event, note); `event` keys the seed action dispatched in app._run_smoke_seeds.
+# All five v5/v6/v7 seeds must coexist inside the 120-frame budget without colliding,
+# so the schedule lives in one place and `smoke_timeline_ok()` proves it stays sane.
+SMOKE_TIMELINE = (
+    ( 2, "bonus",       "short Rapid pickup in the player's path → full spawn→collect→apply→expire (AC20)"),
+    ( 3, "split",       "GREEN pellet already in flight → bursts ~f16 into 3 RED children (AC27)"),
+    (20, "bomb",        "scripted X key-down edge → flush clears the field + the split children (AC30/32/33)"),
+    (38, "boss_target", "2 asteroids + 1 enemy so the FREE arrival clear has a visible target (AC40)"),
+    (40, "boss",        "force boss: free arrival flush + compressed entrance + yellow→12-red (AC41/49/50/51)"),
+)
+
+
+def _smoke_frame(event):
+    """Look up the canonical frame for a SMOKE_TIMELINE event (single source)."""
+    return next(f for f, ev, _ in SMOKE_TIMELINE if ev == event)
+
+
+def smoke_timeline_ok():
+    """Ordering invariant (v9): seed frames are strictly increasing, unique, and
+    all fall inside the 120-frame smoke budget. A new seed that collides with an
+    existing one or overruns the budget trips this — caught by the regression gate
+    before it can silently corrupt the headless coverage."""
+    frames = [f for f, _, _ in SMOKE_TIMELINE]
+    return (frames == sorted(frames)
+            and len(set(frames)) == len(frames)
+            and all(0 <= f < SMOKE_FRAMES for f in frames))
+
+
 SMOKE_BONUS_KIND = "RAPID"          # force-seed a Rapid in the player's path
 SMOKE_BONUS_POS = (300, 700)        # player x, 20 px above (inside 26 px collide)
 SMOKE_BONUS_DUR = 60                # shortened so it expires by ~frame 63
-SMOKE_SEED_FRAME = 2                # frame on which the bonus is seeded
+SMOKE_SEED_FRAME = _smoke_frame("bonus")   # from SMOKE_TIMELINE (single source)
 
 # v5 split lifecycle seed (GDD §V5.6): one green pellet already in flight, heading
 # straight down the player column with a forced short split distance, so it bursts
 # early (S=60 → split_timer=round(60/4.5)=13 → splits ~frame 16) and the 3 red
 # children update through frame 120 — full fire→travel→split→children path headless.
-SMOKE_SPLIT_FRAME = 3               # frame on which the pellet is seeded
+SMOKE_SPLIT_FRAME = _smoke_frame("split")  # from SMOKE_TIMELINE (single source)
 SMOKE_SPLIT_POS = (300, 300)        # above the player, on its x column
 SMOKE_SPLIT_HEADING = (0.0, 1.0)    # straight down toward the player
 SMOKE_SPLIT_DIST = SPLIT_MIN_DIST   # force the short, early burst
@@ -262,7 +294,7 @@ SMOKE_SPLIT_DIST = SPLIT_MIN_DIST   # force the short, early burst
 # split) — one flush clears the seeded enemy + remaining asteroids + the 3 red
 # split children (charge 2→1, flash f20→~f38). Starts at BOMB_START charges, so
 # no charge seeding is needed; only the timed press.
-SMOKE_BOMB_FRAME = 20
+SMOKE_BOMB_FRAME = _smoke_frame("bomb")    # from SMOKE_TIMELINE (single source)
 
 # v7 boss seed (GDD §V7.15): force a boss @ ~f40, AFTER the v5 (f16) + v6 (f20)
 # seeds. A token target is pre-seeded @f38 so the free arrival clear has something
@@ -270,12 +302,23 @@ SMOKE_BOMB_FRAME = 20
 # and runs a COMPRESSED moveset so arrival-clear + entrance + step 1 + the yellow→
 # 12-red split all fire inside 120 f. The boss is NOT defeated (HP 120 stands);
 # the run still exits 0 after exactly 120 frames.
-SMOKE_BOSS_PRESEED_FRAME = 38   # 2 asteroids + 1 enemy so the arrival clear has a target
-SMOKE_BOSS_FRAME       = 40     # force arrival flush+flash (NO charge) + spawn boss near rest
+SMOKE_BOSS_PRESEED_FRAME = _smoke_frame("boss_target")   # SMOKE_TIMELINE (single source)
+SMOKE_BOSS_FRAME       = _smoke_frame("boss")            # SMOKE_TIMELINE (single source)
 SMOKE_BOSS_SPAWN       = (300, 360)   # short entrance → settles (~f60) in-budget
 SMOKE_BOSS_SPLIT_DIST  = 45     # px shortened "midway" → split_timer = round(45/4.5) = 10 f
 SMOKE_BOSS_STEP_DELAY  = 6      # compressed: first step ~6 f after settle
 SMOKE_BOSS_STEP_INTERVAL = 6    # compressed: steps every 6 f → step 4 ~f84, split ~f94
+
+# ── AC13 balance probe (v9, retro T2/A10) ────────────────────────────────────
+# A headless instrument (NOT a pass/fail gate): run K deterministic scripted runs
+# of the REAL play pipeline under the live difficulty ramp until the auto-pilot
+# dies (or a hard cap), then report median / 95th-percentile survival seconds. This
+# replaces the 8-increment "AC13 is untestable" stalemate with an actual number
+# trend the team can watch across versions. The auto-pilot is the fixed smoke sweep
+# (deterministic, non-dodging) so the figure is comparable run-to-run; it is a naive
+# lower-bound proxy, not an expert dodger (documented in the probe output).
+BALANCE_PROBE_RUNS = 15         # default number of scripted runs (override via CLI arg)
+BALANCE_PROBE_CAP_FRAMES = 14400   # 240 s @60 — bound a never-dying run; censored if hit
 
 # ── HUD geometry (art_spec §4.3, §V2.3) ──────────────────────────────────────
 HP_BAR = (468, 12, 120, 14)         # (x, y, w, h); Rect built in view

@@ -96,12 +96,36 @@ row when finishing. Status: `todo` | `in-progress` | `done` | `blocked`.
 | 8 | QA: verify pause/unpause (state preserved), Q-hold arc + quit, no regression, smoke gate still green | qa-tester | done | qa/qa_report/v8.md |
 | 9 | Declare v8 DONE | orchestrator | done | shared/handoffs.md |
 
+### v9 — Process hardening (retro-driven: verification + feedback loops) (2026-06-05)
+| # | Task | Owner role | Status | Artifact |
+|---|------|-----------|--------|----------|
+| 1 | Facilitate team retrospective; collect 8 role cards; apply Manager-owned process changes | manager | done | shared/retrospective.md (+ CLAUDE.md, roles/*, index updates) |
+| 2 | Committed, growing regression harness (accumulates AC1–AC60) | programmer | done | qa/regression_harness.py |
+| 3 | SMOKE_TIMELINE source of truth + headless `--event-script` injection (behaviorally test pause/bomb/quit) | programmer | done | game/config.py + app.py |
+| 4 | Render-smoke (no draw raises + key rects don't overlap) + `string_widths` width/glyph assertion | programmer | done | qa/regression_harness.py |
+| 5 | AC13 `--balance-probe` (K scripted runs → median/95th survival time) | programmer | done | game/app.py + main.py |
+| 6 | QA: verify the new gates catch a planted defect (prove the FAIL loop) + 1 human playtest checkpoint | qa-tester | done | qa/qa_report/v9.md |
+| 7 | Declare v9 DONE | orchestrator | todo | shared/handoffs.md |
+
 ## Status
 
 > **Board only.** One line per shipped version + the parked items. The *why* lives in `history.md`
 > (cross-cutting → `shared/history.md`; per-domain → each role folder's `history.md`); the recent
 > agent-to-agent story is in `handoffs.md`; closed-increment handoffs are in `../archive/`.
 
+- **v9 OPEN** (2026-06-05) — **process hardening** from the post-v8 retrospective (`shared/retrospective.md`).
+  Manager applied the doc/role changes (BLOCKER + SKIP handoffs, required Open-values table, lever-ownership +
+  no-placeholder color/alpha, QA independence + negative test, named volume-neutral re-slice, copy-surface
+  map, Programmer-invariants stub). **Programmer tooling DONE** — `qa/regression_harness.py` (49 checks,
+  AC1–AC60 + render-smoke + `string_widths`), `config.SMOKE_TIMELINE` source-of-truth + ordering check,
+  headless `--event-script` behavioral gate (pause/bomb/quit via the real `_handle_events`), and the AC13
+  `--balance-probe`. Smoke still exits 0; all gates green; 3 planted defects proved the new gates FAIL (the
+  smoke gate stayed green on the behavioral defect — exactly the retro's T1 point). **QA PASS** (`qa/qa_report/v9.md`):
+  all gates green on the clean tree (smoke exit 0 ×3-form + compileall; harness 49/49; event 5/5; balance median 48.5 s /
+  p95 75.0 s); **FAIL loop proven** with 3 *independent* QA-planted defects (flush-no-op → event+regression red; HP-bar↔score
+  overlap → AC47; CONTROLS_1 overflow → AC47w) **each with smoke staying green** (T1 demonstrated, not asserted); first
+  **human live-playtest checkpoint PASS** (AC47 anti-collision + pause/Q-hold arc + feel/flash all confirmed live — T3 closed).
+  With orchestrator to declare v9 DONE.
 - **v8 SHIPPED & DONE** (2026-06-05) — pause/unpause + Q-hold-to-quit. QA PASS (R69–R75, AC53–AC60); smoke exit 0 × 3 + package import; no v1–v7 regression.
 - **v7 SHIPPED & DONE** (2026-06-05) — **bosses** (periodic mothership boss fights). Orchestrator
   framed it (`shared/brief.md` v7); **BA done** — `requirements/v7.md` (**R56–R68 MUST + AC39–AC52**);

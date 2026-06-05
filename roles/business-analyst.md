@@ -19,6 +19,12 @@ never have to guess. You are the voice of "small and shippable".
 - Separate **must-have (v1)** from **out-of-scope/later** — enforce the single-screen, keyboard-only,
   placeholder-art guardrails from `CLAUDE.md`.
 - Note any **constraints/risks** (e.g. "must run headless for QA via --smoke-test").
+- **Required: an "Open values" delegation table (retro-blessed best pattern, 2026-06-05).** For any
+  increment with delegated numbers, emit a `lever → owner → note` table so each downstream role
+  (Designer/Level-designer/Artist) gets a deterministic to-do list — **freeze the *behaviour*, hand every
+  *number* to its owner.** Head each `vN.md` with a one-line **BA-ruling vs Delegated-value** split so
+  nobody re-litigates who owns a decision. When you delegate a genuine *tension* (not just a number), ship
+  a one-line **decision criterion** with it (e.g. "the boss must be seen by the median run"), not just the flag.
 
 ## Output (artifact)
 - Write to `workspace/requirements/requirements/` (sections: Vision, Target player, Session length,

@@ -11,6 +11,7 @@ writing in the wrong file. (Earlier increments pre-date this rule; their entries
 > **v1** (entries 1–9) → `../archive/handoffs-v1.md`; **v2–v5** (entries 10–33) → `../archive/handoffs-v2-v5.md`.
 
 Format: `<n>. <YYYY-MM-DD> — FROM <role> TO <role> — <one-line task>`
+BLOCKER (route upstream): `<n>. <YYYY-MM-DD> — FROM <role> TO <upstream-role> — BLOCKER: <one-line issue>`
 
 ---
 
@@ -57,6 +58,13 @@ Format: `<n>. <YYYY-MM-DD> — FROM <role> TO <role> — <one-line task>`
 61. 2026-06-05 — FROM programmer TO qa-tester — **v8 built.** `PAUSE` added to `GameState`; Esc toggles PLAY↔PAUSE (START/GAME_OVER silent no-op); K_ESCAPE quit line removed (R73); Q-hold 30 f → `sys.exit(0)` with instant reset on release; R from PAUSE → `reset_run()` + PLAY; `draw_pause()` in `hud.py` (dim α=110, PLAYER-cyan "PAUSED" heading at y=290, 3 TEXT_DIM hints, HP_AMBER arc r=22 stroke=3 CW from 12 o'clock center `(300,483)`); smoke exits 0 / 120 f (K_ESCAPE never emitted, PAUSE never entered headlessly). Verify R69–R75, AC53–AC60; no v1–v7 regression.
 62. 2026-06-05 — FROM qa-tester TO orchestrator — v8 QA PASS: R69–R75 + AC53–AC60 all PASS; smoke exit 0 × 3 + package import; no v1–v7 regression; `qa_report/v8.md` written.
 63. 2026-06-05 — FROM orchestrator TO human (project complete) — v8 DONE: pause/unpause + Q-hold-to-quit shipped; all increments v1–v8 DONE.
+
+— — — v9 increment (process hardening — retro-driven verification + feedback loops) opened 2026-06-05 — — —
+
+64. 2026-06-05 — FROM human TO manager — Run a full-team retrospective: ask every role what works / doesn't in the process, collect cards, and apply process changes that benefit team productivity (manager + human review first).
+65. 2026-06-05 — FROM manager TO programmer — Retro done (`shared/retrospective.md`); Manager-owned doc/role changes applied (BLOCKER + SKIP handoffs, required Open-values table, lever-ownership + no-placeholder, QA-independence + negative test, named re-slice, copy-surface map, Programmer-invariants stub). Implement the v9 tooling: committed regression harness, SMOKE_TIMELINE + `--event-script` injection, render-smoke + `string_widths` gate, and the AC13 `--balance-probe`.
+66. 2026-06-05 — FROM programmer TO qa-tester — **v9 tooling built** (`qa/regression_harness.py` 49 checks AC1–AC60 + render-smoke + `string_widths`; `config.SMOKE_TIMELINE` + `--event-script` behavioral gate + `--balance-probe`); smoke still exits 0, all gates green, and 3 planted defects proved the event/regression/render/width gates FAIL — verify the gates catch a planted defect + run the human playtest checkpoint (FAIL → back to programmer).
+67. 2026-06-05 — FROM qa-tester TO orchestrator — **PASS (v9).** All gates green; 3 independent QA-planted defects each turned a gate red (event/regression · render-rect · width) while smoke stayed green (T1 proven); human live-playtest checkpoint PASS (T3). Declare v9 DONE.
 
 — — — (the v6 closeout entry is kept below for the recent story) — — —
 

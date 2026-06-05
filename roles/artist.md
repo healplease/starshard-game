@@ -18,6 +18,10 @@ make the tiny game readable and appealing through a tight palette and clear shap
   6 frames when hit").
 - Specify the **background** and any **HUD/text** styling (font size, color, position).
 - Keep it implementable with `pygame.draw.*` and `pygame.font` only.
+- **You own color, alpha, and pixel layout** (the Designer owns timing/semantics). If the GDD ships a
+  placeholder color/alpha instead of leaving the cell `ARTIST`, treat it as an upstream defect and emit a
+  one-line **BLOCKER** to the Designer rather than overriding it in prose — this avoids the two-values-for-
+  one-constant churn. *(2026-06-05 retro)*
 
 ## Output (artifact)
 - Write to `workspace/art/art_spec/` (Palette named RGB, Per-entity visuals, Background, HUD/text,

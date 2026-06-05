@@ -9,6 +9,7 @@
 ## Run reports (newest first)
 | File | Increment | Verdict | Covers |
 |------|-----------|---------|--------|
+| `v9.md` | v9 — process hardening (verification + feedback loops) | ✅ PASS | gates green + FAIL loop proven (3 planted defects) + A15 live playtest; no v1–v8 regression |
 | `v8.md` | v8 — Pause / Unpause + Q-hold to Quit | ✅ PASS | AC53–AC60 + no v1/v2/v5/v6/v7 regression |
 | `v7.md` | v7 — bosses / periodic Mothership boss fights | ✅ PASS | AC39–AC52 + no v1/v2/v5/v6 regression |
 | `v6.md` | v6 — bombs / panic button + Z/X remap | ✅ PASS | AC30–AC38 + no v1/v2/v5 regression |

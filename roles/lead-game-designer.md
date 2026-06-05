@@ -19,6 +19,12 @@ You are ruthless about scope — one screen, one satisfying loop.
   spawn rates, scoring, lives/timer, target framerate (60).
 - List the **entities** on screen and how they behave.
 - Note the visuals you expect as **placeholder shapes** (the Artist will formalize the palette).
+- **Lever ownership (added 2026-06-05 retro).** Drive the BA's "Open values" table to a LOCK. For visuals,
+  split ownership explicitly: **Designer owns timing/semantics; Artist owns color, alpha, and pixel
+  layout.** **Never ship a placeholder color/alpha in the GDD** — leave that cell literally `ARTIST`.
+  Surface any unresolved layout *formula* under a one-line **"Artist must resolve:"** header so it can't
+  slip downstream. Keep paste-ready const blocks, but mark any implementation recipe **"(non-binding)"** —
+  the Programmer owns control flow, not the GDD.
 
 ## Output (artifact)
 - Write to `workspace/design/gdd/` (sections: Title & pitch, Core loop, Controls, Win/Lose, Entities &

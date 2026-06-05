@@ -109,6 +109,58 @@
   update to f120); boss NOT defeated (HP 120 stands); **exits 0 / exactly 120 f**. Logic probes confirm
   AC39–AC52; v5/v6 chained seeds + v1/v2 economy unchanged (no AC1–AC38 regression).
 
+## Programmer invariants (living note — added 2026-06-05 retro; Programmer fills/maintains)
+> Cuts the per-session re-orientation cost (re-deriving the loop/World contract from code each increment).
+- **PLAY pipeline order (§V2.7):** `encounter.update` → `bombs.update` (BEFORE the damage step) → physics →
+  `combat.resolve` → `spawning.update` → `buffs.tick` → `scoring.survival_tick` → `w.frame += 1`.
+  (Always confirm against `app.py._step_play`.)
+- **What lives on `World`:** charge pool (start 2 / cap 4), `flash_timer` / `bomb_lockout`, `boss` (its own
+  field — NOT in `enemies`, which is why the boss is flush-**IMMUNE by construction**), run `frame`.
+- **Counter-intuitive rulings (don't re-litigate — see the linked history):** bomb flush score = 0;
+  bomb-vs-boss immunity by construction; aim cone 0 ≡ the v1 dead-on shot (regression-safe).
+- **Smoke seeds → `config.SMOKE_TIMELINE` is the single source of truth (v9).** Ordered rows
+  `(frame, event, note)`; `app._run_smoke_seeds()` iterates it and `config.smoke_timeline_ok()` asserts the
+  frames are strictly increasing + in-budget. Adding a seed = one row edit. Current chain:
+  bonus @f2, split @f3, bomb @f20, boss_target @f38, boss @f40 (split bursts ~f16) — all inside 120 f.
+- **v9 headless gates (run these, not just the smoke):** `qa/regression_harness.py` (the durable AC1–AC60
+  suite — extend by adding an `@test(...)` fn), `main.py --event-script` (pause/bomb/quit through the real
+  `_handle_events`), `main.py --balance-probe [K]` (AC13 survival figures). The Q-hold quit now ends the loop
+  via `app.quit_via_qhold` + `running=False` (was an inline `sys.exit`) so it's observable to a harness.
+
+## Retrospective — post-v8 process review (Manager, 2026-06-05)
+- Facilitated a full-team retro (8 role cards → `shared/retrospective.md`). **Headline:** the *authoring*
+  pipeline is excellent (clean specs, reuse compounding, low token cost, zero rework); the
+  **verification/feedback half** is the weak side — QA passed 8/8 first-try, the FAIL + upstream loops never
+  fired, and no visual/feel AC has ever been seen in a live window. Human + Manager approved the full action
+  register. **Manager-now (applied this session):** one-line-handoff reinforce + a **BLOCKER** upstream
+  handoff type + **SKIP** for no-impact rows (`CLAUDE.md` / `handoffs.md`); a **required Open-values
+  delegation table** + decision-criterion-on-tension (BA role); **lever-ownership + no-placeholder
+  color/alpha** (Designer/Artist roles); **QA independence + a negative test** (qa-tester role); the
+  **volume-neutral re-slice** named move (`level_spec/index.md`); a **copy-surface map** (`story/index.md`);
+  and this **Programmer-invariants** stub. **Routed to a v9 — process-hardening increment (Programmer):**
+  a committed, growing `qa/regression_harness.py`; a `SMOKE_TIMELINE` source of truth + headless
+  `--event-script` event injection; a render-smoke + `string_widths` gate; the AC13 `--balance-probe`; plus
+  a periodic human playtest checkpoint.
+
+## v9 — Process hardening tooling (programmer, 2026-06-05)
+- Built the four retro-routed verification gates without changing any v1–v8 game behaviour (smoke still
+  exits 0 / exactly 120 f). **(A11)** `qa/regression_harness.py` — the durable, growing behavioural suite
+  (49 checks spanning AC1–AC60), driving the REAL systems/entities/app/view + the real `App._handle_events`,
+  replacing the per-increment scratch harnesses; exits 0 iff all pass. **(A12/A13)** `config.SMOKE_TIMELINE`
+  is now the single source of truth for every headless seed frame + ordering (`smoke_timeline_ok()`), and
+  `app.run()` got an `event_script` mode that posts scripted KEYDOWN through the real `_handle_events` —
+  exposed as `main.py --event-script` (a 5-check pause/bomb/quit gate) and reused by the harness. The v8
+  Q-hold quit was refactored from an inline `sys.exit(0)` to `quit_via_qhold`+`running=False` (same live
+  behaviour, now observable). A `_q_held()` seam lets the scripted gate drive the held-Q quit that
+  `pygame.key.get_pressed()` can't fake headlessly. **(A14)** the harness adds a render-smoke (one frame per
+  GameState, asserts no draw raises + key HUD rects don't overlap — the AC47 anti-collision made a real
+  gate) and a `string_widths` check (each UI literal fits its panel + every glyph is in the font). **(A10)**
+  `main.py --balance-probe [K]` runs K deterministic scripted games of the pure play pipeline under the live
+  ramp → median / p95 survival seconds (naive non-dodging lower bound; first reading: median ~48 s, p95 ~75 s
+  over 15 runs). **Proof the FAIL loop works:** 3 planted defects (flush no-op / boss-bar overlap / oversized
+  label) made the event, regression, render-rect, and width gates go red — while the **smoke gate stayed
+  green on the behavioural defect**, exactly the retro T1 finding that "exit 0" can't see input-path bugs.
+
 ## Maintenance — knowledge-base cleanup (Manager, 2026-06-05)
 - 2026-06-05 (manager): Token-cost cleanup of the shared hot path after v6 shipped. Archived the closed
   increments' handoffs **v2–v5 (entries 10–33)** to `../archive/handoffs-v2-v5.md` (v1 was already in

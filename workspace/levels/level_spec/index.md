@@ -30,5 +30,11 @@
 ## Updating this spec
 - **New increment:** add `vN-<topic>.md` (`# vN increment — …`) + a row + topic-map entry; **state
   explicitly whether the v1 ramp / prior economy is touched** (so far: never). One-line in `../history.md`.
+- **Named move — the *volume-neutral re-slice* (retro-blessed 2026-06-05).** To add a pickup/enemy *kind*
+  without touching volume: re-slice the existing weight table so it **still sums to 100**, name the **source
+  kinds** you took from, and state the **AC13 reason** for each (protect the low-tail compressor, trim the
+  high-tail extender). No new spawn path, no extra volume → drip cadence / enemy-drop % / cap stay
+  bit-for-bit. This is how v5 re-slid enemy kind and v6 folded in `BOMB=6` — reuse it as a fill-in-the-template
+  operation with built-in AC13 protection.
 - **Fix shipped balance:** edit that version's file **in place** (keep it matching `workspace/game/`
   spawn/config) and record the why in `../history.md`. The weights/formulas are the contract.
