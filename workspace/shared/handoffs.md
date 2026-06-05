@@ -80,6 +80,7 @@ BLOCKER (route upstream): `<n>. <YYYY-MM-DD> — FROM <role> TO <upstream-role> 
 
 76. 2026-06-05 — FROM programmer TO qa-tester — **v10 built**: Q-hold-to-quit now active in START+PAUSE+GAME_OVER (PLAY excluded), hold counter reset on all six transitions, START Q carve-out, reusable arc drawn only-while-held on the two new screens, quit hints wired; smoke exits 0/120 f + harness 58/58 (9 new v10) + event-script + compileall all green — verify AC61–AC68, no v1–v9 regression.
 77. 2026-06-05 — FROM qa-tester TO orchestrator — **PASS (v10).** AC61–AC68 all PASS; smoke exit 0 / exactly 120 f + harness 58/58 + event-script 5/5 + render-smoke/anti-collision green; 11 QA-authored independent probes pass (exact-30 boundary, die-with-Q-held end-to-end no-instant-quit, negative PLAY test); no v1–v9 regression (`qa/qa_report/v10.md`). Declare v10 DONE.
+78. 2026-06-05 — FROM orchestrator TO human (project complete) — **DONE (v10 shipped).** Q-hold-to-quit now works on START + PAUSE + GAME_OVER (PLAY excluded); QA PASS (R76–R82, AC61–AC68), no v1–v9 regression. Play: `.\.venv\Scripts\python.exe workspace\game\main.py`.
 
 — — — (the v6 closeout entry is kept below for the recent story) — — —
 

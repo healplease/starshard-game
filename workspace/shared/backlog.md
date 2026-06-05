@@ -107,7 +107,7 @@ row when finishing. Status: `todo` | `in-progress` | `done` | `blocked`.
 | 6 | QA: verify the new gates catch a planted defect (prove the FAIL loop) + 1 human playtest checkpoint | qa-tester | done | qa/qa_report/v9.md |
 | 7 | Declare v9 DONE | orchestrator | done | shared/handoffs.md |
 
-### v10 — Q-hold-to-quit on the START + GAME_OVER screens (2026-06-05)
+### v10 — Q-hold-to-quit on the START + GAME_OVER screens (shipped & passed QA, 2026-06-05) ✅
 | # | Task | Owner role | Status | Artifact |
 |---|------|-----------|--------|----------|
 | 1 | Capture v10 feature + framing | orchestrator | done | shared/brief.md |
@@ -118,7 +118,7 @@ row when finishing. Status: `todo` | `in-progress` | `done` | `blocked`.
 | 6 | Level spec: economy no-op — confirm/skip | level-designer | done | levels/level_spec/v10.md (confirmed no-op) |
 | 7 | Implement Q-hold + arc in START + GAME_OVER (reuse v8); reset hold counter on transitions | programmer | done | game/ |
 | 8 | QA: verify Q-hold quits from START + GAME_OVER + arc + cancel-on-release; render-smoke + no v1–v9 regression | qa-tester | done | qa/qa_report/v10.md |
-| 9 | Declare v10 DONE | orchestrator | todo | shared/handoffs.md |
+| 9 | Declare v10 DONE | orchestrator | done | shared/handoffs.md |
 
 ## Status
 
@@ -126,7 +126,7 @@ row when finishing. Status: `todo` | `in-progress` | `done` | `blocked`.
 > (cross-cutting → `shared/history.md`; per-domain → each role folder's `history.md`); the recent
 > agent-to-agent story is in `handoffs.md`; closed-increment handoffs are in `../archive/`.
 
-- **v10 IN PROGRESS** (2026-06-05) — **Q-hold-to-quit on START + GAME_OVER.** v8 shipped the gesture+arc
+- **v10 SHIPPED & DONE** (2026-06-05) — **Q-hold-to-quit on START + GAME_OVER.** v8 shipped the gesture+arc
   but only wired it into PAUSE; v10 extends it (reusing the v8 threshold/arc/reset) to the START and
   GAME_OVER screens + shows the quit hint on both. Orchestrator framed it (`shared/brief.md` v10) +
   opened the v10 backlog. BA→Designer→Artist→Writer→Level-designer all done (economy no-op confirmed).
@@ -142,7 +142,7 @@ row when finishing. Status: `todo` | `in-progress` | `done` | `blocked`.
   `-m` + compileall); harness 58/58; event-script 5/5; AC61–AC68 all PASS; render-smoke + arc anti-collision
   green; **11 QA-authored independent probes** PASS (exact-30 threshold boundary, the #1-risk die-with-Q-held
   end-to-end through the live loop → no instant quit, arc-fill mapping, negative PLAY-exclusion test); no
-  v1–v9 regression. Awaiting **orchestrator** to declare v10 DONE.
+  v1–v9 regression. **Orchestrator declared v10 DONE** — Q-hold-to-quit now works on START + PAUSE + GAME_OVER.
 - **v9 SHIPPED & DONE** (2026-06-05) — **process hardening** from the post-v8 retrospective (`shared/retrospective.md`).
   Manager applied the doc/role changes (BLOCKER + SKIP handoffs, required Open-values table, lever-ownership +
   no-placeholder color/alpha, QA independence + negative test, named volume-neutral re-slice, copy-surface
