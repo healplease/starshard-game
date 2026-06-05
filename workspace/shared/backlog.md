@@ -80,8 +80,8 @@ row when finishing. Status: `todo` | `in-progress` | `done` | `blocked`.
 | 5 | Writer: boss name (Mothership), WARNING/intro + defeat copy, boss HUD label | writer | done | story/story/v7.md |
 | 6 | Level spec: breakpoint cadence folded into the ramp/economy (keep AC13), spawn-freeze + resume rules, reward balance | level-designer | done | levels/level_spec/v7-bosses.md |
 | 7 | Implement boss encounter manager + Mothership moveset + yellow→red split (reuse v5) + system field-clear (reuse v6 flush/flash) + boss HUD | programmer | done | game/ |
-| 8 | QA: verify boss loop + moveset + reward + spawn-freeze/resume + smoke gate (seed a boss) + no AC1–AC38 regression | qa-tester | in-progress | qa/qa_report/ |
-| 9 | Declare v7 DONE | orchestrator | todo | shared/handoffs.md |
+| 8 | QA: verify boss loop + moveset + reward + spawn-freeze/resume + smoke gate (seed a boss) + no AC1–AC38 regression | qa-tester | done | qa/qa_report/v7.md |
+| 9 | Declare v7 DONE | orchestrator | done | shared/handoffs.md |
 
 ## Status
 
@@ -89,7 +89,7 @@ row when finishing. Status: `todo` | `in-progress` | `done` | `blocked`.
 > (cross-cutting → `shared/history.md`; per-domain → each role folder's `history.md`); the recent
 > agent-to-agent story is in `handoffs.md`; closed-increment handoffs are in `../archive/`.
 
-- **Latest: v7 IN PROGRESS** (2026-06-05) — **bosses** (periodic mothership boss fights). Orchestrator
+- **v7 SHIPPED & DONE** (2026-06-05) — **bosses** (periodic mothership boss fights). Orchestrator
   framed it (`shared/brief.md` v7); **BA done** — `requirements/v7.md` (**R56–R68 MUST + AC39–AC52**);
   **Designer done** — `design/gdd/v7-bosses.md` (every §26 lever locked). **★ Breakpoint-vs-AC13 RESOLVED:**
   **TIME-based, first boss @ 75 s, then every +90 s** — chose **(a) lower the gate** (boss 1 reliably seen
@@ -109,7 +109,10 @@ row when finishing. Status: `todo` | `in-progress` | `done` | `blocked`.
   coexists with v5 (f16) + v6 (f20). **Programmer done** — `entities/boss.py` + `systems/encounter.py`
   (boss sub-state in PLAY; factored `bombs.trigger_flush` for the free arrival clear; boss folded into §V2.7;
   spawn-freeze skip-no-bank; yellow→12-red split reuses the v5 frozen split; boss HUD bar/label/warn/defeat).
-  Smoke exits 0 / 120 f; logic probes pass AC39–AC52, no AC1–AC38 regression. **Now with QA.**
+  Smoke exits 0 / 120 f; logic probes pass AC39–AC52, no AC1–AC38 regression. **QA PASS** — smoke gate
+  green (exit 0 / exactly 120 f / 3× + `-m` + compileall) AND a seeded boss exercised (free arrival clear @
+  charge-1, entrance→settle y=400 @f60, 5R/2H/7S waves, yellow→even-12-red ring); AC39–AC52 all PASS; no
+  v1/v2/v5/v6 regression (`qa/qa_report/v7.md`). **Orchestrator declared v7 DONE.**
 - **v6 SHIPPED & DONE** (2026-06-05) — bombs / panic button + Z-fire / X-bomb remap. QA PASS
   (R45–R54, AC30–AC38); smoke gate green + bomb-activation-exercising; no v1/v2/v5 regression.
 - **v5 SHIPPED & DONE** — three enemy types (REGULAR/HEAVY/SCOUT + splitting GREEN pellet). QA PASS (AC22–AC29).
