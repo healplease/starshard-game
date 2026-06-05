@@ -185,3 +185,24 @@
   to the folder/`index.md` paths. The `qa/test_plan.md` + `qa/feature_inventory.md` standing docs were left
   as-is (topical, not version-append). Net: a build role now opens a small `index.md` + only the increment
   file(s) it needs, instead of a 700–1050-line monolith.
+
+## v11 — Softer invulnerability pulse (programmer, 2026-06-05)
+- Art-only render tweak per `art_spec/v11.md` — no gameplay/economy/copy change; i-frame & Shield
+  durations untouched. `_draw_player` (`game/view/render.py`) no longer early-returns on the "off" half
+  of a hard 6-f blink (the old `(blink_timer//6)%2` strobe 255→0→255). It now splits two paths:
+  **(1)** *not invulnerable* → draw the ship straight to `screen` at full opacity (the cheap common path,
+  zero surface cost); **(2)** *invulnerable* → a smooth **cosine** alpha pulse `phase=(blink_timer%30)/30`,
+  `osc=0.5+0.5*cos(2π·phase)`, `alpha=128+(255−128)·osc` → 128↔255 over a 30-f cycle, driven off
+  `blink_timer` so it tracks remaining i-frames/Shield and snaps back to solid the instant invuln ends
+  (handled by path 1 — no end-of-pulse special case). **Render mechanism (§V11.5):** the ship is drawn onto
+  a **size-once** module-level `SRCALPHA` surface (`_PLAYER_SURF`, 32×34, local centre (16,17) — like the v6
+  flash surface, never per-frame alloc); the alpha is applied via `surf.fill((255,255,255,alpha),
+  BLEND_RGBA_MULT)` — **NOT** `set_alpha`, which is a silent no-op on a per-pixel SRCALPHA surface (the §V11.5
+  gotcha). **Shield ring (§V11.4):** drawn **solid, every frame, OUTSIDE the alpha surface** straight to
+  `screen` while `shield_active` — it no longer rides the (removed) early-return, so the old ring strobe is
+  gone and the 5-s-Shield-vs-i-frame tell stays crisp. Three `INVULN_*` consts added to `config.py`
+  (`ALPHA_FLOOR=128`, `ALPHA_CEIL=255`, `PULSE_PERIOD=30`). **Verification:** new `v11/pulse` regression test
+  reads the actual alpha off `_PLAYER_SURF` (ceil@phase0, floor@phase0.5, never leaves [128,255], >3 distinct
+  values across a cycle = smooth, solid-when-not-invuln); harness ALL PASS (60 checks), smoke exits 0/120 f,
+  no AC1–AC68 regression. Console-encoding note: harness labels stay ASCII (the cp1252 Windows console can't
+  print `↔`/`↔`).

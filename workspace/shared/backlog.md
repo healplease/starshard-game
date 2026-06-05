@@ -120,12 +120,34 @@ row when finishing. Status: `todo` | `in-progress` | `done` | `blocked`.
 | 8 | QA: verify Q-hold quits from START + GAME_OVER + arc + cancel-on-release; render-smoke + no v1–v9 regression | qa-tester | done | qa/qa_report/v10.md |
 | 9 | Declare v10 DONE | orchestrator | done | shared/handoffs.md |
 
+### v11 — Softer invulnerability blink (raise the alpha floor to ~50% + smooth the pulse) (shipped & passed QA, 2026-06-05) ✅
+| # | Task | Owner role | Status | Artifact |
+|---|------|-----------|--------|----------|
+| 1 | Capture v11 feature + framing; SKIP BA/Designer/Writer/Level-designer (art-only) | orchestrator | done | shared/brief.md |
+| 2 | Art spec: alpha floor (~50%/128), pulse period + interpolation curve (sine/triangle), Shield-ring-during-pulse rule | artist | done | art/art_spec/v11.md |
+| 3 | Implement per-sprite alpha pulse in `_draw_player` (SRCALPHA temp surface, drive from blink_timer; no early-return) | programmer | done | game/view/render.py, game/config.py, qa/regression_harness.py |
+| 4 | QA: ship never fully invisible, pulse smooth, invuln still ends, Shield-ring per spec, render-smoke + smoke + no v1–v10 regression | qa-tester | done | qa/qa_report/v11.md |
+| 5 | Declare v11 DONE | orchestrator | done | shared/handoffs.md |
+
 ## Status
 
 > **Board only.** One line per shipped version + the parked items. The *why* lives in `history.md`
 > (cross-cutting → `shared/history.md`; per-domain → each role folder's `history.md`); the recent
 > agent-to-agent story is in `handoffs.md`; closed-increment handoffs are in `../archive/`.
 
+- **v11 SHIPPED & DONE** (2026-06-05) — **softer invulnerability pulse.** The i-frame strobe (100%↔0%
+  alpha, hard on the eyes) is replaced by a smooth cosine pulse: the ship sprite oscillates 128↔255 alpha
+  on a 30-f (0.5 s) cycle off `blink_timer`, **never fully invisible** (floor 128/~50%), and snaps back to
+  solid the instant invuln ends; the Shield bubble ring stays steady full-alpha (no strobe), keeping the
+  §V2.5 Shield-vs-i-frame tell crisp. Art-only render tweak (`_draw_player`) — Orchestrator framed it +
+  SKIPPED BA/Designer/Writer/Level-designer (no requirements/economy impact). **Artist done** (`art_spec/v11.md`):
+  `INVULN_ALPHA_FLOOR=128`/`CEIL=255`/`PULSE_PERIOD=30`, cosine curve, Shield ring solid, no new palette.
+  **Programmer done** — `_draw_player` pulses via a size-once SRCALPHA surface + `BLEND_RGBA_MULT` (avoids the
+  SRCALPHA `set_alpha` no-op), keeps the cheap direct path when not invuln, draws the ring outside the surface;
+  3 `INVULN_*` consts in `config.py`; new `v11/pulse` regression test that reads the real surface alpha.
+  **QA PASS** (`qa/qa_report/v11.md`) — smoke exits 0/120 f; harness **59/59** ALL PASS (v11/pulse: floor 128 /
+  ceil 255 / smooth / never invisible / solid when not invuln / ring steady); no AC1–AC68 regression.
+  **Orchestrator declared v11 DONE.**
 - **v10 SHIPPED & DONE** (2026-06-05) — **Q-hold-to-quit on START + GAME_OVER.** v8 shipped the gesture+arc
   but only wired it into PAUSE; v10 extends it (reusing the v8 threshold/arc/reset) to the START and
   GAME_OVER screens + shows the quit hint on both. Orchestrator framed it (`shared/brief.md` v10) +

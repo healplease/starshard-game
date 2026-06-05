@@ -43,7 +43,8 @@ def draw_world(screen, world):
     # next so a ram reads correctly (art_spec §V7.6). Only present during a fight.
     if world.boss is not None:
         _draw_boss(screen, world.boss)
-    # Player — blink while invulnerable (i-frames OR shield share the blink, §V2.5)
+    # Player — smooth alpha pulse while invulnerable (i-frames OR shield, §V11.3);
+    # the Shield ring (if any) stays solid (§V11.4).
     _draw_player(screen, world.player)
     # Particles — shrink to 1px late (art_spec §5)
     for p in world.particles:
@@ -134,17 +135,53 @@ def _draw_bonus(screen, bonus):
     screen.blit(glyph, glyph.get_rect(center=(int(cx), int(cy))))
 
 
+# Pre-sized once (art_spec §V11.5): the ship's bounding box is 28×30; a 32×34
+# surface adds margin for the 2px edge stroke. Built lazily on the first invuln
+# draw and reused every frame — never a per-frame alloc (like the v6 flash surface).
+_PLAYER_SURF = None
+_PLAYER_SURF_SIZE = (32, 34)
+_PLAYER_LOCAL = (16, 17)        # local centre on that surface (= the ship's cx, cy)
+
+
+def _ship_pts(cx, cy):
+    """The ship triangle, +y down, offsets from its centre (art_spec §2.1)."""
+    return [(cx, cy - 15), (cx - 14, cy + 15), (cx + 14, cy + 15)]
+
+
 def _draw_player(screen, p):
-    # Blink while invulnerable (i-frames OR shield); visible on alternate 6-f
-    # intervals. Outside invulnerability the ship is always drawn (R18 / §V2.5).
-    if p.invulnerable and (p.blink_timer // 6) % 2 != 0:
-        return
     cx, cy = p.x, p.y
-    pts = [(cx, cy - 15), (cx - 14, cy + 15), (cx + 14, cy + 15)]
-    pygame.draw.polygon(screen, C.PLAYER, pts)
-    pygame.draw.polygon(screen, C.PLAYER_EDGE, pts, 2)
-    pygame.draw.circle(screen, C.PLAYER_EDGE, (int(cx), int(cy)), 3)
-    # Shield bubble ring distinguishes the 5 s shield from a brief i-frame blink (§V2.5)
+    if not p.invulnerable:
+        # Cheap common path: straight to screen at full opacity, zero surface cost
+        # (art_spec §V11.5). Outside invulnerability the ship is always drawn (R18).
+        pts = _ship_pts(cx, cy)
+        pygame.draw.polygon(screen, C.PLAYER, pts)
+        pygame.draw.polygon(screen, C.PLAYER_EDGE, pts, 2)
+        pygame.draw.circle(screen, C.PLAYER_EDGE, (int(cx), int(cy)), 3)
+        return
+    # Invulnerable (i-frames OR shield): smooth cosine alpha pulse between the 128
+    # floor and the 255 ceiling over a 30-f cycle, phase driven by blink_timer so it
+    # tracks the remaining i-frames/Shield and snaps back to solid the instant invuln
+    # ends (the not-invulnerable branch above). Never invisible (floor 128) — §V11.3.
+    phase = (p.blink_timer % C.INVULN_PULSE_PERIOD) / C.INVULN_PULSE_PERIOD
+    osc = 0.5 + 0.5 * math.cos(2 * math.pi * phase)         # 1.0 bright .. 0.0 dim
+    alpha = int(round(C.INVULN_ALPHA_FLOOR
+                      + (C.INVULN_ALPHA_CEIL - C.INVULN_ALPHA_FLOOR) * osc))
+    global _PLAYER_SURF
+    if _PLAYER_SURF is None:
+        _PLAYER_SURF = pygame.Surface(_PLAYER_SURF_SIZE, pygame.SRCALPHA)
+    surf = _PLAYER_SURF
+    surf.fill((0, 0, 0, 0))                                 # clear the prior frame
+    lcx, lcy = _PLAYER_LOCAL
+    lpts = _ship_pts(lcx, lcy)
+    pygame.draw.polygon(surf, C.PLAYER, lpts)
+    pygame.draw.polygon(surf, C.PLAYER_EDGE, lpts, 2)
+    pygame.draw.circle(surf, C.PLAYER_EDGE, (lcx, lcy), 3)
+    # Scale the surface's alpha CHANNEL by alpha/255 (RGB unchanged). set_alpha is a
+    # silent no-op on an SRCALPHA per-pixel surface, so use BLEND_RGBA_MULT (§V11.5).
+    surf.fill((255, 255, 255, alpha), special_flags=pygame.BLEND_RGBA_MULT)
+    screen.blit(surf, (int(cx) - lcx, int(cy) - lcy))
+    # Shield bubble ring stays SOLID — full alpha, every frame, drawn straight to
+    # screen OUTSIDE the alpha surface, so it never pulses or strobes (§V11.4).
     if p.shield_active:
         pygame.draw.circle(screen, C.BONUS_SHIELD, (int(cx), int(cy)), 18, 2)
 

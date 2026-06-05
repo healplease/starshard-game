@@ -72,6 +72,15 @@ P_SPEED, P_R = 5, 13
 P_START = (300, 720)
 P_MAX_HP = 100
 IFRAMES = 60            # i-frames after a hit (R18)
+
+# ── Invulnerability pulse (v11 — supersedes the §V2.5 hard 6-f blink) ──────────
+INVULN_ALPHA_FLOOR  = 128   # dimmest the ship reaches during invuln (~50% of 255). NEVER 0 — the ship
+                            #   is always at least half-visible. Human spec "~50%" → locked at 128/255 (50.2%).
+INVULN_ALPHA_CEIL   = 255   # brightest point of the pulse = fully opaque (the ship's normal solid look).
+INVULN_PULSE_PERIOD = 30    # frames per ONE full pulse (bright→floor→bright). 0.5 s @60 FPS = 2 Hz —
+                            #   a clear gentle "breathing" pulse, ~2.5× slower than the old 12-f strobe,
+                            #   well below any flicker-fusion read. Replaces today's 6-f hard half-cycle.
+
 FIRE_CD = 12            # baseline fire cooldown (R7, ~5/s)
 PB_SPEED = 10           # player bullet speed
 PB_W, PB_H = 4, 12

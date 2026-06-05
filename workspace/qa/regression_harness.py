@@ -60,7 +60,7 @@ from game.view import render, hud
 
 # ── tiny test framework ──────────────────────────────────────────────────────
 TESTS = []
-_GROUP_ORDER = ["v1", "v2", "v5", "v6", "v7", "v8", "v9", "v10"]
+_GROUP_ORDER = ["v1", "v2", "v5", "v6", "v7", "v8", "v9", "v10", "v11"]
 
 
 def test(group, ac, label):
@@ -1000,6 +1000,43 @@ def _t_v10_copy():
     expect("Restart" in C.GAMEOVER_KEYS, "GAMEOVER_KEYS lost its Restart hint")
     expect("Esc" not in C.GAMEOVER_KEYS, "GAMEOVER_KEYS reintroduced a stale Esc hint")
     expect("Esc" not in C.START_QUIT_HINT, "START quit-hint wrongly mentions Esc")
+
+
+@test("v11", "pulse", "invuln ship pulses 128<->255 on a 30-f cosine; solid when not invuln")
+def _t_v11_pulse():
+    """art_spec §V11.2/§V11.3/§V11.4: smooth cosine alpha pulse on the per-sprite
+    alpha surface (floor 128, ceil 255, period 30), driven by blink_timer; the ship
+    is drawn solid straight to screen when not invulnerable. Reads the actual alpha
+    off render._PLAYER_SURF (proves the SRCALPHA path honours the alpha — §V11.5)."""
+    ensure_pygame()
+    screen = pygame.display.set_mode((C.W, C.H))
+    render.set_fonts(make_fonts())
+    p = fresh_world().player                  # P_START, no shield ring drawn
+
+    def alpha_at(blink):                       # blink_timer == iframes when no shield
+        p.iframes = blink
+        screen.fill(C.BG)
+        render._draw_player(screen, p)
+        return render._PLAYER_SURF.get_at(render._PLAYER_LOCAL)[3]   # ship-centre alpha
+
+    expect(alpha_at(C.INVULN_PULSE_PERIOD) == C.INVULN_ALPHA_CEIL,
+           "phase 0 (full cycle) is not at the 255 ceiling")
+    expect(alpha_at(C.INVULN_PULSE_PERIOD // 2) == C.INVULN_ALPHA_FLOOR,
+           "phase 0.5 (half cycle) is not at the 128 floor")
+    seen = set()
+    for b in range(1, C.INVULN_PULSE_PERIOD + 1):
+        a = alpha_at(b)
+        expect(C.INVULN_ALPHA_FLOOR <= a <= C.INVULN_ALPHA_CEIL,
+               f"alpha {a} left [128,255] at blink {b} (ship invisible or over-bright)")
+        seen.add(a)
+    expect(len(seen) > 3, f"alpha took only {len(seen)} values over a cycle — not a smooth pulse")
+    # Not invulnerable → solid ship straight to screen; centre dot is opaque PLAYER_EDGE.
+    p.iframes = 0
+    expect(not p.invulnerable, "player still invulnerable with iframes 0 / no shield")
+    screen.fill(C.BG)
+    render._draw_player(screen, p)
+    expect(tuple(screen.get_at((int(p.x), int(p.y)))[:3]) == C.PLAYER_EDGE,
+           "solid ship centre not drawn at full colour when not invulnerable")
 
 
 # ── the in-process full smoke run is LAST: App.run() calls pygame.quit() at the end ──

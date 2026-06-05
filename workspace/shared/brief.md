@@ -183,7 +183,42 @@ cycle — Designer locks order, timing, and whether it loops 1→2→3→4→1):
   `story/` copy for the two hints. The arc draw + threshold + reset all **already exist from v8** — this
   is wiring them into two more states, not new mechanics. **Economy no-op** (Level-designer likely skip).
 
+## v11 increment (added 2026-06-05) — Softer invulnerability blink (raise the alpha floor + smooth it)
+
+> v10 shipped & passed QA. The human reports the **invulnerability animation is hard on the eyes**: the
+> player ship currently **strobes between full opacity and fully invisible** (it skips drawing the ship on
+> alternate 6-frame intervals — `view/render.py` `_draw_player`, gated on `p.invulnerable` + `p.blink_timer`).
+> This is a **tiny, art-only visual tweak** — no gameplay, requirements, economy, or copy change. The
+> i-frame/Shield mechanic, its duration, and its gameplay tell are all unchanged; only the *rendering* of
+> the tell softens. Build run: **Artist → Programmer → QA** (BA / Designer / Writer / Level-designer SKIPPED —
+> no requirements, design-number, copy, or economy impact).
+
+### Feature: softer invulnerability blink (human's words, lightly framed)
+1. **Raise the alpha floor.** Instead of oscillating between **100% and 0%** alpha (full → invisible), the
+   ship should oscillate between **max (100%) and ~50%** alpha — it never fully disappears, so the strobe is
+   far gentler on the eyes while still clearly reading as "invulnerable / flashing."
+2. **Smooth the transition.** Rather than a hard on/off snap every 6 frames, the alpha should **change smoothly**
+   (interpolated — e.g. a sine/triangle ease between the floor and the ceiling) across the invulnerability
+   period, so it pulses rather than blinks.
+
+### Decisions to nail down (Artist owns the alpha levers; Programmer owns the render mechanism)
+- **Artist:** the exact **alpha floor** (the human said ~50% → ~128/255; confirm or set the precise value),
+  the **pulse period** (today the half-cycle is 6 frames; pick the cycle length that reads as a smooth pulse,
+  not a flicker), and the **interpolation curve** (sine vs triangle). Confirm the **Shield bubble ring**
+  behaviour during the pulse (does the ring fade with the ship or stay solid as the distinct Shield tell?
+  — it's the thing that separates a brief i-frame flash from the 5 s Shield, §V2.5). No new palette colours.
+- **Programmer:** the current `_draw_player` draws polygons **straight to the screen**, so a partial alpha
+  needs a **per-sprite alpha surface** (draw the ship onto a small `SRCALPHA` temp surface, `set_alpha`/per-pixel
+  alpha, then blit) instead of an early-`return`. Keep it cheap (no per-frame surface alloc if avoidable —
+  size once like the v6 flash surface). Drive the alpha from `p.blink_timer` so the phase still tracks the
+  remaining i-frames/Shield. **Must not** regress the smoke gate, the v9 **render-smoke** (no draw raises),
+  or any AC.
+- **QA:** verify the ship is **never fully invisible** during invulnerability (floor respected), the pulse is
+  smooth (alpha varies across frames, not a 2-state snap), invulnerability still ends correctly (ship returns
+  to solid), Shield ring behaves per the Artist's call, and **no v1–v10 regression** + render-smoke + smoke gate green.
+
 ## Next
-v10 is the active increment (Q-hold-to-quit on START + GAME_OVER). The Orchestrator has kicked off the
-Business Analyst (`workspace/requirements/requirements/`). The next increment after v10 opens when the
-human gives a new feature or theme.
+v11 is the active increment (softer invulnerability blink — raise the alpha floor + smooth it). The
+Orchestrator has kicked off the **Artist** (`workspace/art/art_spec/`), skipping BA/Designer/Writer/Level-designer
+(art-only, no requirements/economy impact). The next increment after v11 opens when the human gives a new
+feature or theme.
