@@ -7,7 +7,7 @@ row when finishing. Status: `todo` | `in-progress` | `done` | `blocked`.
 > `history.md`; the cross-role story is in `handoffs.md`. Full v1–v12 detail (per-version task tables
 > + status prose) is archived → `../archive/backlog-v1-v12.md`. See `../README.md` for the map.
 
-## Current game state — "Starshard" (v1–v12 shipped & passed QA, as of 2026-06-06)
+## Current game state — "Starshard" (v1–v13 shipped & passed QA, as of 2026-06-06)
 
 Top-down auto-scrolling space shooter, modular `pygame-ce` package under `game/`. Shipped capabilities:
 
@@ -24,6 +24,8 @@ Top-down auto-scrolling space shooter, modular `pygame-ce` package under `game/`
   START / PAUSE / GAME_OVER. AC53–AC68.
 - **Polish (v11/v12):** softer invuln pulse (never fully invisible); **hold R** (~0.5 s arc) restarts on
   PAUSE / GAME_OVER. AC69–AC77.
+- **Polish (v13):** restart (R) hold-arc co-located on its screen's quit (Q) arc centre (PAUSE 300,483 /
+  GAME_OVER 300,545), recolored violet `BONUS_BOMB`; keys told apart by colour not position. Render-only.
 
 Contract totals: **R1–R91**, **AC1–AC77**; regression harness **65/65**. Standing QA docs:
 `qa/feature_inventory.md`, `qa/test_plan.md`. (v3 = KB reorg, v4 = QA docs, v9 = process hardening —
@@ -32,10 +34,12 @@ no game-feature change.)
 **Play:** `.\.venv\Scripts\python.exe workspace\game\main.py` — Z fire · X bomb · Esc pause ·
 hold Q quit · hold R restart (on PAUSE/GAME_OVER).
 
-## Active increment
+## Active increment — none (v13 shipped 2026-06-06)
 
-_None open._ The next increment begins when the human gives the Orchestrator a new feature or theme.
-The Orchestrator scopes which roles it needs (skipping no-impact lanes) and opens a fresh row block here.
+v13 (restart hold-arc co-located on quit-arc centre + recolored violet) is **shipped & passed QA**
+(smoke green; R/Q arcs co-located PAUSE 300,483 / GAME_OVER 300,545; R fill violet `BONUS_BOMB` on top
+of amber Q; hold timing & idle-visibility unchanged; no AC regression). *Why* → `art/history.md`.
+Awaiting next theme/increment from the human.
 
 ## Parked (non-blocking)
 

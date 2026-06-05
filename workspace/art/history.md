@@ -97,3 +97,14 @@
   x-gap) AND every text rect (below them in y by 25 px, so any Writer hint-width change is safe). `HP_AMBER` reads
   in the lower band on both dims (α=110 / α=160). Coordinated the restart-hint slot with the Writer (each hint
   stays one line; arc clears any width).
+- 2026-06-06 (v13): art_spec/v13.md added (§V13.1–§V13.7). **R-arc unified with the Q-arc.** Set
+  the R-arc centre = the Q-arc centre per screen (`PAUSE_RESTART_ARC_CENTER (200,483)→(300,483)`,
+  `GAMEOVER_RESTART_ARC_CENTER (200,545)→(300,545)`), **superseding v12 §V12.4**, and recolored the R
+  **fill** violet `BONUS_BOMB #B464F5` (reused — no new palette; Q fill stays `HP_AMBER`). Chose to
+  **reuse** the existing violet (palette's one saturated violet, luminance ≈140, reads over both dims;
+  bomb pickup is PLAY-only so no in-frame clash) over a new constant — keeps the zero-new-colour rule.
+  With both arcs co-located, the v12 §V12.5.1 R-vs-Q 56-px gap constraint is **dropped** (overlap
+  human-approved); **render order locked R-after-Q so the violet R fill wins on dual-hold**. Co-located
+  R inherits the Q arc's proven text clearance (no new anti-collision proof). Bonus: the two PAUSE
+  always-on tracks now coincide into one ring (resolves v12's clutter note). Added a `fill_color` param
+  to `draw_hold_arc` (defaults amber → Q unchanged; R passes violet). Hold timing/semantics untouched.

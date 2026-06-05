@@ -404,20 +404,14 @@ RESTART_HOLD_FRAMES = PAUSE_QUIT_FRAMES   # 30 — coupled to PAUSE_QUIT_FRAMES,
 START_ARC_CENTER    = (W // 2, 665)   # (300, 665) — 56 px below the START quit-hint (top 600)
 GAMEOVER_ARC_CENTER = (W // 2, 545)   # (300, 545) — 56 px below GAMEOVER_KEYS (centre 489)
 
-# ── v12 Hold-R-to-restart arc centres on PAUSE + GAME_OVER (art_spec §V12.4/§V12.8) ──
-# Reuse the v8 arc visual verbatim via draw_hold_arc(...): PAUSE_ARC_R=22,
-# PAUSE_ARC_STROKE=3, CW from 12 o'clock, HP_AMBER fill / HP_BACK track,
-# fill = r_hold_frames / RESTART_HOLD_FRAMES. Each R centre = that screen's locked
-# Q-arc centre shifted 100 px LEFT, same y → 56 px clear of the Q arc, in the same
-# open band (inherits the Q arc's proven text clearance). Idle-visibility matches the
-# Q arc per screen: PAUSE track ALWAYS on (two empty tracks now), GAME_OVER whole
-# widget ONLY while r_hold_frames > 0. Bounding rects:
-#   PAUSE    : (178, 461, 44, 44) — 56 px left of the Q arc (278,461,44,44); clears the
-#              PAUSE text block (lowest rect ≤ y436) by 25 px
-#   GAME_OVER: (178, 523, 44, 44) — 56 px left of the Q arc (278,523,44,44); clears
-#              GAMEOVER_KEYS (y480–498) by 25 px
-PAUSE_RESTART_ARC_CENTER    = (W // 2 - 100, PAUSE_PANEL_Y + 56)   # (200, 483)
-GAMEOVER_RESTART_ARC_CENTER = (W // 2 - 100, 545)                  # (200, 545)
+# ── v13 Restart-arc shares the Q-arc centre + violet fill (art_spec §V13.2/§V13.3) ──
+# R arc now = its screen's Q-arc centre (co-located; overlap on dual-hold is intended).
+# Geometry/fill-mapping/idle-visibility all per v12; ONLY centre + fill colour change.
+#   fill colour = BONUS_BOMB (#B464F5, reused from v6) — Q fill stays HP_AMBER.
+#   PAUSE    R centre = (300, 483) = PAUSE Q-arc centre
+#   GAME_OVER R centre = (300, 545) = GAMEOVER_ARC_CENTER
+PAUSE_RESTART_ARC_CENTER    = (W // 2, PAUSE_PANEL_Y + 56)   # (300, 483)
+GAMEOVER_RESTART_ARC_CENTER = (W // 2, 545)                  # (300, 545)
 
 
 # ── Difficulty ramp (level_spec §3) — pure formulas, t = seconds in run ───────

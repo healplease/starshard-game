@@ -264,3 +264,5 @@
   and an end-to-end real-loop Esc→PAUSE→hold-R-30 f→PLAY-with-both-counters-zero); strengthened the v10
   reset-spine to assert BOTH counters zero and rewrote the v8 R74 + spine #5/#6 from the removed K_r tap to the
   held path; added "v12" to `_GROUP_ORDER`. No AC1–AC68 regression.
+
+**v13 (2026-06-06, programmer).** Co-located the R-restart arc onto its screen Q-quit arc centre (PAUSE (300,483), GAME_OVER (300,545)) in config.py, and added a `fill_color` param to `draw_hold_arc` (default HP_AMBER) so the R calls pass BONUS_BOMB violet while Q stays amber. R is drawn after Q on both screens (already the call order), so violet wins on dual-hold. Hold timing/semantics & idle-visibility untouched; smoke gate green.

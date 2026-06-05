@@ -225,19 +225,21 @@ def draw_pause(screen, q_hold_frames, r_hold_frames=0):
         screen.blit(surf, surf.get_rect(midtop=(cx, y)))
 
     # ── 4. Q-hold + R-hold progress arcs (both tracks always on, §V12.3) ────────
-    # Q arc at its locked PAUSE centre (300,483); R arc 100 px left at (200,483).
+    # v13: R arc now co-located on the Q centre (300,483); draw R AFTER Q so the
+    # violet R fill renders on top on dual-hold (§V13.4). Q fill amber, R fill violet.
     draw_hold_arc(screen, (cx, C.PAUSE_PANEL_Y + 56), q_hold_frames, C.PAUSE_QUIT_FRAMES)
-    draw_hold_arc(screen, C.PAUSE_RESTART_ARC_CENTER, r_hold_frames, C.RESTART_HOLD_FRAMES)
+    draw_hold_arc(screen, C.PAUSE_RESTART_ARC_CENTER, r_hold_frames,
+                  C.RESTART_HOLD_FRAMES, fill_color=C.BONUS_BOMB)
 
 
 # ── v12: the v8/v10 hold arc generalised — one helper for BOTH gestures ─────────
-def draw_hold_arc(screen, center, hold_frames, threshold):
-    """The shipped v8 progress arc (HP_BACK track ring + CW HP_AMBER fill) at an
-    arbitrary centre, driven by any (hold_frames / threshold) ratio (GDD §V12.11,
-    art_spec v8 §V8.4 / v12 §V12.9). r=22, stroke=3, CW from 12 o'clock. The track is
-    always drawn; the fill is drawn only while hold_frames > 0. Used for both the Q-quit
-    arc (threshold=PAUSE_QUIT_FRAMES) and the R-restart arc (threshold=RESTART_HOLD_FRAMES).
-    No new constants."""
+def draw_hold_arc(screen, center, hold_frames, threshold, fill_color=C.HP_AMBER):
+    """The shipped v8 progress arc (HP_BACK track ring + CW fill) at an arbitrary
+    centre, driven by any (hold_frames / threshold) ratio (GDD §V12.11, art_spec v8
+    §V8.4 / v12 §V12.9 / v13 §V13.3). r=22, stroke=3, CW from 12 o'clock. The track is
+    always drawn; the fill is drawn only while hold_frames > 0. fill_color defaults to
+    HP_AMBER (the Q-quit arc); the R-restart arc passes BONUS_BOMB violet (v13). No new
+    constants."""
     cx, cy = center
     r = C.PAUSE_ARC_R                                  # 22
     rect = pygame.Rect(cx - r, cy - r, 2 * r, 2 * r)   # 44×44 bounding box
@@ -248,7 +250,7 @@ def draw_hold_arc(screen, center, hold_frames, threshold):
         # and sweep the start back by fill×2π.
         end_a   = math.pi / 2
         start_a = end_a - fill * 2 * math.pi
-        pygame.draw.arc(screen, C.HP_AMBER, rect, start_a, end_a, C.PAUSE_ARC_STROKE)
+        pygame.draw.arc(screen, fill_color, rect, start_a, end_a, C.PAUSE_ARC_STROKE)
 
 
 # ── v10: the Q-hold quit arc, reusable at any centre (START + GAME_OVER) ────────
@@ -276,4 +278,4 @@ def draw_gameover_restart_arc(screen, r_hold_frames):
     track always on, matching the Q arc per screen.)"""
     if r_hold_frames > 0:
         draw_hold_arc(screen, C.GAMEOVER_RESTART_ARC_CENTER,
-                      r_hold_frames, C.RESTART_HOLD_FRAMES)
+                      r_hold_frames, C.RESTART_HOLD_FRAMES, fill_color=C.BONUS_BOMB)

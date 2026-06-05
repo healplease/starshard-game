@@ -26,8 +26,22 @@ v1–v12 shipped & passed QA — see `backlog.md` for the capability summary and
 each role folder. Closed-increment framings (v2, v5, v7–v12) are archived in
 `../archive/brief-increments-*.md`.
 
-## Current increment
-_None open._ The Orchestrator writes the next increment's framing here when the human gives a new
-feature or theme — **theme + the human's words, lightly framed + the open questions to delegate**, then
-scopes which roles it actually needs (see `roles/orchestrator.md`). Keep this section to the *latest*
-increment; archive the prior framing when a new one opens.
+## Current increment — v13: unify the restart hold-progress UI with quit
+
+**Human's words:** holding **R** (restart) should use the **same progress bar position** as holding
+**Q** (quit) — one UI element/location instead of two separate circle progresses. If R and Q are both
+held they may overlap (drawing on the same spot) or only one shows; either is fine. **Hold behavior
+does not change** — the only changes are (1) the restart progress arc's **position now matches the quit
+arc's position** on each screen, and (2) the restart arc is **violet**.
+
+**Lightly framed:** v12 placed the R-arc 100 px left of the Q-arc (`(200,…)` vs `(300,…)`). v13
+collapses the R-arc onto the Q-arc centre (same x and y) and recolors it violet. PAUSE & GAME_OVER both
+have a restart arc; START has only quit (no restart there — unchanged).
+
+**Open question delegated to Artist:** pick the violet hex (a `BONUS_BOMB #B464F5`-style violet already
+exists in the palette — reuse or pick a distinct violet) and confirm the two new R-arc centres = the
+Q-arc centres. Note that with R & Q at the same centre, render order decides which arc shows on top when
+both are held — that overlap is human-approved, so no anti-collision constraint between R and Q anymore.
+
+**Scoped roles:** Artist → Programmer → QA (lazy pass). BA / Designer / Writer / Level-designer skipped
+(no scope/timing/economy/copy change).
