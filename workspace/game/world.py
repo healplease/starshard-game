@@ -17,6 +17,7 @@ from .entities.fx import make_starfield
 class GameState(Enum):
     START = "START"
     PLAY = "PLAY"
+    PAUSE = "PAUSE"
     GAME_OVER = "GAME_OVER"
 
 

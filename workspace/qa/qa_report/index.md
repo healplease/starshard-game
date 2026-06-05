@@ -9,6 +9,7 @@
 ## Run reports (newest first)
 | File | Increment | Verdict | Covers |
 |------|-----------|---------|--------|
+| `v8.md` | v8 — Pause / Unpause + Q-hold to Quit | ✅ PASS | AC53–AC60 + no v1/v2/v5/v6/v7 regression |
 | `v7.md` | v7 — bosses / periodic Mothership boss fights | ✅ PASS | AC39–AC52 + no v1/v2/v5/v6 regression |
 | `v6.md` | v6 — bombs / panic button + Z/X remap | ✅ PASS | AC30–AC38 + no v1/v2/v5 regression |
 | `v5.md` | v5 — three-enemy roster + splitting pellet | ✅ PASS | AC22–AC29 + no v1/v2 regression |

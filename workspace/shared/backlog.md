@@ -83,12 +83,26 @@ row when finishing. Status: `todo` | `in-progress` | `done` | `blocked`.
 | 8 | QA: verify boss loop + moveset + reward + spawn-freeze/resume + smoke gate (seed a boss) + no AC1–AC38 regression | qa-tester | done | qa/qa_report/v7.md |
 | 9 | Declare v7 DONE | orchestrator | done | shared/handoffs.md |
 
+### v8 — Pause / Unpause + Q-hold to quit (shipped & passed QA, 2026-06-05) ✅
+| # | Task | Owner role | Status | Artifact |
+|---|------|-----------|--------|----------|
+| 1 | Capture v8 feature + framing | orchestrator | done | shared/brief.md |
+| 2 | Requirements: pause behaviour, freeze list, Q-hold threshold+arc, restart-from-pause, smoke-gate plan, ACs | business-analyst | done | requirements/requirements/v8.md |
+| 3 | GDD: exact freeze list, Esc toggle semantics per state, Q-hold numbers, arc position/style, pause-screen layout, restart-from-pause rule | lead-game-designer | done | design/gdd/v8-pause.md |
+| 4 | Art spec: pause overlay + Q-hold arc visuals | artist | done | art/art_spec/v8-pause.md |
+| 5 | Writer: pause-screen copy (unpause / restart / quit hints), updated controls copy | writer | done | story/story/v8.md |
+| 6 | Level spec: no economy changes expected — skip or confirm | level-designer | done | levels/level_spec/v8-pause.md (confirmed no-op) |
+| 7 | Implement pause state, freeze all timers, pause-screen overlay, Q-hold arc, Esc→pause/unpause, remove Esc-quit | programmer | done | game/ |
+| 8 | QA: verify pause/unpause (state preserved), Q-hold arc + quit, no regression, smoke gate still green | qa-tester | done | qa/qa_report/v8.md |
+| 9 | Declare v8 DONE | orchestrator | done | shared/handoffs.md |
+
 ## Status
 
 > **Board only.** One line per shipped version + the parked items. The *why* lives in `history.md`
 > (cross-cutting → `shared/history.md`; per-domain → each role folder's `history.md`); the recent
 > agent-to-agent story is in `handoffs.md`; closed-increment handoffs are in `../archive/`.
 
+- **v8 SHIPPED & DONE** (2026-06-05) — pause/unpause + Q-hold-to-quit. QA PASS (R69–R75, AC53–AC60); smoke exit 0 × 3 + package import; no v1–v7 regression.
 - **v7 SHIPPED & DONE** (2026-06-05) — **bosses** (periodic mothership boss fights). Orchestrator
   framed it (`shared/brief.md` v7); **BA done** — `requirements/v7.md` (**R56–R68 MUST + AC39–AC52**);
   **Designer done** — `design/gdd/v7-bosses.md` (every §26 lever locked). **★ Breakpoint-vs-AC13 RESOLVED:**
@@ -120,7 +134,7 @@ row when finishing. Status: `todo` | `in-progress` | `done` | `blocked`.
 - **v3 DONE** — knowledge-base reorg into per-role folders (Manager). Specs unchanged.
 - **v2 SHIPPED & DONE** — pickup bonuses + modular MVC refactor (~500-line cap retired). QA PASS (AC14–AC21).
 - **v1 SHIPPED & DONE** — "Starshard" base game. QA PASS (R1–R14, AC1–AC13).
-- **Game is playable:** `.\.venv\Scripts\python.exe workspace\game\main.py` (Z = fire · X = bomb).
+- **Game is playable:** `.\.venv\Scripts\python.exe workspace\game\main.py` (Z = fire · X = bomb · Esc = pause · Q-hold = quit).
 
 ### Parked (non-blocking)
 - **AC13 long runs** — expert pure-dodging can exceed 3 min; tuning levers in `levels/level_spec/`

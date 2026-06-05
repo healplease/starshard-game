@@ -67,3 +67,16 @@
   **2 new colors total** (`BOSS_HULL`, `EB_COLOR_YELLOW`); reuses `ENEMY`/`ENEMY_EDGE`/`HP_BACK`/`EB_COLOR_RED`/
   `FLASH` + `FONT_HUD`. Render order: boss in the enemy layer (player draws over it), its bullets in the
   enemy-bullet layer, bar/label in HUD (transient), flash unchanged.
+- 2026-06-05 (v8): art_spec/v8-pause.md added (§V8.1–§V8.7). **ZERO new palette entries** — all five colors
+  reused (`OVERLAY`, `PLAYER`, `TEXT_DIM`, `HP_AMBER`, `HP_BACK`). Resolved the **`pause_panel_y + 56` formula**
+  (GDD §V8.4) by defining `pause_panel_y = 427` as the y-center of the bottom hint line (Restart hint);
+  arc center y = 483. Layout: PAUSED heading (FONT_BIG, PLAYER cyan) top=290; three FONT_SMALL TEXT_DIM hint
+  lines at tops 358/388/418; 20 px gap heading→hints, 12 px between hints, 47 px hint3-bottom→arc-center
+  (≈48 px of §V8.6.1); full content block y=290–505 centered near y=397 ≈ screen center. **HP_AMBER arc
+  confirmed**: high-luminance warm amber against dimmed near-black field; no competing warm element at screen
+  centre during PAUSE; HP_BACK track recedes so arc pops. **alpha=110 dim confirmed visually distinct from
+  GAME_OVER alpha=160**: 43 % vs 63 % opacity (~20 % difference) plus scrolling starfield (PAUSE only) +
+  cyan heading vs red heading as orthogonal disambiguators. **PLAYER cyan heading confirmed**: opposite
+  temperature from GAME_OVER's HP_RED; different hue from ENEMY magenta. Config constants block + draw recipe
+  with CW arc math provided paste-ready (§V8.3.3/§V8.4). No new render layer — PAUSE slots into the existing
+  state-overlay dispatch at layer 11.

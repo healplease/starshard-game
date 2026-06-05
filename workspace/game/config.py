@@ -299,10 +299,10 @@ TITLE          = "STARSHARD"
 PITCH          = "Dodge the rocks. Gun the rest. Beat your best."
 # v6: rewritten to teach Z=fire / X=bomb; old "FIRE  Space" is a defect (story §V6.4, AC35).
 CONTROLS_1     = "MOVE  Arrows / WASD      Z = fire · X = bomb"
-CONTROLS_2     = "QUIT  Esc"
+CONTROLS_2     = "Esc  Pause · hold Q  Quit"
 START_PROMPT   = "Press any key to fly"
 GAMEOVER_TITLE = "GAME OVER"
-GAMEOVER_KEYS  = "R  Restart      Esc  Quit"
+GAMEOVER_KEYS  = "R  Restart"
 
 # v7 boss copy (story §V7.5). Name blessed verbatim; label == name (AC47-safe, ≤12 ch).
 BOSS_NAME        = "MOTHERSHIP"      # canonical boss name
@@ -310,6 +310,23 @@ BOSS_LABEL_TEXT  = BOSS_NAME         # drawn on the boss bar (FONT_HUD, magenta)
 BOSS_WARN_1      = "WARNING"             # arrival klaxon (ARRIVAL→ENTRANCE, fades before settle)
 BOSS_WARN_2      = "MOTHERSHIP INBOUND"  # intro + name reveal
 BOSS_DEFEAT_TEXT = "MOTHERSHIP DOWN"     # defeat flavor line; "+{points}" tracks the real award
+
+# ── v8 pause: heading + three hint lines (FONT_SMALL / TEXT_DIM, centered at W//2) ──
+PAUSE_TITLE        = "PAUSED"              # FONT_BIG 64, PLAYER cyan #50DCFF
+PAUSE_HINT_RESUME  = "Esc  Resume"         # hint line 1 — second Esc resumes
+PAUSE_HINT_QUIT    = "Hold Q  Quit"        # hint line 2 — Q held 0.5 s quits
+PAUSE_HINT_RESTART = "R  Restart"          # hint line 3 — R key restarts from pause
+
+# ── v8 pause overlay geometry (art_spec §V8.3, GDD §V8.3/§V8.4/§V8.6) ─────────
+PAUSE_DIM_ALPHA  = 110          # full-screen dim opacity (< GAME_OVER 160 = temporary-state read)
+PAUSE_HEADING_Y  = 290          # top of "PAUSED" heading blit (FONT_BIG 48 px → center y 314)
+PAUSE_HINT_Y1    = 358          # top of resume hint blit     (FONT_SMALL 18 px → center y 367)
+PAUSE_HINT_Y2    = 388          # top of Q-hold hint blit     (FONT_SMALL 18 px → center y 397)
+PAUSE_HINT_Y3    = 418          # top of restart hint blit    (FONT_SMALL 18 px → center y 427)
+PAUSE_PANEL_Y    = 427          # pause_panel_y anchor (= center of hint3)
+PAUSE_ARC_R      = 22           # Q-hold arc radius in px (GDD §V8.4)
+PAUSE_ARC_STROKE = 3            # Q-hold arc stroke width
+PAUSE_QUIT_FRAMES = 30          # hold duration to quit (0.5 s @ 60 FPS)
 
 
 # ── Difficulty ramp (level_spec §3) — pure formulas, t = seconds in run ───────

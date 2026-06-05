@@ -12,6 +12,7 @@
 | `v5-enemy-bullets.md` | v5 | **§V5.1 three enemy bodies** (octagon/chevron/dart + vertex math) · **§V5.2 RED/GREEN/CYAN bullet palette** · §V5.3 bullet shapes · §V5.4 optional split burst · §V5.5 render order · DoD | shipped ✅ |
 | `v6-bomb-flash.md` | v6 | §V6.1 bomb palette (`BONUS_BOMB #B464F5`) · §V6.2 violet diamond · **§V6.3 bomb-count HUD readout** (`×N`, top-right) · §V6.4 "+1 BOMB" popup · **§V6.5 activation flash** (`FLASH_TINT #F0F8FF`, alpha 200, 18-f fade) · §V6.6 render order · DoD | shipped ✅ |
 | `v7-bosses.md` | v7 | §V7.1 boss palette (`BOSS_HULL #342C4A`, `EB_COLOR_YELLOW #FFEA00`) · **§V7.2 Mothership silhouette** (~180×152, vertices, r=70 coverage) · **§V7.3 boss health bar + label** (center-top, magenta, anti-collision) · §V7.4 yellow fan + red children hues · §V7.5 arrival flash (reuse v6) · §V7.6 render order · DoD | spec ✅ |
+| `v8-pause.md` | v8 | **§V8.1 no new palette** (all reused) · **§V8.2 three design confirmations** (HP_AMBER arc color, alpha=110 dim, PLAYER cyan heading) · **§V8.3 exact pixel layout** (heading y=290, hints y=358/388/418, `pause_panel_y=427`, arc center y=483) · §V8.4 draw recipe (pygame.draw.arc CW from 12 o'clock) · §V8.5 anti-collision · §V8.6 render order | spec ✅ |
 
 ## Where is …? (topic → file)
 - **Palette / named colors** → `v1-base.md` §1 (+ extensions: `v2…` §V2.1, `v5…` §V5.2, `v6…` §V6.1)
@@ -21,6 +22,7 @@
 - **Enemy body silhouettes (HEAVY/REGULAR/SCOUT) + bullet hues** → `v5-enemy-bullets.md` §V5.1–V5.2
 - **Bomb pickup color/glyph, bomb-count HUD, full-screen flash** → `v6-bomb-flash.md`
 - **Mothership silhouette/hull color, boss health bar + label, yellow-fan + red-child bullet hues** → `v7-bosses.md`
+- **Pause overlay dim + text block + Q-hold arc, `pause_panel_y` resolution** → `v8-pause.md`
 
 ## Updating this spec
 - **New increment:** add `vN-<topic>.md` (`# vN increment — …`) + a row + topic-map entry; flag any

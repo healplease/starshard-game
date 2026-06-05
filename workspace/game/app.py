@@ -6,6 +6,7 @@ mutates the World only via systems; it never draws directly (view does that).
 """
 
 import random
+import sys
 
 import pygame
 
@@ -22,6 +23,7 @@ class App:
         self.state = GameState.START
         self.frame = 0          # global loop counter (smoke cap + start-screen blink)
         self.bomb_fired = False  # X key-down edge this frame (v6, GDD §V6.4)
+        self.q_hold_frames = 0   # v8: Q-hold timer for quit-from-PAUSE (GDD §V8.3)
 
     # ── setup ────────────────────────────────────────────────────────────────
     def _init_pygame(self):
@@ -70,12 +72,23 @@ class App:
             if event.type == pygame.QUIT:
                 return False
             if event.type == pygame.KEYDOWN:
+                # v8 R73: Esc toggles PLAY↔PAUSE; silently ignored in START/GAME_OVER
                 if event.key == pygame.K_ESCAPE:
-                    return False
+                    if self.state is GameState.PLAY:
+                        self.state = GameState.PAUSE
+                        self.q_hold_frames = 0
+                    elif self.state is GameState.PAUSE:
+                        self.state = GameState.PLAY
+                    # else: START or GAME_OVER — silent no-op
+                    continue
                 if self.state is GameState.START:
                     self.state = GameState.PLAY
                 elif self.state is GameState.GAME_OVER and event.key == pygame.K_r:
                     self.world.reset_run()           # R13/R31 — no leak into the new run
+                    self.state = GameState.PLAY
+                elif self.state is GameState.PAUSE and event.key == pygame.K_r:
+                    self.world.reset_run()           # v8 R74 — restart from PAUSE
+                    self.q_hold_frames = 0
                     self.state = GameState.PLAY
                 elif self.state is GameState.PLAY and event.key == pygame.K_x:
                     self.bomb_fired = True            # X key-down edge → bomb (§V6.4)
@@ -91,6 +104,10 @@ class App:
             render.draw_world(self.screen, self.world)
             hud.draw_hud(self.screen, self.world)
             hud.draw_flash(self.screen, self.world)   # v6 flash: above HUD, PLAY-only (§V6.6)
+        elif self.state is GameState.PAUSE:            # v8: frozen world + HUD + pause overlay
+            render.draw_world(self.screen, self.world)
+            hud.draw_hud(self.screen, self.world)
+            hud.draw_pause(self.screen, self.q_hold_frames)
         else:  # GAME_OVER — frozen field + dim + text
             render.draw_world(self.screen, self.world)
             hud.draw_hud(self.screen, self.world)
@@ -133,7 +150,15 @@ class App:
                 inp = read_input()
 
             physics.update_starfield(self.world)     # cosmetic, runs in every state
-            if self.state is GameState.PLAY:
+            if self.state is GameState.PAUSE:          # v8: Q-hold timer (GDD §V8.3)
+                if pygame.key.get_pressed()[pygame.K_q]:
+                    self.q_hold_frames += 1
+                    if self.q_hold_frames >= C.PAUSE_QUIT_FRAMES:
+                        pygame.quit()
+                        sys.exit(0)
+                else:
+                    self.q_hold_frames = 0
+            elif self.state is GameState.PLAY:
                 self._step_play(inp)
 
             self._draw()

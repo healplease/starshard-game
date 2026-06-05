@@ -78,6 +78,53 @@ cycle — Designer locks order, timing, and whether it loops 1→2→3→4→1):
   attack during its entrance. Minion caps (does step 1 re-spawn 5 even if the last 5 are alive?).
 - **Attack-4 detail:** yellow-fan count + spread; the **split trigger** ("midway" = screen midpoint?
   after N frames/distance?); the 12 red children's directions (even 360°?) + their speed/damage.
+
+---
+
+## v8 increment (added 2026-06-05) — Pause / Unpause + Q-hold to quit
+
+> v7 shipped & passed QA. The human now wants a **pause system** and a **hold-to-quit gesture**.
+> This is a moderate increment — it primarily touches the Programmer and the flow/HUD, but the full
+> pipeline runs because controls and UX copy need to be specced, and the smoke-gate plan needs
+> updating. Build run: BA → Designer → Writer → Programmer → QA (Artist is light; Level-designer
+> likely no-op — Orchestrator will skip them if the BA/Designer confirm no economy impact).
+
+### Feature: pause / unpause (human's words, lightly framed)
+
+**Pause behaviour (Esc key)**
+- **Esc now pauses/unpauses** instead of quitting. Pressing Esc while playing freezes all objects
+  (player, bullets, enemies, asteroids, particles, boss) and all timers (buff durations, spawn
+  timers, boss timers, flash timer, bomb lockout timer, popup timers, buff tick, run clock) in place.
+- **Unpausing (Esc again)** resumes from the **exact same state** — all velocities, directions,
+  and timer values exactly as they were when paused. Nothing expires during the pause.
+
+**Pause screen**
+- While paused, a screen **similar to the start screen** covers the game scene (semi-transparent
+  overlay over the frozen game world). It shows hints: how to **unpause**, how to **restart**, and
+  how to **quit** (using the Q-hold gesture).
+
+**Q-hold to quit (any time)**
+- **Q key held for ~0.5 s (≈ 30 frames @60 FPS)** quits the application from *any* state (START,
+  PLAY, PAUSE, GAME_OVER).
+- While Q is being held, a **round progress arc** appears in a corner of the screen — it fills as
+  the hold progresses; releasing Q before the threshold cancels it cleanly.
+- Old Esc-to-quit behavior is **removed**; Q-hold is the sole quit path.
+
+### Design questions for the BA & Designer to nail down
+- **What exactly freezes during pause?** Enumerate every timer/system: run frame counter, spawn
+  timers, buff timers, boss moveset timer, boss osc, flash timer, bomb lockout, popup timers,
+  survival-score tick, starfield scroll. Some (starfield) may be fine to keep running.
+- **Does pressing Esc on START or GAME_OVER do anything?** (Pausing is only meaningful in PLAY.)
+- **Q-hold threshold:** ~30 f (0.5 s) is the human's spec — confirm or adjust. Does Q-hold cancel
+  a pause (i.e., does it work while paused too)?
+- **Progress arc:** corner, size, color, whether it's always visible when Q is held regardless of
+  game state, behavior if Q is released mid-hold.
+- **Restart from the pause screen:** pressing R while paused — does it restart directly or unpause
+  first? (Simplest: restart directly, no extra confirm step.)
+- **Smoke-gate plan:** the smoke test must still exit 0 in 120 f. Pause is player-triggered
+  (KEYDOWN Esc); the scripted smoke path never issues that key, so pause is a no-op for the smoke
+  run. Verify nothing regresses. The Q-hold threshold also requires the Q key to be held, which the
+  smoke path won't do — no change needed there either.
 - **Boss damage model:** does the boss collide-damage the player (ram)? boss-bullet damage. Is the
   **boss immune to the player's bomb flush**, or does the flush chip it / clear only its minions+bullets?
   (Edge case: player bombs mid-boss-fight.) Can the player's shots always hit the boss?

@@ -11,7 +11,8 @@
 | `v2.md` | v2 | **R23–R35** (bonus pickups + modular refactor; C3 line-cap RETIRED) + **AC14–AC21** | shipped ✅ |
 | `v5.md` | v5 | **R36–R44** (three enemy types + splitting pellet) + **AC22–AC29** | shipped ✅ |
 | `v6.md` | v6 | **R45–R55** (bombs/panic button + Z/X remap) + **AC30–AC38** | shipped ✅ |
-| `v7.md` | v7 | **R56–R68** (boss-fight loop + Mothership 4-step moveset) + **AC39–AC52** | in progress |
+| `v7.md` | v7 | **R56–R68** (boss-fight loop + Mothership 4-step moveset) + **AC39–AC52** | shipped ✅ |
+| `v8.md` | v8 | **R69–R75** (pause/unpause + Q-hold to quit + pause overlay) + **AC53–AC60** | in progress |
 
 ## Where is …? (topic → file)
 - **R1–R22 / AC1–AC13 (base game)** → `v1-base.md`
@@ -20,7 +21,8 @@
 - **Enemy types (R36–R44)** → `v5.md`
 - **Bombs + control remap (R45–R55)** → `v6.md`
 - **Bosses / Mothership boss fights (R56–R68)** → `v7.md`
-- Quick rule: **R1–22→v1 · R23–35→v2 · R36–44→v5 · R45–55→v6 · R56–68→v7**; **AC1–13→v1 · 14–21→v2 · 22–29→v5 · 30–38→v6 · 39–52→v7**.
+- **Pause / Q-hold to quit (R69–R75)** → `v8.md`
+- Quick rule: **R1–22→v1 · R23–35→v2 · R36–44→v5 · R45–55→v6 · R56–68→v7 · R69–75→v8**; **AC1–13→v1 · 14–21→v2 · 22–29→v5 · 30–38→v6 · 39–52→v7 · 53–60→v8**.
 
 ## Updating this spec
 - **New increment:** add `vN.md` (`# vN increment — …`) with the next R#/AC# block (continue the

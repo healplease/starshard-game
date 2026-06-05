@@ -1,6 +1,8 @@
 r"""hud — score, health bar, buff-pill stack, repair popup, and the START /
-GAME_OVER text (art_spec §4 + §V2.3/§V2.4, story §2/§4/§V2). Read-only.
+GAME_OVER / PAUSE text (art_spec §4 + §V2.3/§V2.4/§V8, story §2/§4/§V2/§V8). Read-only.
 """
+
+import math
 
 import pygame
 
@@ -192,3 +194,51 @@ def draw_gameover(screen, world):
     _center(screen, _FONTS["mid"].render(f"SCORE {world.score:05d}", True, C.TEXT), 380)
     _center(screen, _FONTS["mid"].render(f"BEST {world.best:05d}", True, C.TEXT_DIM), 420)
     _center(screen, _FONTS["small"].render(C.GAMEOVER_KEYS, True, C.TEXT_DIM), 480)
+
+
+def draw_pause(screen, q_hold_frames):
+    """PAUSE overlay: full-screen dim + centered text block + Q-hold arc.
+    q_hold_frames: int 0..PAUSE_QUIT_FRAMES — drives the arc fill ratio.
+    (art_spec §V8.3, GDD §V8.4/§V8.6)
+    """
+    # ── 1. Full-screen dim (lighter than GAME_OVER's alpha=160) ──────────────
+    dim = pygame.Surface((C.W, C.H))
+    dim.set_alpha(C.PAUSE_DIM_ALPHA)   # 110 = temporary-state; game world still legible
+    dim.fill(C.OVERLAY)
+    screen.blit(dim, (0, 0))
+
+    cx = C.W // 2   # 300 — all text and arc are horizontally centred here
+
+    # ── 2. "PAUSED" heading — PLAYER cyan (≠ GAME_OVER's HP_RED) ─────────────
+    heading = _FONTS["big"].render(C.PAUSE_TITLE, True, C.PLAYER)
+    screen.blit(heading, heading.get_rect(midtop=(cx, C.PAUSE_HEADING_Y)))
+
+    # ── 3. Hint lines — TEXT_DIM, FONT_SMALL ─────────────────────────────────
+    for y, text in ((C.PAUSE_HINT_Y1, C.PAUSE_HINT_RESUME),
+                    (C.PAUSE_HINT_Y2, C.PAUSE_HINT_QUIT),
+                    (C.PAUSE_HINT_Y3, C.PAUSE_HINT_RESTART)):
+        surf = _FONTS["small"].render(text, True, C.TEXT_DIM)
+        screen.blit(surf, surf.get_rect(midtop=(cx, y)))
+
+    # ── 4. Q-hold progress arc ────────────────────────────────────────────────
+    arc_cy = C.PAUSE_PANEL_Y + 56       # 483 (resolves GDD §V8.4 formula)
+    r      = C.PAUSE_ARC_R              # 22
+    rect   = pygame.Rect(cx - r, arc_cy - r, 2 * r, 2 * r)   # (278, 461, 44, 44)
+
+    # Track (empty ring) — always drawn so the player sees the full circle to fill
+    pygame.draw.arc(screen, C.HP_BACK,
+                    rect,
+                    0, 2 * math.pi,
+                    C.PAUSE_ARC_STROKE)
+
+    # Fill arc — clockwise from 12 o'clock (−π/2 base), sweep = fill × 2π
+    # pygame.draw.arc draws CCW from start_angle to end_angle.
+    # To draw CW from 12 o'clock: fix end=π/2, start=π/2 − fill×2π.
+    fill = q_hold_frames / C.PAUSE_QUIT_FRAMES   # 0.0 → 1.0
+    if fill > 0:
+        end_a   = math.pi / 2
+        start_a = end_a - fill * 2 * math.pi
+        pygame.draw.arc(screen, C.HP_AMBER,
+                        rect,
+                        start_a, end_a,
+                        C.PAUSE_ARC_STROKE)
