@@ -96,7 +96,7 @@ row when finishing. Status: `todo` | `in-progress` | `done` | `blocked`.
 | 8 | QA: verify pause/unpause (state preserved), Q-hold arc + quit, no regression, smoke gate still green | qa-tester | done | qa/qa_report/v8.md |
 | 9 | Declare v8 DONE | orchestrator | done | shared/handoffs.md |
 
-### v9 — Process hardening (retro-driven: verification + feedback loops) (2026-06-05)
+### v9 — Process hardening (retro-driven: verification + feedback loops) (shipped & passed QA, 2026-06-05) ✅
 | # | Task | Owner role | Status | Artifact |
 |---|------|-----------|--------|----------|
 | 1 | Facilitate team retrospective; collect 8 role cards; apply Manager-owned process changes | manager | done | shared/retrospective.md (+ CLAUDE.md, roles/*, index updates) |
@@ -105,7 +105,20 @@ row when finishing. Status: `todo` | `in-progress` | `done` | `blocked`.
 | 4 | Render-smoke (no draw raises + key rects don't overlap) + `string_widths` width/glyph assertion | programmer | done | qa/regression_harness.py |
 | 5 | AC13 `--balance-probe` (K scripted runs → median/95th survival time) | programmer | done | game/app.py + main.py |
 | 6 | QA: verify the new gates catch a planted defect (prove the FAIL loop) + 1 human playtest checkpoint | qa-tester | done | qa/qa_report/v9.md |
-| 7 | Declare v9 DONE | orchestrator | todo | shared/handoffs.md |
+| 7 | Declare v9 DONE | orchestrator | done | shared/handoffs.md |
+
+### v10 — Q-hold-to-quit on the START + GAME_OVER screens (2026-06-05)
+| # | Task | Owner role | Status | Artifact |
+|---|------|-----------|--------|----------|
+| 1 | Capture v10 feature + framing | orchestrator | done | shared/brief.md |
+| 2 | Requirements: Q-hold-to-quit enabled in START + GAME_OVER (reuse v8 threshold/arc/reset), quit-hint visible on both, ACs | business-analyst | done | requirements/requirements/v10.md |
+| 3 | GDD: confirm v8 numbers reused; arc behaviour/position across START+GAME_OVER; hold-counter reset on state transitions | lead-game-designer | done | design/gdd/v10.md |
+| 4 | Art spec: arc placement on START + GAME_OVER (no text collision; render-smoke safe) | artist | done | art/art_spec/v10.md |
+| 5 | Writer: START quit hint + GAME_OVER key-list quit hint (width-safe, no stale Esc-quit) | writer | done | story/story/v10.md |
+| 6 | Level spec: economy no-op — confirm/skip | level-designer | done | levels/level_spec/v10.md (confirmed no-op) |
+| 7 | Implement Q-hold + arc in START + GAME_OVER (reuse v8); reset hold counter on transitions | programmer | done | game/ |
+| 8 | QA: verify Q-hold quits from START + GAME_OVER + arc + cancel-on-release; render-smoke + no v1–v9 regression | qa-tester | done | qa/qa_report/v10.md |
+| 9 | Declare v10 DONE | orchestrator | todo | shared/handoffs.md |
 
 ## Status
 
@@ -113,7 +126,24 @@ row when finishing. Status: `todo` | `in-progress` | `done` | `blocked`.
 > (cross-cutting → `shared/history.md`; per-domain → each role folder's `history.md`); the recent
 > agent-to-agent story is in `handoffs.md`; closed-increment handoffs are in `../archive/`.
 
-- **v9 OPEN** (2026-06-05) — **process hardening** from the post-v8 retrospective (`shared/retrospective.md`).
+- **v10 IN PROGRESS** (2026-06-05) — **Q-hold-to-quit on START + GAME_OVER.** v8 shipped the gesture+arc
+  but only wired it into PAUSE; v10 extends it (reusing the v8 threshold/arc/reset) to the START and
+  GAME_OVER screens + shows the quit hint on both. Orchestrator framed it (`shared/brief.md` v10) +
+  opened the v10 backlog. BA→Designer→Artist→Writer→Level-designer all done (economy no-op confirmed).
+  **Programmer DONE** — generalised the v8 hold-counter block to `state in (START, PAUSE, GAME_OVER)`
+  (PLAY excluded, R81); paired every `self.state = …` with `q_hold_frames = 0` across all six transitions
+  (esp. PLAY→GAME_OVER so dying with Q held can't instant-quit); carved Q out of START "any key starts"
+  (§V10.5); factored a reusable `hud.draw_quit_arc` + START/GAME_OVER guarded calls (drawn only while held,
+  `draw_pause` untouched); wired the Writer's `START_QUIT_HINT` line + `GAMEOVER_KEYS`/`CONTROLS_2` rewrites
+  + the two Artist arc centres. Smoke exits 0/120 f (×3-form + `-m` + event-script + compileall); regression
+  harness **58/58** (49 prior + 9 new v10: render-smoke START+GAME_OVER with/without arc + arc-rect anti-collision,
+  6-transition reset spine, START Q carve-out, hold-quit on both screens, no-accumulation, PLAY-excluded);
+  no AC1–AC60 regression. **QA PASS** (`qa/qa_report/v10.md`) — smoke exit 0 / exactly 120 f (×2-form +
+  `-m` + compileall); harness 58/58; event-script 5/5; AC61–AC68 all PASS; render-smoke + arc anti-collision
+  green; **11 QA-authored independent probes** PASS (exact-30 threshold boundary, the #1-risk die-with-Q-held
+  end-to-end through the live loop → no instant quit, arc-fill mapping, negative PLAY-exclusion test); no
+  v1–v9 regression. Awaiting **orchestrator** to declare v10 DONE.
+- **v9 SHIPPED & DONE** (2026-06-05) — **process hardening** from the post-v8 retrospective (`shared/retrospective.md`).
   Manager applied the doc/role changes (BLOCKER + SKIP handoffs, required Open-values table, lever-ownership +
   no-placeholder color/alpha, QA independence + negative test, named volume-neutral re-slice, copy-surface
   map, Programmer-invariants stub). **Programmer tooling DONE** — `qa/regression_harness.py` (49 checks,
@@ -125,7 +155,7 @@ row when finishing. Status: `todo` | `in-progress` | `done` | `blocked`.
   p95 75.0 s); **FAIL loop proven** with 3 *independent* QA-planted defects (flush-no-op → event+regression red; HP-bar↔score
   overlap → AC47; CONTROLS_1 overflow → AC47w) **each with smoke staying green** (T1 demonstrated, not asserted); first
   **human live-playtest checkpoint PASS** (AC47 anti-collision + pause/Q-hold arc + feel/flash all confirmed live — T3 closed).
-  With orchestrator to declare v9 DONE.
+  **Orchestrator declared v9 DONE** — the retro action register's verification half (A10–A15) is now live and proven.
 - **v8 SHIPPED & DONE** (2026-06-05) — pause/unpause + Q-hold-to-quit. QA PASS (R69–R75, AC53–AC60); smoke exit 0 × 3 + package import; no v1–v7 regression.
 - **v7 SHIPPED & DONE** (2026-06-05) — **bosses** (periodic mothership boss fights). Orchestrator
   framed it (`shared/brief.md` v7); **BA done** — `requirements/v7.md` (**R56–R68 MUST + AC39–AC52**);

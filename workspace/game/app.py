@@ -73,6 +73,7 @@ class App:
         scoring.survival_tick(w)        # +1/s survival bonus (×mult)
         if w.player.hp <= 0:            # step 6 → GAME_OVER
             w.best = max(w.best, w.score)
+            self.q_hold_frames = 0      # v10 transition #4 (§V10.4) — dying with Q held must NOT instant-quit
             self.state = GameState.GAME_OVER
 
     # ── event handling (discrete transitions: quit / start / restart) ──────────
@@ -86,15 +87,21 @@ class App:
                 if event.key == pygame.K_ESCAPE:
                     if self.state is GameState.PLAY:
                         self.state = GameState.PAUSE
-                        self.q_hold_frames = 0
+                        self.q_hold_frames = 0       # v8 transition #2 (§V10.4)
                     elif self.state is GameState.PAUSE:
                         self.state = GameState.PLAY
+                        self.q_hold_frames = 0       # v10 transition #3 (§V10.4)
                     # else: START or GAME_OVER — silent no-op
                     continue
-                if self.state is GameState.START:
+                # v10 §V10.5: Q is carved out of "any key starts" on START — it's reserved
+                # for the hold-to-quit gesture (else a Q tap would start the run before the
+                # hold counter could reach 30). Every OTHER key still starts.
+                if self.state is GameState.START and event.key != pygame.K_q:
+                    self.q_hold_frames = 0           # v10 transition #1 (§V10.4)
                     self.state = GameState.PLAY
                 elif self.state is GameState.GAME_OVER and event.key == pygame.K_r:
                     self.world.reset_run()           # R13/R31 — no leak into the new run
+                    self.q_hold_frames = 0           # v10 transition #5 (§V10.4)
                     self.state = GameState.PLAY
                 elif self.state is GameState.PAUSE and event.key == pygame.K_r:
                     self.world.reset_run()           # v8 R74 — restart from PAUSE
@@ -110,6 +117,7 @@ class App:
         render.draw_starfield(self.screen, self.world)
         if self.state is GameState.START:
             hud.draw_start(self.screen, self.frame)
+            hud.draw_start_quit_arc(self.screen, self.q_hold_frames)   # v10: only while Q held
         elif self.state is GameState.PLAY:
             render.draw_world(self.screen, self.world)
             hud.draw_hud(self.screen, self.world)
@@ -122,6 +130,7 @@ class App:
             render.draw_world(self.screen, self.world)
             hud.draw_hud(self.screen, self.world)
             hud.draw_gameover(self.screen, self.world)
+            hud.draw_gameover_quit_arc(self.screen, self.q_hold_frames)  # v10: only while Q held
         pygame.display.flip()
 
     # ── smoke seeding (driven by the SMOKE_TIMELINE source of truth, v9) ────────
@@ -181,7 +190,10 @@ class App:
                 inp = read_input()
 
             physics.update_starfield(self.world)     # cosmetic, runs in every state
-            if self.state is GameState.PAUSE:          # v8: Q-hold timer (GDD §V8.3)
+            # v8/v10: Q-hold-to-quit timer — active in START + PAUSE + GAME_OVER, NOT
+            # PLAY (R81/§V10.3: a stray Q during a run can never end it). PLAY stays
+            # mutually exclusive so the counter is never advanced mid-run.
+            if self.state in (GameState.START, GameState.PAUSE, GameState.GAME_OVER):
                 if self._q_held():
                     self.q_hold_frames += 1
                     if self.q_hold_frames >= C.PAUSE_QUIT_FRAMES:

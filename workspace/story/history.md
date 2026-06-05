@@ -24,3 +24,18 @@
   awarded value** — chosen over a hardcoded `+1000` because GDD §V7.9 routes the reward through `scoring.award`,
   so **Score×2 doubles it to 2000**; a literal would lie (same single-source-of-truth discipline as v2 `+40` /
   v6 `+1 BOMB`). UI-only (C2); all v1/v2/v5/v6 strings untouched.
+- 2026-06-05 (v10): story/v10.md added (Q-hold-to-quit copy on START + GAME_OVER, R78). **New
+  `START_QUIT_HINT = "Hold Q  Quit"`** — the v8 `PAUSE_HINT_QUIT` wording **verbatim** so the gesture
+  reads identically wherever it's now active (START/PAUSE/GAME_OVER, one mental model); placed on the
+  Artist's locked START slot (top-y 600, the arc sits 56 px below at `(300,665)`). **`GAMEOVER_KEYS`
+  rewritten** `"R  Restart"` → `"R  Restart      Hold Q  Quit"` (restores the v8 two-entry key-list
+  shape, second entry now the honest gesture since Q-hold quits from GAME_OVER in v10, R77); **no "Esc"**
+  so AC59 + v8 R73 still hold. **`CONTROLS_2` rewritten** `"Esc  Pause · hold Q  Quit"` → `"Esc  Pause"`
+  — the quit clause was a v8 *preview* (gesture wasn't START-active then); now the dedicated arc-anchored
+  line owns it, so dropping the duplicate avoids "hold Q Quit" appearing twice on START (still has
+  Esc+Pause for AC59). **`START_PROMPT` KEPT** `"Press any key to fly"` (Designer-blessed §V10.5: Q is
+  carved out of "any key starts" but a Q-tap does nothing and starting via Q is vanishingly rare; the
+  new quit hint below disambiguates Q — chose iconic v1 copy over hedging a 0.0001 % edge). Widths
+  **measured** (live small font, budget W=600): START_QUIT_HINT 89 px, CONTROLS_2 77 px, GAMEOVER_KEYS
+  184 px — all safe. Flagged for QA/Programmer: add `START_QUIT_HINT` to the `string_widths` budget list.
+  UI-only (C2); all other v1–v8 strings untouched.

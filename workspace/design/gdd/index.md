@@ -13,7 +13,8 @@
 | `v5-enemies.md` | v5 | §V5.1–V5.9 — **§V5.2 enemy roster table** (REGULAR/HEAVY/SCOUT) · §V5.3 aim cones · **§V5.4 splitting green pellet** · §V5.5 config consts · §V5.6 smoke · §V5.7 ramp intent · coverage | shipped ✅ |
 | `v6-bombs.md` | v6 | §V6.1–V6.13 — §V6.2 charge pool · **§V6.3 flush** · §V6.4 lockout · §V6.5 flash · §V6.6 bomb pickup · §V6.7 lull · §V6.8 AC13 · **§V6.9 keymap (supersedes §3 — Z fire / X bomb)** · §V6.10 smoke · §V6.11 consts · coverage | shipped ✅ |
 | `v7-bosses.md` | v7 | §V7.1–V7.18 — **§V7.2 breakpoint + AC13 reconcile** · §V7.3 fight-loop/clock · §V7.4 boss HP · §V7.5 arrival clear (reuse v6) · §V7.6 spawn-freeze+economy · §V7.7 entrance/rest/oscillation · §V7.8 no-attack-on-entrance · §V7.9 damage+reward · §V7.10 moveset cadence · §V7.11 minion waves+cap · **§V7.12 yellow→12-red split (reuse v5)** · §V7.13 collision · §V7.14 bomb-vs-boss · §V7.15 smoke · §V7.16 consts · coverage | shipped ✅ |
-| `v8-pause.md` | v8 | §V8.1–V8.12 — §V8.2 Esc-toggle state machine (PAUSE as first-class GameState; no-op in START/GAME_OVER) · **§V8.3 t_quit = 30 f (0.5 s @ 60 FPS)** · §V8.4 Q-hold arc (circular, r=22, HP_AMBER fill, HP_BACK track) · **§V8.5 freeze list** (8 subsystems enumerated by module) · §V8.6 pause overlay (full-screen dim α=110; PLAYER-cyan heading; 3 hint lines; arc below) · **§V8.7 restart = K_r** · §V8.8 starfield continues / particles freeze · §V8.9 consts · §V8.10 programmer guide · coverage | in progress 🚧 |
+| `v8-pause.md` | v8 | §V8.1–V8.12 — §V8.2 Esc-toggle state machine (PAUSE as first-class GameState; no-op in START/GAME_OVER) · **§V8.3 t_quit = 30 f (0.5 s @ 60 FPS)** · §V8.4 Q-hold arc (circular, r=22, HP_AMBER fill, HP_BACK track) · **§V8.5 freeze list** (8 subsystems enumerated by module) · §V8.6 pause overlay (full-screen dim α=110; PLAYER-cyan heading; 3 hint lines; arc below) · **§V8.7 restart = K_r** · §V8.8 starfield continues / particles freeze · §V8.9 consts · §V8.10 programmer guide · coverage | shipped ✅ |
+| `v10.md` | v10 | §V10.1–V10.12 — extends the v8 Q-hold-to-quit gesture to START + GAME_OVER · **§V10.2 v8 reuse verbatim** (PAUSE_QUIT_FRAMES=30 + arc, no per-state variation) · **§V10.3 active-state set = START+PAUSE+GAME_OVER, NOT PLAY** · **§V10.4 reset-on-transition spine** (one shared `q_hold_frames`, 6 transitions named) · **§V10.5 START "any key starts" Q carve-out** · §V10.6 arc idle-visibility (only-while-held on the new screens) + placement constraint for Artist · §V10.10 programmer guide · coverage | in progress 🚧 |
 
 ## Where is …? (topic → file)
 - **Master numbers / tuning table** → `v1-base.md` §7.3
@@ -31,6 +32,7 @@
 - **Arrival field-clear (free, reuses the v6 flush/flash)** → `v7-bosses.md` §V7.5
 - **Bomb-vs-boss rule (boss immune)** → `v7-bosses.md` §V7.14
 - **Pause state machine / freeze list / Q-hold arc / overlay layout** → `v8-pause.md` §V8.2–§V8.6
+- **Q-hold-to-quit on START + GAME_OVER (reuse v8 arc) / shared-counter reset-on-transition / START Q carve-out** → `v10.md` §V10.2–§V10.6
 - **Smoke-test design** → `v1-base.md` §11 (base) + each increment's smoke section (§V5.6, §V6.10, §V7.15, §V8.11 R75 row)
 
 ## Updating this spec

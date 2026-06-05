@@ -147,7 +147,43 @@ cycle — Designer locks order, timing, and whether it loops 1→2→3→4→1):
   pellet** — reuse that machinery. The **field-clear flash** reuses the **v6 bomb flush/flash** —
   factor it so the boss manager can trigger it without a charge.
 
+## v10 increment (added 2026-06-05) — Q-hold-to-quit on the START + GAME_OVER screens
+
+> v8 shipped pause/unpause + a **Q-hold-to-quit gesture with a progress arc**. The v8 brief intended
+> Q-hold to quit "from *any* state (START, PLAY, PAUSE, GAME_OVER)", but the shipped build only wired
+> the gesture (and its arc) into **PAUSE**. The human now wants the **same gesture available on the
+> START (game-start) screen and the GAME_OVER screen**. This is a **small extension** — it reuses the
+> v8 mechanic verbatim; the work is enabling it in two more states + showing the quit hint there.
+
+### Feature: Q-hold-to-quit on START + GAME_OVER (human's words, lightly framed)
+- Holding **Q** for the v8 threshold (`PAUSE_QUIT_FRAMES = 30 f / 0.5 s`) on the **START screen** and on
+  the **GAME_OVER screen** quits the application — exactly as it already does from PAUSE.
+- The same **round progress arc** must appear while Q is held on these screens, filling toward the
+  threshold and **cancelling cleanly on release before it completes** (reuse the v8 arc + reset logic).
+- The **on-screen hint** for the gesture must be visible on both screens (the START screen should teach
+  "hold Q  Quit"; the GAME_OVER key list — currently `R  Restart` with no quit hint — should add it).
+
+### Design questions for the BA & Designer to nail down (delegate values — DO NOT assume)
+- **Arc position on START / GAME_OVER.** In PLAY/PAUSE the arc is centered at `(300, 483)` under the
+  pause panel. On START / GAME_OVER there's no pause panel — does the arc reuse the same center, sit by
+  the relevant hint line, or go in a fixed corner? Artist owns the exact placement so it doesn't collide
+  with existing START/GAME_OVER text.
+- **Hold-state bookkeeping per state.** The Q-hold counter must arm/reset correctly when entering and
+  leaving START and GAME_OVER (e.g. a partial hold carried across a restart must not instantly quit).
+  Programmer confirms one shared hold counter is reset on every state transition.
+- **Copy.** START quit hint + the GAME_OVER key-list quit hint (Writer; keep both width-safe at the
+  established fonts). Confirm there's no stale "Esc Quit" text reintroduced.
+- **Smoke gate.** Q-hold needs the Q key actually held, which the headless smoke path never does, so this
+  stays a no-op for the smoke run — but the new render paths (arc drawn on START/GAME_OVER) must pass the
+  v9 render-smoke (no draw raises + key rects don't overlap). QA confirms.
+
+### Notes (orientation only — Programmer owns the real touch-list)
+- Likely touches: `input.py`/the event handler (route Q key-down/up + the hold counter in START and
+  GAME_OVER, not just PAUSE), `view/`/`hud.py` (draw the v8 arc on the START + GAME_OVER screens), and
+  `story/` copy for the two hints. The arc draw + threshold + reset all **already exist from v8** — this
+  is wiring them into two more states, not new mechanics. **Economy no-op** (Level-designer likely skip).
+
 ## Next
-No active increment until v7 closes — **v6 shipped**. The next increment opens when the human gives a
-new feature or theme: the Orchestrator records its framing here (superseding the previous) and kicks off
-the Business Analyst (`workspace/requirements/requirements/`).
+v10 is the active increment (Q-hold-to-quit on START + GAME_OVER). The Orchestrator has kicked off the
+Business Analyst (`workspace/requirements/requirements/`). The next increment after v10 opens when the
+human gives a new feature or theme.

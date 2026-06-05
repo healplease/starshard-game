@@ -43,6 +43,12 @@
   (f4500) never fires in 120 f, so the forced boss @f40 is the sole boss, strictly after the v5 split (f16) + v6 bomb
   (f20); free arrival flush leaves charge=1 (AC40); freeze exercised f40→120; exits 0. v1 ramp + v2/v5/v6 economy
   UNCHANGED (only paused-and-resumed around the boss).
+- 2026-06-05 (v10): level_spec/v10.md added — **confirmed economy no-op** (mirrors the v8 verdict). v10 extends
+  the v8 Q-hold-to-quit gesture to START + GAME_OVER, both **UI-only states where `w.frame` and all spawners are
+  idle**. Zero new spawn types / pickup kinds / ramp deltas / timing changes; GDD §V10.9 adds zero design consts
+  (reuses the v8 set). The new R79 reset-on-transition zeroes only a **UI hold counter** (`App.q_hold_frames`),
+  never a ramp/breakpoint timer. **AC13 protected:** gesture excluded from PLAY (R81) so the run clock never
+  advances under it. v1 ramp + v2/v5/v6 economy + v7 boss pacing all UNCHANGED. No vN balance lever introduced.
 - 2026-06-05 (v6): level_spec.md v6 section added — bomb-charge pickup **spawn weight = `BOMB = 6`** (rarest
   kind; 5–8 % band; < Shield/Score 15), folded into the v2 kind table by **re-slicing**, not adding volume:
   Shield 15→12, Score×2 15→12 (Repair/Fan/Rapid untouched) → table still sums 100, so **drip cadence /

@@ -342,10 +342,17 @@ TITLE          = "STARSHARD"
 PITCH          = "Dodge the rocks. Gun the rest. Beat your best."
 # v6: rewritten to teach Z=fire / X=bomb; old "FIRE  Space" is a defect (story §V6.4, AC35).
 CONTROLS_1     = "MOVE  Arrows / WASD      Z = fire · X = bomb"
-CONTROLS_2     = "Esc  Pause · hold Q  Quit"
+# v10 ⚠ REWRITE (story §V10.3): drop the now-duplicate quit clause — the gesture is
+# taught once on START via its own arc-anchored START_QUIT_HINT line. Esc still never quits.
+CONTROLS_2     = "Esc  Pause"
 START_PROMPT   = "Press any key to fly"
+# v10 (story §V10.2): dedicated START quit-hint line, top-y 600 (arc 56 px below at
+# START_ARC_CENTER). Wording is intentionally identical to PAUSE_HINT_QUIT — one mental model.
+START_QUIT_HINT = "Hold Q  Quit"
 GAMEOVER_TITLE = "GAME OVER"
-GAMEOVER_KEYS  = "R  Restart"
+# v10 ⚠ REWRITE (story §V10.4): Q-hold now quits from GAME_OVER (R77), so the key list
+# gains the honest quit hint. No stale "Esc Quit" (v8 R73 holds).
+GAMEOVER_KEYS  = "R  Restart      Hold Q  Quit"
 
 # v7 boss copy (story §V7.5). Name blessed verbatim; label == name (AC47-safe, ≤12 ch).
 BOSS_NAME        = "MOTHERSHIP"      # canonical boss name
@@ -370,6 +377,16 @@ PAUSE_PANEL_Y    = 427          # pause_panel_y anchor (= center of hint3)
 PAUSE_ARC_R      = 22           # Q-hold arc radius in px (GDD §V8.4)
 PAUSE_ARC_STROKE = 3            # Q-hold arc stroke width
 PAUSE_QUIT_FRAMES = 30          # hold duration to quit (0.5 s @ 60 FPS)
+
+# ── v10 Q-hold-to-quit arc centres on START + GAME_OVER (art_spec §V10.4) ─────
+# Reuse the v8 arc visual verbatim (PAUSE_ARC_R=22, PAUSE_ARC_STROKE=3, CW from 12
+# o'clock, HP_AMBER fill / HP_BACK track). Each centre sits 56 px below its screen's
+# quit-hint line (the v8 PAUSE offset). The whole widget is drawn ONLY while held on
+# these two screens (draw_pause's always-on track is unchanged). Bounding rects:
+#   START    : (278, 643, 44, 44) — clears the START text block (lowest rect ≤ y618)
+#   GAME_OVER: (278, 523, 44, 44) — clears GAMEOVER_KEYS (y480–498)
+START_ARC_CENTER    = (W // 2, 665)   # (300, 665) — 56 px below the START quit-hint (top 600)
+GAMEOVER_ARC_CENTER = (W // 2, 545)   # (300, 545) — 56 px below GAMEOVER_KEYS (centre 489)
 
 
 # ── Difficulty ramp (level_spec §3) — pure formulas, t = seconds in run ───────

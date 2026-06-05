@@ -183,6 +183,9 @@ def draw_start(screen, frame):
     _center(screen, _FONTS["small"].render(C.CONTROLS_2, True, C.TEXT_DIM), 500)
     if (frame // 30) % 2 == 0:                    # blink the prompt
         _center(screen, _FONTS["small"].render(C.START_PROMPT, True, C.TEXT), 560)
+    # v10: the Q-hold-to-quit hint — always visible (only the arc below is held-gated),
+    # FONT_SMALL / TEXT_DIM, top-y 600; the arc sits 56 px below at START_ARC_CENTER.
+    _center(screen, _FONTS["small"].render(C.START_QUIT_HINT, True, C.TEXT_DIM), 600)
 
 
 def draw_gameover(screen, world):
@@ -242,3 +245,32 @@ def draw_pause(screen, q_hold_frames):
                         rect,
                         start_a, end_a,
                         C.PAUSE_ARC_STROKE)
+
+
+# ── v10: the v8 Q-hold arc, reusable at any centre (START + GAME_OVER) ──────────
+def draw_quit_arc(screen, center, q_hold_frames):
+    """The v8 Q-hold progress arc (track ring + CW amber fill) at an arbitrary centre.
+    Visual is identical to draw_pause's arc (art_spec v8 §V8.4 / v10 §V10.2): r=22,
+    stroke=3, HP_AMBER fill / HP_BACK track, CW from 12 o'clock, fill =
+    q_hold_frames / PAUSE_QUIT_FRAMES. No new constants."""
+    cx, cy = center
+    r = C.PAUSE_ARC_R                                  # 22
+    rect = pygame.Rect(cx - r, cy - r, 2 * r, 2 * r)   # 44×44 bounding box
+    pygame.draw.arc(screen, C.HP_BACK, rect, 0, 2 * math.pi, C.PAUSE_ARC_STROKE)
+    fill = q_hold_frames / C.PAUSE_QUIT_FRAMES         # 0.0 → 1.0
+    if fill > 0:
+        end_a   = math.pi / 2
+        start_a = end_a - fill * 2 * math.pi
+        pygame.draw.arc(screen, C.HP_AMBER, rect, start_a, end_a, C.PAUSE_ARC_STROKE)
+
+
+def draw_start_quit_arc(screen, q_hold_frames):
+    """START: draw the whole widget ONLY while Q is held (art_spec v10 §V10.3)."""
+    if q_hold_frames > 0:
+        draw_quit_arc(screen, C.START_ARC_CENTER, q_hold_frames)
+
+
+def draw_gameover_quit_arc(screen, q_hold_frames):
+    """GAME_OVER: draw the whole widget ONLY while Q is held (art_spec v10 §V10.3)."""
+    if q_hold_frames > 0:
+        draw_quit_arc(screen, C.GAMEOVER_ARC_CENTER, q_hold_frames)

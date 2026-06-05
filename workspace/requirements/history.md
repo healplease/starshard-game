@@ -58,3 +58,17 @@
   counts+angles, reward, damage — examples are illustrative, not tuning. The run-length watch-item now
   cuts both ways: a boss fight *itself* costs time and could push runs past 3 min, so the chosen cadence +
   HP + reward must be balanced (or AC13 redefined) — flagged in §28.
+- 2026-06-05 (v10): `requirements/v10.md` added (§36–§41). **R76–R82 MUST**, **AC61–AC68**. Extends the
+  v8 Q-hold-to-quit gesture (R72) — previously **PAUSE-only** — to **START + GAME_OVER**, and surfaces
+  the quit hint on both. **Key BA stance: freeze by reuse.** The threshold (`PAUSE_QUIT_FRAMES=30`),
+  the arc visual, and the cancel-on-release/no-accumulation semantics are **reused verbatim from v8** —
+  v10 invents no new mechanic; it only changes *which states* run the gesture and *where* the hint/arc
+  sit. **This increment explicitly amends v8 R72's "PAUSE-only" ruling + v8 §33 non-goal #1** (the
+  deferral this resolves). **BA rulings (not delegated):** active states become START/PAUSE/GAME_OVER
+  but **NOT PLAY** (R81 — keeps a stray Q from ending a run; mid-run quit still via PAUSE); one shared
+  hold counter **reset to zero on every state transition** (R79 — the correctness spine: a partial hold
+  must never carry across a death/restart into an instant quit). **Delegated (§38):** arc pixel
+  placement on each of START + GAME_OVER → Artist (criterion: visible + no text-rect overlap, the v9
+  render-smoke key-rect check is the gate); the two quit-hint strings → Writer (width-safe, no stale
+  "Esc Quit"); economy = confirmed no-op (Level-designer confirm/skip). Smoke stays a no-op (Q never
+  held headlessly) — the real new-code gate is the v9 **render-smoke** on START+GAME_OVER (AC68).

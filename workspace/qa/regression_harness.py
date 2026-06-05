@@ -60,7 +60,7 @@ from game.view import render, hud
 
 # ── tiny test framework ──────────────────────────────────────────────────────
 TESTS = []
-_GROUP_ORDER = ["v1", "v2", "v5", "v6", "v7", "v8", "v9"]
+_GROUP_ORDER = ["v1", "v2", "v5", "v6", "v7", "v8", "v9", "v10"]
 
 
 def test(group, ac, label):
@@ -731,6 +731,7 @@ def _t_string_widths():
         ("CONTROLS_1", C.CONTROLS_1, "small", C.W),
         ("CONTROLS_2", C.CONTROLS_2, "small", C.W),
         ("START_PROMPT", C.START_PROMPT, "small", C.W),
+        ("START_QUIT_HINT", C.START_QUIT_HINT, "small", C.W),   # v10 START quit-hint line
         ("GAMEOVER_TITLE", C.GAMEOVER_TITLE, "big", C.W),
         ("GAMEOVER_KEYS", C.GAMEOVER_KEYS, "small", C.W),
         ("PAUSE_TITLE", C.PAUSE_TITLE, "big", C.W),
@@ -786,6 +787,219 @@ def _t_balance():
     p95 = app_mod._percentile(s, 0.95)
     expect(len(s) == 6 and median > 0, "balance probe produced no usable runs")
     expect(median <= p95 + 1e-9, "median exceeded p95 (percentile logic broken)")
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# v10 — Q-hold-to-quit on START + GAME_OVER (AC61–AC68)
+# ════════════════════════════════════════════════════════════════════════════
+def _run_from_state(state, script):
+    """Run the REAL App loop but begin in `state` (override the headless PLAY force in
+    `_new_world`) so START / GAME_OVER hold-to-quit is exercised through the live loop."""
+    app = App(event_script=script)
+
+    def patched():                       # replaces _new_world: start in `state`, no smoke seed
+        app.world = World(random.Random(C.SMOKE_SEED))
+        app.state = state
+    app._new_world = patched
+    app.run()
+    return app
+
+
+def _start_text_rects(fonts):
+    """The START text rects (centred at x=W//2), matching hud.draw_start blit sites."""
+    lines = [(C.TITLE, "big", 250), (C.PITCH, "small", 320),
+             (C.CONTROLS_1, "small", 470), (C.CONTROLS_2, "small", 500),
+             (C.START_PROMPT, "small", 560), (C.START_QUIT_HINT, "small", 600)]
+    rects = []
+    for text, fk, y in lines:
+        surf = fonts[fk].render(text, True, C.TEXT)
+        rects.append(surf.get_rect(topleft=(C.W // 2 - surf.get_width() // 2, y)))
+    return rects
+
+
+def _gameover_text_rects(fonts):
+    """The GAME_OVER text rects (centred at x=W//2), matching hud.draw_gameover sites."""
+    lines = [(C.GAMEOVER_TITLE, "big", 300), (f"SCORE {0:05d}", "mid", 380),
+             (f"BEST {0:05d}", "mid", 420), (C.GAMEOVER_KEYS, "small", 480)]
+    rects = []
+    for text, fk, y in lines:
+        surf = fonts[fk].render(text, True, C.TEXT)
+        rects.append(surf.get_rect(topleft=(C.W // 2 - surf.get_width() // 2, y)))
+    return rects
+
+
+@test("v10", "AC68", "render-smoke: START + GAME_OVER draw with AND without the arc")
+def _t_v10_render():
+    ensure_pygame()
+    screen = pygame.display.set_mode((C.W, C.H))
+    fonts = make_fonts()
+    render.set_fonts(fonts)
+    hud.set_fonts(fonts)
+    w = _rich_world()
+    for q in (0, 15, 30):                 # without arc (0) and with arc (held)
+        screen.fill(C.BG)
+        render.draw_starfield(screen, w)
+        hud.draw_start(screen, 0)
+        hud.draw_start_quit_arc(screen, q)
+        screen.fill(C.BG)
+        render.draw_starfield(screen, w)
+        hud.draw_gameover(screen, w)
+        hud.draw_gameover_quit_arc(screen, q)
+    # Reaching here without an exception is the pass (mirrors the v9 render-smoke).
+
+
+@test("v10", "AC68", "arc rect overlaps NO text rect on START or GAME_OVER")
+def _t_v10_arc_rects():
+    ensure_pygame()
+    pygame.display.set_mode((C.W, C.H))
+    fonts = make_fonts()
+    r = C.PAUSE_ARC_R
+    start_arc = pygame.Rect(C.START_ARC_CENTER[0] - r, C.START_ARC_CENTER[1] - r, 2 * r, 2 * r)
+    go_arc = pygame.Rect(C.GAMEOVER_ARC_CENTER[0] - r, C.GAMEOVER_ARC_CENTER[1] - r, 2 * r, 2 * r)
+    for tr in _start_text_rects(fonts):
+        expect(not start_arc.colliderect(tr), f"START arc {tuple(start_arc)} overlaps text {tuple(tr)}")
+    for tr in _gameover_text_rects(fonts):
+        expect(not go_arc.colliderect(tr), f"GAME_OVER arc {tuple(go_arc)} overlaps text {tuple(tr)}")
+    expect(start_arc.bottom <= C.H and go_arc.bottom <= C.H, "arc rect runs off the bottom edge")
+
+
+@test("v10", "AC66", "the hold counter resets to 0 on every state transition")
+def _t_v10_reset_spine():
+    ensure_pygame()
+
+    def fresh_app(state):
+        app = App()
+        app.world = fresh_world()
+        app.state = state
+        app.q_hold_frames = 25            # a near-complete hold carried into the transition
+        return app
+
+    # #1 START -> PLAY (a non-Q key starts and resets)
+    app = fresh_app(GameState.START)
+    pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_SPACE))
+    app._handle_events()
+    expect(app.state is GameState.PLAY and app.q_hold_frames == 0, "#1 START->PLAY did not reset")
+
+    # #2 PLAY -> PAUSE (Esc)
+    app = fresh_app(GameState.PLAY)
+    pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE))
+    app._handle_events()
+    expect(app.state is GameState.PAUSE and app.q_hold_frames == 0, "#2 PLAY->PAUSE did not reset")
+
+    # #3 PAUSE -> PLAY (Esc resume)
+    app = fresh_app(GameState.PAUSE)
+    pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE))
+    app._handle_events()
+    expect(app.state is GameState.PLAY and app.q_hold_frames == 0, "#3 PAUSE->PLAY did not reset")
+
+    # #4 PLAY -> GAME_OVER (die with Q incidentally held — the #1 risk)
+    app = fresh_app(GameState.PLAY)
+    app.world.player.hp = 1
+    p = app.world.player
+    app.world.asteroids = [Asteroid(p.x, p.y, 0, 0, C.AST_L_R, 2, True)]
+    app._step_play(InputState(0, 0, False))
+    expect(app.state is GameState.GAME_OVER, "#4 did not reach GAME_OVER")
+    expect(app.q_hold_frames == 0, "#4 PLAY->GAME_OVER did not zero the hold counter (instant-quit risk)")
+
+    # #5 GAME_OVER -> PLAY (R restart)
+    app = fresh_app(GameState.GAME_OVER)
+    pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_r))
+    app._handle_events()
+    expect(app.state is GameState.PLAY and app.q_hold_frames == 0, "#5 GAME_OVER->PLAY did not reset")
+
+    # #6 PAUSE -> PLAY (R restart)
+    app = fresh_app(GameState.PAUSE)
+    pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_r))
+    app._handle_events()
+    expect(app.state is GameState.PLAY and app.q_hold_frames == 0, "#6 PAUSE->PLAY (R) did not reset")
+
+
+@test("v10", "R76", "START: Q is carved out of 'any key starts'; other keys still start")
+def _t_v10_start_carveout():
+    ensure_pygame()
+    app = App()
+    app.world = fresh_world()
+    app.state = GameState.START
+    pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_q))
+    app._handle_events()
+    expect(app.state is GameState.START, "a Q tap wrongly started the run (R76 unreachable)")
+    pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_z))
+    app._handle_events()
+    expect(app.state is GameState.PLAY, "a non-Q key did not start the run")
+
+
+@test("v10", "AC61", "holding Q PAUSE_QUIT_FRAMES on START quits the app")
+def _t_v10_start_quit():
+    ensure_pygame()
+    app = _run_from_state(GameState.START, {
+        "frames": 50,
+        "held": {f: [pygame.K_q] for f in range(0, 45)},   # 45 continuous held frames > 30
+        "probes": {},
+    })
+    expect(app.quit_via_qhold, "Q held on START did not quit")
+
+
+@test("v10", "AC62", "holding Q PAUSE_QUIT_FRAMES on GAME_OVER quits the app")
+def _t_v10_gameover_quit():
+    ensure_pygame()
+    app = _run_from_state(GameState.GAME_OVER, {
+        "frames": 50,
+        "held": {f: [pygame.K_q] for f in range(0, 45)},
+        "probes": {},
+    })
+    expect(app.quit_via_qhold, "Q held on GAME_OVER did not quit")
+
+
+@test("v10", "AC63", "release before threshold resets; re-press starts from 0 (no accumulation)")
+def _t_v10_no_accum():
+    ensure_pygame()
+    cap = {}
+
+    def grab(name):
+        def probe(app):
+            cap[name] = app.q_hold_frames
+        return probe
+
+    app = _run_from_state(GameState.START, {
+        "frames": 30,
+        "held": {**{f: [pygame.K_q] for f in range(0, 10)},      # 10 held (<30)
+                 **{f: [pygame.K_q] for f in range(14, 18)}},     # then re-press for 4
+        "probes": {9: grab("held10"), 12: grab("released"), 17: grab("repress4")},
+    })
+    expect(not app.quit_via_qhold, "a sub-threshold hold wrongly quit")
+    expect(cap["held10"] == 10, f"counter wrong while held: {cap['held10']}")
+    expect(cap["released"] == 0, "counter did not reset on release")
+    expect(cap["repress4"] == 4, f"re-press accumulated instead of starting from 0: {cap['repress4']}")
+
+
+@test("v10", "AC67", "Q held in PLAY does NOT arm the gesture or quit (real loop)")
+def _t_v10_play_excluded():
+    ensure_pygame()
+    cap = {}
+
+    def grab(app):
+        cap["state"] = app.state
+        cap["q"] = app.q_hold_frames
+    # Headless start forces PLAY; hold Q for 40 frames without ever pausing.
+    app = run_event_script({
+        "frames": 45,
+        "keydowns": {},
+        "held": {f: [pygame.K_q] for f in range(0, 40)},
+        "probes": {38: grab},
+    })
+    expect(not app.quit_via_qhold, "Q held in PLAY quit the run (R81 violated)")
+    expect(cap["state"] is GameState.PLAY, "state left PLAY under a held Q")
+    expect(cap["q"] == 0, "the hold counter advanced during PLAY (gesture armed mid-run)")
+
+
+@test("v10", "AC65", "START shows the quit hint; GAMEOVER_KEYS adds it with no stale 'Esc'")
+def _t_v10_copy():
+    expect(C.START_QUIT_HINT == "Hold Q  Quit", "START quit-hint string changed unexpectedly")
+    expect("Q" in C.START_QUIT_HINT and "Quit" in C.START_QUIT_HINT, "START hint does not teach Q-quit")
+    expect("Quit" in C.GAMEOVER_KEYS and "Q" in C.GAMEOVER_KEYS, "GAMEOVER_KEYS missing the quit hint")
+    expect("Restart" in C.GAMEOVER_KEYS, "GAMEOVER_KEYS lost its Restart hint")
+    expect("Esc" not in C.GAMEOVER_KEYS, "GAMEOVER_KEYS reintroduced a stale Esc hint")
+    expect("Esc" not in C.START_QUIT_HINT, "START quit-hint wrongly mentions Esc")
 
 
 # ── the in-process full smoke run is LAST: App.run() calls pygame.quit() at the end ──

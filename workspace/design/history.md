@@ -99,3 +99,20 @@
   Consts in §V7.16. **DELEGATED downstream:** Artist = Mothership shape + boss health bar + yellow/red hues;
   Writer = "MOTHERSHIP" name + HUD label + WARNING/defeat copy; Level-designer = re-confirm AC13 (first-mark /
   interval / `BOSS_HP` / reward) + the freeze/drop economy + smoke coexistence.
+- 2026-06-05 (v10): GDD `v10.md` added (§V10.1–V10.12) — **Q-hold-to-quit extended to START + GAME_OVER, every
+  §38 Designer lever resolved.** **v8 reused VERBATIM** (`PAUSE_QUIT_FRAMES=30`, the §V8.4 arc r=22/stroke-3/
+  HP_AMBER-CW-from-12, cancel-on-release / restart-from-zero / no-accumulation) with **no per-state variation**.
+  **★ The R79 reset-on-transition spine LOCKED:** one shared `App.q_hold_frames`, reset to 0 on **all six**
+  transitions — code already resets PLAY→PAUSE + PAUSE→PLAY(R), so v10 **adds** the reset to the four currently
+  unreset ones: **START→PLAY, PAUSE→PLAY(Esc), PLAY→GAME_OVER, GAME_OVER→PLAY(R)**; design rule = *pair every
+  `self.state=…` with `q_hold_frames=0`*. The load-bearing one is **PLAY→GAME_OVER** (die with Q held must NOT
+  instantly quit). **Active set = START+PAUSE+GAME_OVER, NOT PLAY** (R81); reuse the existing `_q_held()` seam.
+  **★ Integration decision the state machine forced (locked, not delegated):** START today starts on *any*
+  KEYDOWN incl. Q → R76 unreachable; **carve Q out** (`START and event.key != K_q`) so Q is reserved for the
+  hold — the START analogue of the v8 §V8.2 Esc table. **Arc on the new screens:** drawn **only while held**
+  (track+fill together, R80/AC68 "with and without"), unlike the v8 PAUSE always-on track — the one recorded
+  deviation; PAUSE left untouched. **Arc placement = Artist** (centre x=300 default, 44×44 must clear all text
+  rects per the v9 render-smoke gate; intent = below each screen's quit hint). **No new Designer consts** — only
+  the two arc centres (Artist) + two quit-hint strings (Writer) are new. **Economy no-op** (Level-designer
+  confirm/skip). DELEGATED: Artist = the two arc centres; Writer = START "hold Q Quit" + extend `GAMEOVER_KEYS`
+  (no stale "Esc Quit", v8 R73).
