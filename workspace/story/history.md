@@ -39,3 +39,16 @@
   **measured** (live small font, budget W=600): START_QUIT_HINT 89 px, CONTROLS_2 77 px, GAMEOVER_KEYS
   184 px — all safe. Flagged for QA/Programmer: add `START_QUIT_HINT` to the `string_widths` budget list.
   UI-only (C2); all other v1–v8 strings untouched.
+- 2026-06-05 (v12): story/v12.md added (hold-R-to-restart hint copy, R85). **`PAUSE_HINT_RESTART`
+  rewritten** `"R  Restart"` → `"Hold R  Restart"` and the **R clause of `GAMEOVER_KEYS`** rewritten
+  → `"Hold R  Restart      Hold Q  Quit"` (only the restart clause changed; the v10 `"Hold Q  Quit"`
+  clause kept byte-for-byte). Chose `"Hold R  Restart"` = the v8/v10 `"Hold Q  Quit"` **wording shape
+  verbatim** (capital "Hold", key, two spaces, action) so restart + quit read as one symmetric hold
+  pair — the brief's explicit goal. Both stale instant-press strings are gone (the §46 risk: a tap no
+  longer restarts after GDD §V12.5, so "R  Restart" would mislead). Both stay **one FONT_SMALL line at
+  their locked y** (PAUSE 418, GAME_OVER 480) — growth is horizontal only, so the Artist's two R arcs
+  (`(200,483)` / `(200,545)`) keep their 25 px vertical clearance at any width (art_spec §V12.5/§V12.6);
+  GAME_OVER reads left=restart / right=quit, matching the two arcs left→right. Widths **measured** (live
+  small font, budget W=600): PAUSE_HINT_RESTART 108 px, GAMEOVER_KEYS 221 px — both safe; no new
+  `string_widths` row needed (both already listed). No "Esc" reintroduced (AC59 / v8 R73). UI-only (C2);
+  all other v1–v11 strings untouched, Q gesture wording not touched.

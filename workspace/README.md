@@ -35,7 +35,8 @@ workspace/
     feature_inventory.md standing: 32 features F1–F32 → R#/AC#/module
     history.md
   archive/             ← frozen history; you rarely need to open this
-    handoffs-v1.md, handoffs-v2-v5.md, brief-increments-v2-v5.md, project-log-v1.md, README.md
+    handoffs-v1.md, handoffs-v2-v5.md, handoffs-v6-v12.md, backlog-v1-v12.md,
+    brief-increments-v2-v5.md, brief-increments-v7-v12.md, project-log-v1.md, README.md
   game/                ← the programmer's artifact (the actual game; unchanged)
 ```
 

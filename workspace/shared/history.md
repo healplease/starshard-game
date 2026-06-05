@@ -186,6 +186,34 @@
   as-is (topical, not version-append). Net: a build role now opens a small `index.md` + only the increment
   file(s) it needs, instead of a 700–1050-line monolith.
 
+## Maintenance — "new page" + lazier/leaner roles (Manager, 2026-06-06)
+- 2026-06-06 (manager): Human asked to (a) make the roles **lazier** — scale effort to the change, think
+  and speak less; (b) have the **Orchestrator scope the handoff queue** to only the lanes a change touches
+  (the trigger was BA + Level-designer being run for a pure UI/UX change); and (c) make the deliverable
+  **docs more concise** — but only **after** archiving most of the current scope to "turn a new page".
+- **Archive first (the new page).** Collapsed the three always-loaded hot-path files to a lean baseline,
+  moving all closed detail to `../archive/` verbatim (nothing lost): handoffs entries **34–94 (v6–v12)** →
+  `handoffs-v6-v12.md`; the full **v1–v12 backlog** task tables + status prose → `backlog-v1-v12.md`; the
+  v7–v12 orchestrator framings → `brief-increments-v7-v12.md`. `shared/backlog.md` now = a **current
+  game-state capability summary** (v1–v12 one-liners + R/AC totals + play command) + parked items;
+  `shared/handoffs.md` reset to an empty active log (numbering continues from 94); `shared/brief.md`
+  trimmed to theme + constraints + a pointer. Archive `README.md` + `workspace/README.md` map updated.
+- **Orchestrator scoping (role + CLAUDE.md).** Added a "scope the handoff queue" responsibility + a
+  **change-shape → roles** table to `roles/orchestrator.md` (UI/UX tweak skips BA + Level-designer;
+  render-only = Artist→Programmer→QA; copy-only = Writer→Programmer→QA; bug fix = Programmer→QA), a
+  **right-size-QA** instruction, and reinforced it in the `CLAUDE.md` pipeline note. QA is never skipped
+  but its rigor scales.
+- **Lazier behaviour (CLAUDE.md + roles).** New first ground rule: *"Be lazy on purpose — scale effort to
+  the change; speak short."* Softened the always-on rituals: the BA Open-values table is now "when the
+  increment delegates numbers" (a sentence suffices for small ones); QA's independent-probe + negative-test
+  is now **full-rigor for new mechanics / lazy-pass for small-UI** (smoke gate never skipped).
+- **Concise docs (done last, per the human's "sensitive — leave to the end").** Added a concise-spec
+  instruction to `CLAUDE.md` STEP 4.1: a spec is a contract not an essay; state the value + at most a
+  one-line why, push reasoning to `history.md` — **fewer words, never fewer facts; numbers/rules/strings
+  stay exact.** No existing canonical spec content was rewritten (only the *guidance* for future specs).
+- **No spec/code touched; all "Read first" paths still resolve** (backlog/handoffs/brief kept their paths,
+  just leaner; role folders unmoved).
+
 ## v11 — Softer invulnerability pulse (programmer, 2026-06-05)
 - Art-only render tweak per `art_spec/v11.md` — no gameplay/economy/copy change; i-frame & Shield
   durations untouched. `_draw_player` (`game/view/render.py`) no longer early-returns on the "off" half
@@ -206,3 +234,33 @@
   values across a cycle = smooth, solid-when-not-invuln); harness ALL PASS (60 checks), smoke exits 0/120 f,
   no AC1–AC68 regression. Console-encoding note: harness labels stay ASCII (the cp1252 Windows console can't
   print `↔`/`↔`).
+
+
+## v12 — Hold-R-to-restart (mirror the Q-hold gesture on PAUSE + GAME_OVER) (2026-06-05)
+- 2026-06-05 (v12 programmer): Restart (R) converted from an instant `K_r` KEYDOWN press to a 0.5 s HELD
+  gesture on PAUSE + GAME_OVER, mirroring the v8/v10 Q-hold-to-quit. **Two independent counters:** added
+  `self.r_hold_frames` on `App` beside `q_hold_frames` (UI state, not World); each gesture is driven by its
+  OWN held-key seam (`_q_held()` for Q, new `_r_held()` for R) and its own `+=1` / `=0` branch — they never
+  read each other's key and never share a variable (the §V12.3 #1-risk "counter cross-talk" guard).
+  **Activation moved off the edge (§V12.5):** removed the two `K_r` KEYDOWN restart branches from
+  `_handle_events` (a single R tap no longer restarts), and drive restart from a new `_restart_hold_step()`
+  called in the main loop under `if running and self.state in (PAUSE, GAME_OVER)` — the `running` guard gives
+  quit-precedence on a same-frame Q+R tie (§V12.3.1), and the `(PAUSE, GAME_OVER)`-only guard (NOT the Q
+  block's START+PAUSE+GAME_OVER) enforces R90 START/PLAY exclusion (§V12.8). Factoring the R logic into
+  `_restart_hold_step()` (vs fully inline) keeps the Q block untouched and makes the gesture unit-testable via
+  the `_r_held` event-script seam. **Reset spine (§V12.4):** paired `self.r_hold_frames = 0` beside every
+  existing `q_hold_frames = 0` across all six transitions (START→PLAY, PLAY↔PAUSE Esc, PLAY→GAME_OVER death,
+  and the rewritten R-restart #5/#6 which zero BOTH atomically) so a partial R-hold can never carry into a new
+  screen or pre-fill an arc. **Two arcs (§V12.7):** generalised the v8/v10 arc body into
+  `hud.draw_hold_arc(screen, center, hold_frames, threshold)` (track always drawn, fill while >0);
+  `draw_quit_arc` is now a thin wrapper, `draw_pause` draws BOTH the Q arc (300,483) and the R arc (200,483)
+  with tracks always-on, and `draw_gameover_restart_arc` draws the R widget only-while-held at (200,545),
+  mirroring `draw_gameover_quit_arc`. **Config:** one new alias `RESTART_HOLD_FRAMES = PAUSE_QUIT_FRAMES`
+  (=30, coupled to one source of truth, §V12.10) + the two Artist arc-centre consts; rewrote
+  `PAUSE_HINT_RESTART`→"Hold R  Restart" and `GAMEOVER_KEYS`→"Hold R  Restart      Hold Q  Quit" (Writer
+  literals). **Verification:** smoke exits 0 / exactly 120 f (×3 + `-m game.main` + compileall + `--event-script`
+  5/5); regression harness **65/65** (6 new v12: render-smoke PAUSE+GAME_OVER with both arcs in all 4 hold
+  combos; R-rect vs Q-rect-and-text anti-collision; Q/R independence; START/PLAY exclusion; cancel-on-release;
+  and an end-to-end real-loop Esc→PAUSE→hold-R-30 f→PLAY-with-both-counters-zero); strengthened the v10
+  reset-spine to assert BOTH counters zero and rewrote the v8 R74 + spine #5/#6 from the removed K_r tap to the
+  held path; added "v12" to `_GROUP_ORDER`. No AC1–AC68 regression.

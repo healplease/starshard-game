@@ -19,12 +19,15 @@ never have to guess. You are the voice of "small and shippable".
 - Separate **must-have (v1)** from **out-of-scope/later** — enforce the single-screen, keyboard-only,
   placeholder-art guardrails from `CLAUDE.md`.
 - Note any **constraints/risks** (e.g. "must run headless for QA via --smoke-test").
-- **Required: an "Open values" delegation table (retro-blessed best pattern, 2026-06-05).** For any
-  increment with delegated numbers, emit a `lever → owner → note` table so each downstream role
-  (Designer/Level-designer/Artist) gets a deterministic to-do list — **freeze the *behaviour*, hand every
-  *number* to its owner.** Head each `vN.md` with a one-line **BA-ruling vs Delegated-value** split so
-  nobody re-litigates who owns a decision. When you delegate a genuine *tension* (not just a number), ship
-  a one-line **decision criterion** with it (e.g. "the boss must be seen by the median run"), not just the flag.
+- **"Open values" delegation table — when the increment delegates numbers (retro-blessed pattern,
+  2026-06-05).** For a substantial increment that hands numbers downstream, emit a `lever → owner → note`
+  table so each downstream role (Designer/Level-designer/Artist) gets a deterministic to-do list —
+  **freeze the *behaviour*, hand every *number* to its owner** — and head the `vN.md` with a one-line
+  **BA-ruling vs Delegated-value** split. When you delegate a genuine *tension* (not just a number), ship
+  a one-line **decision criterion** with it (e.g. "the boss must be seen by the median run"). For a small
+  increment with one or two obvious values, a sentence naming the owner is enough — don't build the full
+  table for its own sake. (And if a change is small enough that it has no requirements impact at all, the
+  Orchestrator should have skipped you — say so and hand back rather than manufacturing requirements.)
 
 ## Output (artifact)
 - Write to `workspace/requirements/requirements/` (sections: Vision, Target player, Session length,

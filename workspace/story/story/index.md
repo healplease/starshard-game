@@ -13,13 +13,15 @@
 | `v6.md` | v6 | Bomb pickup name `BOMB` + glyph `B` · HUD `×N` bomb-count label · **`CONTROLS_1` rewrite "Z = fire · X = bomb"** (drops stale "Space") · "+1 BOMB" popup | shipped ✅ |
 | `v7.md` | v7 | Boss name `MOTHERSHIP` · boss-bar HUD label (`boss_label_text`) · optional arrival `WARNING`/`MOTHERSHIP INBOUND` · defeat `MOTHERSHIP DOWN` + `+{points}` popup | shipped ✅ |
 | `v8.md` | v8 | `PAUSE_TITLE` "PAUSED" · `PAUSE_HINT_RESUME` "Esc  Resume" · `PAUSE_HINT_QUIT` "Hold Q  Quit" · `PAUSE_HINT_RESTART` "R  Restart" · **`CONTROLS_2` rewrite** (Esc now pauses) · **`GAMEOVER_KEYS` rewrite** (Esc clause removed) | shipped ✅ |
-| `v10.md` | v10 | NEW `START_QUIT_HINT` "Hold Q  Quit" (START line, top-y 600, arc-anchored) · **`GAMEOVER_KEYS` rewrite** (append "Hold Q  Quit", R77) · **`CONTROLS_2` rewrite** (drop duplicate quit clause → "Esc  Pause") · START prompt kept | spec ready |
+| `v10.md` | v10 | NEW `START_QUIT_HINT` "Hold Q  Quit" (START line, top-y 600, arc-anchored) · **`GAMEOVER_KEYS` rewrite** (append "Hold Q  Quit", R77) · **`CONTROLS_2` rewrite** (drop duplicate quit clause → "Esc  Pause") · START prompt kept | shipped ✅ |
+| `v12.md` | v12 | **`PAUSE_HINT_RESTART` rewrite** "Hold R  Restart" · **`GAMEOVER_KEYS` rewrite** (R clause → "Hold R  Restart", Q clause kept) — teach the hold-R-to-restart gesture (R85) | spec ready |
 
 ## Where is …? (topic → file)
 - **Start-screen controls line (`CONTROLS_1`)** → `v1-base.md` → **rewritten in** `v6.md` (Z = fire · X = bomb)
 - **Start-screen controls line (`CONTROLS_2`)** → `v1-base.md` → **rewritten in** `v8.md` (Esc pauses · hold Q quits) → **rewritten in** `v10.md` (→ "Esc  Pause"; quit clause moved to the dedicated line)
 - **Start-screen quit-hint line (`START_QUIT_HINT`)** → `v10.md` (NEW; "Hold Q  Quit", arc-anchored at top-y 600)
-- **Game-Over key list (`GAMEOVER_KEYS`)** → `v1-base.md` → **rewritten in** `v8.md` (Esc clause removed) → **rewritten in** `v10.md` (append "Hold Q  Quit", R77)
+- **Game-Over key list (`GAMEOVER_KEYS`)** → `v1-base.md` → **rewritten in** `v8.md` (Esc clause removed) → **rewritten in** `v10.md` (append "Hold Q  Quit", R77) → **rewritten in** `v12.md` (R clause → "Hold R  Restart", R85)
+- **PAUSE restart hint (`PAUSE_HINT_RESTART`)** → `v8.md` ("R  Restart") → **rewritten in** `v12.md` ("Hold R  Restart", R85)
 - **Score / HP / Game-Over text** → `v1-base.md`
 - **Bonus names + buff-pill letters** → `v2.md`
 - **Enemy kind names** → `v5.md`

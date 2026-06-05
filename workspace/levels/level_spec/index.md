@@ -15,6 +15,7 @@
 | `v7-bosses.md` | v7 | **§V7.1 breakpoint cadence** (75 s / +90 s, CONFIRM) · **§V7.2 spawn-freeze/resume** (skip-no-bank, `BOSS_RESUME_LULL=0`) · §V7.3 fight economy (drip frozen / minion-drops suppressed / minion-score ON) · §V7.4 +1000 reward · §V7.5 AC13 (`BOSS_HP=120` lever) · §V7.6 levers · §V7.7 smoke coexistence · §V7.8 traceability | spec ✅ |
 | `v8-pause.md` | v8 | **§V8.1 verdict** (confirmed no-op — zero spawn/pickup/ramp/timing changes) · §V8.2 edge case (real-world vs in-game time, non-issue) · §V8.3 traceability | confirmed no-op ✅ |
 | `v10.md` | v10 | **§V10.1 verdict** (confirmed no-op — Q-hold-to-quit on START+GAME_OVER, UI-only, no spawn/pickup/ramp/timing change) · §V10.2 edge case (UI counter, not a game clock) · §V10.3 traceability | confirmed no-op ✅ |
+| `v12.md` | v12 | **§V12.1 verdict** (confirmed no-op — hold-R-to-restart on PAUSE+GAME_OVER, UI-only, no spawn/pickup/ramp/timing change) · §V12.2 edge case (second UI hold counter, not a game clock; `reset_run()` unchanged) · §V12.3 traceability | confirmed no-op ✅ |
 
 ## Where is …? (topic → file)
 - **Difficulty ramp formulas (the curve)** → `v1-base.md` §3 (untouched by v2/v5/v6)
@@ -28,6 +29,7 @@
 - **Boss-fight economy (drip / minion drops / minion score / +1000 reward)** → `v7-bosses.md` §V7.3, §V7.4
 - **v8 Pause economy impact** → `v8-pause.md` §V8.1 (confirmed no-op — no new spawns/pickups/ramp/timing)
 - **v10 START/GAME_OVER Q-hold-to-quit economy impact** → `v10.md` §V10.1 (confirmed no-op — UI-only gesture, no spawn/pickup/ramp/timing)
+- **v12 PAUSE/GAME_OVER hold-R-to-restart economy impact** → `v12.md` §V12.1 (confirmed no-op — UI-only gesture, second hold counter, `reset_run()` unchanged)
 
 ## Updating this spec
 - **New increment:** add `vN-<topic>.md` (`# vN increment — …`) + a row + topic-map entry; **state

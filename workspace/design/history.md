@@ -3,6 +3,21 @@
 > Per-domain history. The current spec is `gdd.md` (canonical). This file holds the dated decision
 > notes for this domain only. The cross-role story lives in `../shared/handoffs.md`.
 
+- 2026-06-05 (v12): `gdd/v12.md` added — hold-R-to-restart on PAUSE + GAME_OVER. **Threshold REUSED**
+  (`RESTART_HOLD_FRAMES = PAUSE_QUIT_FRAMES` = 30 f / 0.5 s — a coupled alias so quit + restart stay
+  symmetric from one source of truth; no distinct value, no deviation). **Two independent counters**
+  (`q_hold_frames` + new `r_hold_frames`, never read each other's key/state; quit-precedence if both
+  complete the same frame). **Both counters reset on every state transition** — extends the v10
+  §V10.4 single-counter spine to the second counter; the rule is "every `self.state = …` pairs with
+  `q=0` AND `r=0`." **Activation-model change:** restart moves **off the `K_r` KEYDOWN edge** onto the
+  main-loop held counter (the two KEYDOWN branches removed, exactly as v8 R73 removed Esc-quit) —
+  amends v8 R74 (PAUSE one-step) + v1 R13 (GAME_OVER instant-R). **Two arcs:** R arc reuses the v8
+  visual VERBATIM (same colour — BA ruling §42, disambiguated by position + hint, not hue);
+  idle-visibility **matches the Q arc per screen** (PAUSE track always-on, GAME_OVER only-while-held).
+  **Active set = PAUSE + GAME_OVER only** (narrower than Q's START+PAUSE+GAME_OVER — R has nothing to
+  restart in START). One new const (the alias); no new palette. Delegated down: R-arc placement
+  (Artist), the two "Hold R  Restart" strings (Writer), economy no-op (Level-designer).
+
 - 2026-06-05 (v1): GDD.md created from R1–R14 — 600×800 @60fps, full master numbers table, ramp
   formula defaults, screen-state machine, entities & behaviors, HUD layout, collision order,
   smoke-test design. R20/R21 deferred for line budget; R19/R22 optional.

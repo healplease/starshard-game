@@ -361,7 +361,9 @@ START_QUIT_HINT = "Hold Q  Quit"
 GAMEOVER_TITLE = "GAME OVER"
 # v10 ⚠ REWRITE (story §V10.4): Q-hold now quits from GAME_OVER (R77), so the key list
 # gains the honest quit hint. No stale "Esc Quit" (v8 R73 holds).
-GAMEOVER_KEYS  = "R  Restart      Hold Q  Quit"
+# v12 ⚠ REWRITE (story §V12.3): Restart is now a 0.5 s HOLD gesture (RESTART_HOLD_FRAMES=30),
+# so the restart clause teaches the hold; the v10 "Hold Q  Quit" clause is unchanged.
+GAMEOVER_KEYS  = "Hold R  Restart      Hold Q  Quit"
 
 # v7 boss copy (story §V7.5). Name blessed verbatim; label == name (AC47-safe, ≤12 ch).
 BOSS_NAME        = "MOTHERSHIP"      # canonical boss name
@@ -374,7 +376,7 @@ BOSS_DEFEAT_TEXT = "MOTHERSHIP DOWN"     # defeat flavor line; "+{points}" track
 PAUSE_TITLE        = "PAUSED"              # FONT_BIG 64, PLAYER cyan #50DCFF
 PAUSE_HINT_RESUME  = "Esc  Resume"         # hint line 1 — second Esc resumes
 PAUSE_HINT_QUIT    = "Hold Q  Quit"        # hint line 2 — Q held 0.5 s quits
-PAUSE_HINT_RESTART = "R  Restart"          # hint line 3 — R key restarts from pause
+PAUSE_HINT_RESTART = "Hold R  Restart"     # hint line 3 — v12: R is now a 0.5 s hold gesture
 
 # ── v8 pause overlay geometry (art_spec §V8.3, GDD §V8.3/§V8.4/§V8.6) ─────────
 PAUSE_DIM_ALPHA  = 110          # full-screen dim opacity (< GAME_OVER 160 = temporary-state read)
@@ -387,6 +389,11 @@ PAUSE_ARC_R      = 22           # Q-hold arc radius in px (GDD §V8.4)
 PAUSE_ARC_STROKE = 3            # Q-hold arc stroke width
 PAUSE_QUIT_FRAMES = 30          # hold duration to quit (0.5 s @ 60 FPS)
 
+# v12 (GDD §V12.2/§V12.10): hold-R-to-restart reuses the v8 quit threshold VERBATIM —
+# a self-documenting alias bound to the single source of truth, so the two gestures stay
+# symmetric from one value. Drives fill = r_hold_frames / RESTART_HOLD_FRAMES.
+RESTART_HOLD_FRAMES = PAUSE_QUIT_FRAMES   # 30 — coupled to PAUSE_QUIT_FRAMES, not a 2nd literal
+
 # ── v10 Q-hold-to-quit arc centres on START + GAME_OVER (art_spec §V10.4) ─────
 # Reuse the v8 arc visual verbatim (PAUSE_ARC_R=22, PAUSE_ARC_STROKE=3, CW from 12
 # o'clock, HP_AMBER fill / HP_BACK track). Each centre sits 56 px below its screen's
@@ -396,6 +403,21 @@ PAUSE_QUIT_FRAMES = 30          # hold duration to quit (0.5 s @ 60 FPS)
 #   GAME_OVER: (278, 523, 44, 44) — clears GAMEOVER_KEYS (y480–498)
 START_ARC_CENTER    = (W // 2, 665)   # (300, 665) — 56 px below the START quit-hint (top 600)
 GAMEOVER_ARC_CENTER = (W // 2, 545)   # (300, 545) — 56 px below GAMEOVER_KEYS (centre 489)
+
+# ── v12 Hold-R-to-restart arc centres on PAUSE + GAME_OVER (art_spec §V12.4/§V12.8) ──
+# Reuse the v8 arc visual verbatim via draw_hold_arc(...): PAUSE_ARC_R=22,
+# PAUSE_ARC_STROKE=3, CW from 12 o'clock, HP_AMBER fill / HP_BACK track,
+# fill = r_hold_frames / RESTART_HOLD_FRAMES. Each R centre = that screen's locked
+# Q-arc centre shifted 100 px LEFT, same y → 56 px clear of the Q arc, in the same
+# open band (inherits the Q arc's proven text clearance). Idle-visibility matches the
+# Q arc per screen: PAUSE track ALWAYS on (two empty tracks now), GAME_OVER whole
+# widget ONLY while r_hold_frames > 0. Bounding rects:
+#   PAUSE    : (178, 461, 44, 44) — 56 px left of the Q arc (278,461,44,44); clears the
+#              PAUSE text block (lowest rect ≤ y436) by 25 px
+#   GAME_OVER: (178, 523, 44, 44) — 56 px left of the Q arc (278,523,44,44); clears
+#              GAMEOVER_KEYS (y480–498) by 25 px
+PAUSE_RESTART_ARC_CENTER    = (W // 2 - 100, PAUSE_PANEL_Y + 56)   # (200, 483)
+GAMEOVER_RESTART_ARC_CENTER = (W // 2 - 100, 545)                  # (200, 545)
 
 
 # ── Difficulty ramp (level_spec §3) — pure formulas, t = seconds in run ───────

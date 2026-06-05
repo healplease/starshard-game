@@ -60,7 +60,7 @@ from game.view import render, hud
 
 # ── tiny test framework ──────────────────────────────────────────────────────
 TESTS = []
-_GROUP_ORDER = ["v1", "v2", "v5", "v6", "v7", "v8", "v9", "v10", "v11"]
+_GROUP_ORDER = ["v1", "v2", "v5", "v6", "v7", "v8", "v9", "v10", "v11", "v12"]
 
 
 def test(group, ac, label):
@@ -622,16 +622,22 @@ def _t_ac59():
     expect("Esc" not in C.GAMEOVER_KEYS, "GAMEOVER_KEYS still shows a stale Esc hint")
 
 
-@test("v8", "R74", "R in PAUSE restarts the run into PLAY")
+@test("v8", "R74", "hold-R in PAUSE restarts the run into PLAY (v12: held gesture, not a tap)")
 def _t_r74():
     ensure_pygame()
     app = App()
     app.world = fresh_world()
     app.world.score = 500
     app.state = GameState.PAUSE
+    # v12: a single R KEYDOWN no longer restarts — the branch was removed (§V12.5).
     pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_r))
     app._handle_events()
-    expect(app.state is GameState.PLAY and app.world.score == 0, "R-from-pause restart failed")
+    expect(app.state is GameState.PAUSE, "a single R tap must NOT restart after v12")
+    # Holding R the full RESTART_HOLD_FRAMES restarts into PLAY (via the main-loop block).
+    app.event_script = {"held": {app.frame: [pygame.K_r]}}
+    for _ in range(C.RESTART_HOLD_FRAMES):
+        app._restart_hold_step()
+    expect(app.state is GameState.PLAY and app.world.score == 0, "hold-R-from-pause restart failed")
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -687,7 +693,7 @@ def _t_render_smoke():
         elif state is GameState.PAUSE:
             render.draw_world(screen, w)
             hud.draw_hud(screen, w)
-            hud.draw_pause(screen, 15)
+            hud.draw_pause(screen, 15, 15)   # v12: both Q + R arcs
         else:
             render.draw_world(screen, w)
             hud.draw_hud(screen, w)
@@ -863,6 +869,149 @@ def _t_v10_arc_rects():
     expect(start_arc.bottom <= C.H and go_arc.bottom <= C.H, "arc rect runs off the bottom edge")
 
 
+def _pause_text_rects(fonts):
+    """The PAUSE text rects, matching hud.draw_pause blit sites (all midtop at x=W//2)."""
+    cx = C.W // 2
+    lines = [(C.PAUSE_TITLE, "big", C.PAUSE_HEADING_Y),
+             (C.PAUSE_HINT_RESUME, "small", C.PAUSE_HINT_Y1),
+             (C.PAUSE_HINT_QUIT, "small", C.PAUSE_HINT_Y2),
+             (C.PAUSE_HINT_RESTART, "small", C.PAUSE_HINT_Y3)]
+    rects = []
+    for text, fk, y in lines:
+        surf = fonts[fk].render(text, True, C.TEXT)
+        rects.append(surf.get_rect(midtop=(cx, y)))
+    return rects
+
+
+@test("v12", "AC77", "render-smoke: PAUSE + GAME_OVER draw with BOTH Q and R arcs (no/each/both held)")
+def _t_v12_render():
+    ensure_pygame()
+    screen = pygame.display.set_mode((C.W, C.H))
+    fonts = make_fonts()
+    render.set_fonts(fonts)
+    hud.set_fonts(fonts)
+    w = _rich_world()
+    # Every required combination: neither held, Q only, R only, both held.
+    for q, r in ((0, 0), (15, 0), (0, 15), (30, 30)):
+        screen.fill(C.BG)
+        render.draw_world(screen, w)
+        hud.draw_hud(screen, w)
+        hud.draw_pause(screen, q, r)                       # PAUSE: both tracks always on
+        screen.fill(C.BG)
+        render.draw_world(screen, w)
+        hud.draw_gameover(screen, w)
+        hud.draw_gameover_quit_arc(screen, q)              # GAME_OVER: only while held
+        hud.draw_gameover_restart_arc(screen, r)
+    # Reaching here without an exception is the pass (mirrors the v9/v10 render-smoke).
+
+
+@test("v12", "AC71", "R arc rect overlaps NEITHER the Q arc NOR any text on PAUSE / GAME_OVER")
+def _t_v12_arc_rects():
+    ensure_pygame()
+    pygame.display.set_mode((C.W, C.H))
+    fonts = make_fonts()
+    r = C.PAUSE_ARC_R
+
+    def arc_rect(center):
+        return pygame.Rect(center[0] - r, center[1] - r, 2 * r, 2 * r)
+
+    # PAUSE: Q arc at (300,483) computed by draw_pause as (W//2, PAUSE_PANEL_Y+56).
+    pause_q = arc_rect((C.W // 2, C.PAUSE_PANEL_Y + 56))
+    pause_r = arc_rect(C.PAUSE_RESTART_ARC_CENTER)
+    go_q = arc_rect(C.GAMEOVER_ARC_CENTER)
+    go_r = arc_rect(C.GAMEOVER_RESTART_ARC_CENTER)
+
+    # (a) the two arcs on each screen must not overlap each other (the new two-arc constraint)
+    expect(not pause_r.colliderect(pause_q), f"PAUSE R arc {tuple(pause_r)} overlaps Q arc {tuple(pause_q)}")
+    expect(not go_r.colliderect(go_q), f"GAME_OVER R arc {tuple(go_r)} overlaps Q arc {tuple(go_q)}")
+    # (b) the R arc must clear every text rect on its screen
+    for tr in _pause_text_rects(fonts):
+        expect(not pause_r.colliderect(tr), f"PAUSE R arc {tuple(pause_r)} overlaps text {tuple(tr)}")
+    for tr in _gameover_text_rects(fonts):
+        expect(not go_r.colliderect(tr), f"GAME_OVER R arc {tuple(go_r)} overlaps text {tuple(tr)}")
+    # (c) both R rects stay inside the window
+    expect(pause_r.bottom <= C.H and go_r.bottom <= C.H and pause_r.left >= 0 and go_r.left >= 0,
+           "R arc rect runs off a screen edge")
+
+
+@test("v12", "AC72", "Q and R hold counters are fully independent (no cross-fill)")
+def _t_v12_independence():
+    ensure_pygame()
+    # Hold R alone in PAUSE: r advances, q stays 0, app does NOT quit.
+    app = App()
+    app.world = fresh_world()
+    app.state = GameState.PAUSE
+    app.event_script = {"held": {f: [pygame.K_r] for f in range(40)}}
+    for app.frame in range(5):
+        app._restart_hold_step()
+    expect(app.r_hold_frames == 5 and app.q_hold_frames == 0,
+           "holding R must advance ONLY r_hold_frames (q stayed?)")
+
+    # Hold Q alone (via the seam) does not advance r — drive the Q block's seam directly.
+    app2 = App()
+    app2.world = fresh_world()
+    app2.state = GameState.PAUSE
+    app2.event_script = {"held": {f: [pygame.K_q] for f in range(40)}}
+    # the R step under a Q-only hold must leave r at 0 (R not held → reset/idle)
+    for app2.frame in range(5):
+        app2._restart_hold_step()
+    expect(app2.r_hold_frames == 0, "holding Q must NOT advance r_hold_frames")
+
+
+@test("v12", "AC76", "R-hold restart is inactive in START and PLAY (state guard)")
+def _t_v12_start_play_excluded():
+    ensure_pygame()
+    # The main-loop guard is `state in (PAUSE, GAME_OVER)`; emulate it for START + PLAY.
+    for state in (GameState.START, GameState.PLAY):
+        app = App()
+        app.world = fresh_world()
+        app.state = state
+        app.event_script = {"held": {f: [pygame.K_r] for f in range(40)}}
+        for app.frame in range(C.RESTART_HOLD_FRAMES + 5):
+            if app.state in (GameState.PAUSE, GameState.GAME_OVER):
+                app._restart_hold_step()
+        expect(app.state is state and app.r_hold_frames == 0,
+               f"R-hold must be a no-op in {state} (no arc, no restart)")
+
+
+@test("v12", "AC74", "release R before threshold cancels (no accumulation)")
+def _t_v12_cancel_on_release():
+    ensure_pygame()
+    app = App()
+    app.world = fresh_world()
+    app.state = GameState.GAME_OVER
+    # Hold for 15 frames, then release: counter must snap to 0, no restart.
+    app.event_script = {"held": {f: [pygame.K_r] for f in range(15)}}
+    for app.frame in range(15):
+        app._restart_hold_step()
+    expect(app.r_hold_frames == 15 and app.state is GameState.GAME_OVER, "mid-hold state wrong")
+    app.frame = 15                                  # R no longer in the held set → release
+    app._restart_hold_step()
+    expect(app.r_hold_frames == 0 and app.state is GameState.GAME_OVER, "release did not cancel the hold")
+
+
+@test("v12", "AC69", "end-to-end: Esc->PAUSE then hold R 30 f in the REAL loop restarts to PLAY")
+def _t_v12_hold_restart_e2e():
+    ensure_pygame()
+    captured = {}
+
+    def probe(app):                                  # at the restart frame, capture the result
+        captured["state"] = app.state
+        captured["q"] = app.q_hold_frames
+        captured["r"] = app.r_hold_frames
+
+    # Headless start forces PLAY; Esc@f3 -> PAUSE, then hold R f4..f33 (30 frames) -> restart@f33.
+    app = run_event_script({
+        "frames": 36,
+        "keydowns": {3: [pygame.K_ESCAPE]},
+        "held": {f: [pygame.K_r] for f in range(4, 34)},
+        "probes": {33: probe},
+    })
+    expect(captured.get("state") is GameState.PLAY, "hold-R for 30 f in PAUSE did not restart into PLAY")
+    expect(captured.get("q") == 0 and captured.get("r") == 0,
+           "the R-restart did not zero BOTH counters atomically")
+
+
 @test("v10", "AC66", "the hold counter resets to 0 on every state transition")
 def _t_v10_reset_spine():
     ensure_pygame()
@@ -872,46 +1021,52 @@ def _t_v10_reset_spine():
         app.world = fresh_world()
         app.state = state
         app.q_hold_frames = 25            # a near-complete hold carried into the transition
+        app.r_hold_frames = 25            # v12: BOTH counters must zero on every transition
         return app
+
+    def both_zero(app):                   # v12: every transition zeroes q AND r (§V12.4)
+        return app.q_hold_frames == 0 and app.r_hold_frames == 0
 
     # #1 START -> PLAY (a non-Q key starts and resets)
     app = fresh_app(GameState.START)
     pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_SPACE))
     app._handle_events()
-    expect(app.state is GameState.PLAY and app.q_hold_frames == 0, "#1 START->PLAY did not reset")
+    expect(app.state is GameState.PLAY and both_zero(app), "#1 START->PLAY did not reset both")
 
     # #2 PLAY -> PAUSE (Esc)
     app = fresh_app(GameState.PLAY)
     pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE))
     app._handle_events()
-    expect(app.state is GameState.PAUSE and app.q_hold_frames == 0, "#2 PLAY->PAUSE did not reset")
+    expect(app.state is GameState.PAUSE and both_zero(app), "#2 PLAY->PAUSE did not reset both")
 
     # #3 PAUSE -> PLAY (Esc resume)
     app = fresh_app(GameState.PAUSE)
     pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE))
     app._handle_events()
-    expect(app.state is GameState.PLAY and app.q_hold_frames == 0, "#3 PAUSE->PLAY did not reset")
+    expect(app.state is GameState.PLAY and both_zero(app), "#3 PAUSE->PLAY did not reset both")
 
-    # #4 PLAY -> GAME_OVER (die with Q incidentally held — the #1 risk)
+    # #4 PLAY -> GAME_OVER (die with Q AND R incidentally held — the #1 risk)
     app = fresh_app(GameState.PLAY)
     app.world.player.hp = 1
     p = app.world.player
     app.world.asteroids = [Asteroid(p.x, p.y, 0, 0, C.AST_L_R, 2, True)]
     app._step_play(InputState(0, 0, False))
     expect(app.state is GameState.GAME_OVER, "#4 did not reach GAME_OVER")
-    expect(app.q_hold_frames == 0, "#4 PLAY->GAME_OVER did not zero the hold counter (instant-quit risk)")
+    expect(both_zero(app), "#4 PLAY->GAME_OVER did not zero both counters (instant-quit/restart risk)")
 
-    # #5 GAME_OVER -> PLAY (R restart)
+    # #5 GAME_OVER -> PLAY (v12: R-HOLD restart, KEYDOWN branch removed)
     app = fresh_app(GameState.GAME_OVER)
-    pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_r))
-    app._handle_events()
-    expect(app.state is GameState.PLAY and app.q_hold_frames == 0, "#5 GAME_OVER->PLAY did not reset")
+    app.r_hold_frames = C.RESTART_HOLD_FRAMES - 1     # one held frame from firing
+    app.event_script = {"held": {app.frame: [pygame.K_r]}}
+    app._restart_hold_step()
+    expect(app.state is GameState.PLAY and both_zero(app), "#5 GAME_OVER->PLAY (hold R) did not reset both")
 
-    # #6 PAUSE -> PLAY (R restart)
+    # #6 PAUSE -> PLAY (v12: R-HOLD restart)
     app = fresh_app(GameState.PAUSE)
-    pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_r))
-    app._handle_events()
-    expect(app.state is GameState.PLAY and app.q_hold_frames == 0, "#6 PAUSE->PLAY (R) did not reset")
+    app.r_hold_frames = C.RESTART_HOLD_FRAMES - 1
+    app.event_script = {"held": {app.frame: [pygame.K_r]}}
+    app._restart_hold_step()
+    expect(app.state is GameState.PLAY and both_zero(app), "#6 PAUSE->PLAY (hold R) did not reset both")
 
 
 @test("v10", "R76", "START: Q is carved out of 'any key starts'; other keys still start")

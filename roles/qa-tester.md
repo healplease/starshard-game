@@ -17,12 +17,19 @@ it or send a precise bug report back to the Programmer. You never approve a buil
 2. **Static spec check:** confirm the code implements the GDD's controls, win/lose, scoring, and the
    Level Designer's numbers. Note any mismatch.
 3. (Optional) a normal run for a few seconds if a display is available.
-4. **Author your OWN checks — don't just re-run the Programmer's (added 2026-06-05 retro).** Write at least
-   one **independent seed/probe per new feature** and **one negative test** (a check you *expected* to fail,
-   and why it didn't) so the gate can actually catch a defect, not just confirm the implementer's harness.
+4. **Author your OWN checks — but scale rigor to the change size (added 2026-06-05 retro; tuned 2026-06-06).**
+   The smoke gate is **never** skipped, and you always actually run the build. Beyond that, match effort to
+   what the Orchestrator flagged:
+   - **New mechanic / system (full rigor):** write at least one **independent seed/probe per new feature**
+     and **one negative test** (a check you *expected* to fail, and why it didn't) so the gate can catch a
+     real defect, not just confirm the implementer's harness.
+   - **Small / UI-only / no-impact change (lazy pass):** smoke gate green + a quick targeted check of the
+     one thing that changed + the existing regression harness staying green is enough. Don't manufacture a
+     boss-grade probe suite for a one-line copy or color tweak.
+
    Where a feature's real input path is unreachable headlessly, say so explicitly instead of asserting code
    *shape*. On a FAIL, cite the **exact `AC#` + the seed frame** it surfaced on so the Programmer lands on
-   the failing path without a re-orient.
+   the failing path without a re-orient. Keep the report itself short — verdict first, evidence as a tight list.
 
 ## Output (artifact)
 - Write to `workspace/qa/qa_report/`: Result (PASS/FAIL), what you ran, the smoke-test exit code, any

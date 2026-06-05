@@ -13,7 +13,8 @@
 | `v6.md` | v6 | **R45–R55** (bombs/panic button + Z/X remap) + **AC30–AC38** | shipped ✅ |
 | `v7.md` | v7 | **R56–R68** (boss-fight loop + Mothership 4-step moveset) + **AC39–AC52** | shipped ✅ |
 | `v8.md` | v8 | **R69–R75** (pause/unpause + Q-hold to quit + pause overlay) + **AC53–AC60** | shipped ✅ |
-| `v10.md` | v10 | **R76–R82** (Q-hold-to-quit on START + GAME_OVER; reuses v8 gesture) + **AC61–AC68** | in progress |
+| `v10.md` | v10 | **R76–R82** (Q-hold-to-quit on START + GAME_OVER; reuses v8 gesture) + **AC61–AC68** | shipped ✅ |
+| `v12.md` | v12 | **R83–R91** (hold-R-to-restart on PAUSE + GAME_OVER; two independent hold counters + arcs) + **AC69–AC77** | in progress |
 
 ## Where is …? (topic → file)
 - **R1–R22 / AC1–AC13 (base game)** → `v1-base.md`
@@ -24,7 +25,8 @@
 - **Bosses / Mothership boss fights (R56–R68)** → `v7.md`
 - **Pause / Q-hold to quit (R69–R75)** → `v8.md`
 - **Q-hold-to-quit on START + GAME_OVER (R76–R82)** → `v10.md`
-- Quick rule: **R1–22→v1 · R23–35→v2 · R36–44→v5 · R45–55→v6 · R56–68→v7 · R69–75→v8 · R76–82→v10**; **AC1–13→v1 · 14–21→v2 · 22–29→v5 · 30–38→v6 · 39–52→v7 · 53–60→v8 · 61–68→v10**.
+- **Hold-R-to-restart on PAUSE + GAME_OVER (R83–R91)** → `v12.md`
+- Quick rule: **R1–22→v1 · R23–35→v2 · R36–44→v5 · R45–55→v6 · R56–68→v7 · R69–75→v8 · R76–82→v10 · R83–91→v12**; **AC1–13→v1 · 14–21→v2 · 22–29→v5 · 30–38→v6 · 39–52→v7 · 53–60→v8 · 61–68→v10 · 69–77→v12**.
 
 ## Updating this spec
 - **New increment:** add `vN.md` (`# vN increment — …`) with the next R#/AC# block (continue the

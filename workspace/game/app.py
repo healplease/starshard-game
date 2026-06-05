@@ -30,6 +30,7 @@ class App:
         self.frame = 0          # global loop counter (smoke cap + start-screen blink)
         self.bomb_fired = False  # X key-down edge this frame (v6, GDD §V6.4)
         self.q_hold_frames = 0   # v8: Q-hold timer for quit-from-PAUSE (GDD §V8.3)
+        self.r_hold_frames = 0   # v12: R-hold timer for restart on PAUSE+GAME_OVER (GDD §V12.3) — INDEPENDENT of q
         self.quit_via_qhold = False  # v9: set when a Q-hold completes (testable quit seam)
 
     # ── setup ────────────────────────────────────────────────────────────────
@@ -74,6 +75,7 @@ class App:
         if w.player.hp <= 0:            # step 6 → GAME_OVER
             w.best = max(w.best, w.score)
             self.q_hold_frames = 0      # v10 transition #4 (§V10.4) — dying with Q held must NOT instant-quit
+            self.r_hold_frames = 0      # v12 transition #4 (§V12.4) — dying with R held must NOT instant-restart
             self.state = GameState.GAME_OVER
 
     # ── event handling (discrete transitions: quit / start / restart) ──────────
@@ -88,9 +90,11 @@ class App:
                     if self.state is GameState.PLAY:
                         self.state = GameState.PAUSE
                         self.q_hold_frames = 0       # v8 transition #2 (§V10.4)
+                        self.r_hold_frames = 0       # v12 transition #2 (§V12.4)
                     elif self.state is GameState.PAUSE:
                         self.state = GameState.PLAY
                         self.q_hold_frames = 0       # v10 transition #3 (§V10.4)
+                        self.r_hold_frames = 0       # v12 transition #3 (§V12.4)
                     # else: START or GAME_OVER — silent no-op
                     continue
                 # v10 §V10.5: Q is carved out of "any key starts" on START — it's reserved
@@ -98,15 +102,11 @@ class App:
                 # hold counter could reach 30). Every OTHER key still starts.
                 if self.state is GameState.START and event.key != pygame.K_q:
                     self.q_hold_frames = 0           # v10 transition #1 (§V10.4)
+                    self.r_hold_frames = 0           # v12 transition #1 (§V12.4 — defensive; R inactive in START)
                     self.state = GameState.PLAY
-                elif self.state is GameState.GAME_OVER and event.key == pygame.K_r:
-                    self.world.reset_run()           # R13/R31 — no leak into the new run
-                    self.q_hold_frames = 0           # v10 transition #5 (§V10.4)
-                    self.state = GameState.PLAY
-                elif self.state is GameState.PAUSE and event.key == pygame.K_r:
-                    self.world.reset_run()           # v8 R74 — restart from PAUSE
-                    self.q_hold_frames = 0
-                    self.state = GameState.PLAY
+                # v12 §V12.5: the two K_r KEYDOWN restart branches (GAME_OVER + PAUSE) are
+                # REMOVED — a single R press no longer restarts. Restart is now the held
+                # gesture in the main-loop R-hold block (_restart_hold_step, transitions #5/#6).
                 elif self.state is GameState.PLAY and event.key == pygame.K_x:
                     self.bomb_fired = True            # X key-down edge → bomb (§V6.4)
         return True
@@ -125,12 +125,13 @@ class App:
         elif self.state is GameState.PAUSE:            # v8: frozen world + HUD + pause overlay
             render.draw_world(self.screen, self.world)
             hud.draw_hud(self.screen, self.world)
-            hud.draw_pause(self.screen, self.q_hold_frames)
+            hud.draw_pause(self.screen, self.q_hold_frames, self.r_hold_frames)  # v12: both arcs
         else:  # GAME_OVER — frozen field + dim + text
             render.draw_world(self.screen, self.world)
             hud.draw_hud(self.screen, self.world)
             hud.draw_gameover(self.screen, self.world)
-            hud.draw_gameover_quit_arc(self.screen, self.q_hold_frames)  # v10: only while Q held
+            hud.draw_gameover_quit_arc(self.screen, self.q_hold_frames)     # v10: only while Q held
+            hud.draw_gameover_restart_arc(self.screen, self.r_hold_frames)  # v12: only while R held
         pygame.display.flip()
 
     # ── smoke seeding (driven by the SMOKE_TIMELINE source of truth, v9) ────────
@@ -167,6 +168,33 @@ class App:
         if self.event_script is not None:
             return pygame.K_q in self.event_script.get("held", {}).get(self.frame, ())
         return bool(pygame.key.get_pressed()[pygame.K_q])
+
+    def _r_held(self):
+        """Is the R key down this frame? Mirrors `_q_held` (v12 §V12.9 seam) so the
+        held-R restart is exercisable headlessly via the event-script `held` set —
+        independent of `_q_held`, so neither gesture ever reads the other's key."""
+        if self.event_script is not None:
+            return pygame.K_r in self.event_script.get("held", {}).get(self.frame, ())
+        return bool(pygame.key.get_pressed()[pygame.K_r])
+
+    def _restart_hold_step(self):
+        """v12 R-hold-to-restart inner step (GDD §V12.5/§V12.11), the analogue of the
+        Q-hold block. Advances `r_hold_frames` while R is held; at RESTART_HOLD_FRAMES
+        runs `world.reset_run()` → PLAY, zeroing BOTH counters atomically (transitions
+        #5/#6, §V12.4); cancels on release (§V12.6). It reads ONLY `_r_held()` and never
+        touches `q_hold_frames` except to zero it on the atomic restart, so the two
+        counters stay independent (§V12.3). The caller gates this on
+        `running and state in (PAUSE, GAME_OVER)` — quit-precedence tie-break (§V12.3.1)
+        + START/PLAY exclusion (§V12.8, R90)."""
+        if self._r_held():
+            self.r_hold_frames += 1
+            if self.r_hold_frames >= C.RESTART_HOLD_FRAMES:
+                self.world.reset_run()
+                self.q_hold_frames = 0      # transitions #5/#6: zero BOTH atomically
+                self.r_hold_frames = 0
+                self.state = GameState.PLAY
+        else:
+            self.r_hold_frames = 0          # cancel-on-release, no accumulation (§V12.6)
 
     # ── main loop ──────────────────────────────────────────────────────────────
     def run(self):
@@ -206,6 +234,12 @@ class App:
                     self.q_hold_frames = 0
             elif self.state is GameState.PLAY:
                 self._step_play(inp)
+
+            # v12: R-hold-to-restart — active in PAUSE + GAME_OVER ONLY (R90/§V12.8),
+            # independent of the Q counter (§V12.3). Guarded by `running` so a same-frame
+            # Q-quit (evaluated above) wins the §V12.3.1 tie-break and the app exits.
+            if running and self.state in (GameState.PAUSE, GameState.GAME_OVER):
+                self._restart_hold_step()
 
             self._draw()
             if not (self.smoke or self.event_script is not None):

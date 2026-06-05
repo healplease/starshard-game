@@ -49,6 +49,15 @@
   (reuses the v8 set). The new R79 reset-on-transition zeroes only a **UI hold counter** (`App.q_hold_frames`),
   never a ramp/breakpoint timer. **AC13 protected:** gesture excluded from PLAY (R81) so the run clock never
   advances under it. v1 ramp + v2/v5/v6 economy + v7 boss pacing all UNCHANGED. No vN balance lever introduced.
+- 2026-06-05 (v12): level_spec/v12.md added — **confirmed economy no-op** (mirrors the v8/v10 verdict). v12
+  converts Restart (R) from an instant press to a **held gesture** on PAUSE + GAME_OVER, both **UI-only states
+  where `w.frame` isn't advancing** (frozen on PAUSE, idle on GAME_OVER). Zero new spawn types / pickup kinds /
+  ramp deltas / timing changes; GDD §V12.10 adds **one** const — `RESTART_HOLD_FRAMES = PAUSE_QUIT_FRAMES`
+  (a UI-threshold alias coupled to the v8 value) — and zero economy values. The new R88 reset-on-transition
+  zeroes a **second UI hold counter** (`App.r_hold_frames`), never a ramp/breakpoint timer; `reset_run()`
+  semantics unchanged (same v1 R13 / v8 R74 reset, so fresh-run economy is identical). **AC13 protected:**
+  gesture excluded from START + PLAY (R90) so the run clock never advances under it. v1 ramp + v2/v5/v6 economy
+  + v7 boss pacing all UNCHANGED. No vN balance lever introduced.
 - 2026-06-05 (v6): level_spec.md v6 section added — bomb-charge pickup **spawn weight = `BOMB = 6`** (rarest
   kind; 5–8 % band; < Shield/Score 15), folded into the v2 kind table by **re-slicing**, not adding volume:
   Shield 15→12, Score×2 15→12 (Repair/Fan/Rapid untouched) → table still sums 100, so **drip cadence /

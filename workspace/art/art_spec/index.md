@@ -15,6 +15,7 @@
 | `v8-pause.md` | v8 | **§V8.1 no new palette** (all reused) · **§V8.2 three design confirmations** (HP_AMBER arc color, alpha=110 dim, PLAYER cyan heading) · **§V8.3 exact pixel layout** (heading y=290, hints y=358/388/418, `pause_panel_y=427`, arc center y=483) · §V8.4 draw recipe (pygame.draw.arc CW from 12 o'clock) · §V8.5 anti-collision · §V8.6 render order | spec ✅ |
 | `v10.md` | v10 | **§V10.2 no new palette** (reuse v8 arc verbatim) · **§V10.3 idle visibility** (track+fill drawn only while Q held; `draw_pause` untouched) · **§V10.4 the two arc centres** (`START_ARC_CENTER=(300,665)`, `GAMEOVER_ARC_CENTER=(300,545)`, each +56 below its quit-hint) · **§V10.5 anti-collision proof** (both 44×44 rects clear every text rect) · §V10.8 config · §V10.9 draw recipe (`draw_quit_arc` helper) | spec ✅ |
 | `v11.md` | v11 | **§V11.2 alpha levers** (`INVULN_ALPHA_FLOOR=128`/~50%, `INVULN_ALPHA_CEIL=255`, `INVULN_PULSE_PERIOD=30 f`) · **§V11.3 cosine curve recipe** (phase→alpha off `blink_timer`) · **§V11.4 Shield ring stays SOLID** (does not pulse; amends §V2.5) · §V11.5 render-mechanism note (per-sprite alpha surface, SRCALPHA `set_alpha` gotcha) · §V11.6 render order unchanged · **no new palette** | spec ✅ |
+| `v12.md` | v12 | **§V12.2 no new palette** (reuse v8 arc verbatim for the R gesture) · **§V12.3 idle visibility** (R matches Q per screen: PAUSE track always-on → two empty tracks; GAME_OVER only-while-held) · **§V12.4 the two R-arc centres** (`PAUSE_RESTART_ARC_CENTER=(200,483)`, `GAMEOVER_RESTART_ARC_CENTER=(200,545)`, each = Q-arc centre shifted 100 px left, same y) · **§V12.5 anti-collision proof** (each R rect 56 px clear of the Q arc + 25 px below every text rect) · §V12.8 config · §V12.9 draw recipe (`draw_hold_arc` helper) | spec ✅ |
 
 ## Where is …? (topic → file)
 - **Palette / named colors** → `v1-base.md` §1 (+ extensions: `v2…` §V2.1, `v5…` §V5.2, `v6…` §V6.1)
@@ -27,6 +28,7 @@
 - **Pause overlay dim + text block + Q-hold arc, `pause_panel_y` resolution** → `v8-pause.md`
 - **Q-hold-to-quit arc centres on START + GAME_OVER (only-while-held)** → `v10.md`
 - **Invuln alpha pulse (floor 128 / ceil 255 / 30-f cosine), Shield-ring-stays-solid rule** → `v11.md` (amends §V2.5 blink)
+- **Hold-R-to-restart arc centres on PAUSE + GAME_OVER (reuse the Q arc, two-arc placement)** → `v12.md`
 
 ## Updating this spec
 - **New increment:** add `vN-<topic>.md` (`# vN increment — …`) + a row + topic-map entry; flag any

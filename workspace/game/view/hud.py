@@ -199,10 +199,11 @@ def draw_gameover(screen, world):
     _center(screen, _FONTS["small"].render(C.GAMEOVER_KEYS, True, C.TEXT_DIM), 480)
 
 
-def draw_pause(screen, q_hold_frames):
-    """PAUSE overlay: full-screen dim + centered text block + Q-hold arc.
-    q_hold_frames: int 0..PAUSE_QUIT_FRAMES — drives the arc fill ratio.
-    (art_spec §V8.3, GDD §V8.4/§V8.6)
+def draw_pause(screen, q_hold_frames, r_hold_frames=0):
+    """PAUSE overlay: full-screen dim + centered text block + Q-hold AND R-hold arcs.
+    q_hold_frames / r_hold_frames: ints 0..30 — drive each arc's fill ratio independently.
+    Both arc tracks are ALWAYS on here (a permanent pause-panel element); each fills only
+    while its own key is held. (art_spec §V8.3/§V12.3, GDD §V8.4/§V8.6/§V12.7)
     """
     # ── 1. Full-screen dim (lighter than GAME_OVER's alpha=160) ──────────────
     dim = pygame.Surface((C.W, C.H))
@@ -223,45 +224,37 @@ def draw_pause(screen, q_hold_frames):
         surf = _FONTS["small"].render(text, True, C.TEXT_DIM)
         screen.blit(surf, surf.get_rect(midtop=(cx, y)))
 
-    # ── 4. Q-hold progress arc ────────────────────────────────────────────────
-    arc_cy = C.PAUSE_PANEL_Y + 56       # 483 (resolves GDD §V8.4 formula)
-    r      = C.PAUSE_ARC_R              # 22
-    rect   = pygame.Rect(cx - r, arc_cy - r, 2 * r, 2 * r)   # (278, 461, 44, 44)
-
-    # Track (empty ring) — always drawn so the player sees the full circle to fill
-    pygame.draw.arc(screen, C.HP_BACK,
-                    rect,
-                    0, 2 * math.pi,
-                    C.PAUSE_ARC_STROKE)
-
-    # Fill arc — clockwise from 12 o'clock (−π/2 base), sweep = fill × 2π
-    # pygame.draw.arc draws CCW from start_angle to end_angle.
-    # To draw CW from 12 o'clock: fix end=π/2, start=π/2 − fill×2π.
-    fill = q_hold_frames / C.PAUSE_QUIT_FRAMES   # 0.0 → 1.0
-    if fill > 0:
-        end_a   = math.pi / 2
-        start_a = end_a - fill * 2 * math.pi
-        pygame.draw.arc(screen, C.HP_AMBER,
-                        rect,
-                        start_a, end_a,
-                        C.PAUSE_ARC_STROKE)
+    # ── 4. Q-hold + R-hold progress arcs (both tracks always on, §V12.3) ────────
+    # Q arc at its locked PAUSE centre (300,483); R arc 100 px left at (200,483).
+    draw_hold_arc(screen, (cx, C.PAUSE_PANEL_Y + 56), q_hold_frames, C.PAUSE_QUIT_FRAMES)
+    draw_hold_arc(screen, C.PAUSE_RESTART_ARC_CENTER, r_hold_frames, C.RESTART_HOLD_FRAMES)
 
 
-# ── v10: the v8 Q-hold arc, reusable at any centre (START + GAME_OVER) ──────────
-def draw_quit_arc(screen, center, q_hold_frames):
-    """The v8 Q-hold progress arc (track ring + CW amber fill) at an arbitrary centre.
-    Visual is identical to draw_pause's arc (art_spec v8 §V8.4 / v10 §V10.2): r=22,
-    stroke=3, HP_AMBER fill / HP_BACK track, CW from 12 o'clock, fill =
-    q_hold_frames / PAUSE_QUIT_FRAMES. No new constants."""
+# ── v12: the v8/v10 hold arc generalised — one helper for BOTH gestures ─────────
+def draw_hold_arc(screen, center, hold_frames, threshold):
+    """The shipped v8 progress arc (HP_BACK track ring + CW HP_AMBER fill) at an
+    arbitrary centre, driven by any (hold_frames / threshold) ratio (GDD §V12.11,
+    art_spec v8 §V8.4 / v12 §V12.9). r=22, stroke=3, CW from 12 o'clock. The track is
+    always drawn; the fill is drawn only while hold_frames > 0. Used for both the Q-quit
+    arc (threshold=PAUSE_QUIT_FRAMES) and the R-restart arc (threshold=RESTART_HOLD_FRAMES).
+    No new constants."""
     cx, cy = center
     r = C.PAUSE_ARC_R                                  # 22
     rect = pygame.Rect(cx - r, cy - r, 2 * r, 2 * r)   # 44×44 bounding box
     pygame.draw.arc(screen, C.HP_BACK, rect, 0, 2 * math.pi, C.PAUSE_ARC_STROKE)
-    fill = q_hold_frames / C.PAUSE_QUIT_FRAMES         # 0.0 → 1.0
+    fill = hold_frames / threshold                     # 0.0 → 1.0
     if fill > 0:
+        # CW from 12 o'clock: pygame.draw.arc draws CCW start→end, so fix end=π/2
+        # and sweep the start back by fill×2π.
         end_a   = math.pi / 2
         start_a = end_a - fill * 2 * math.pi
         pygame.draw.arc(screen, C.HP_AMBER, rect, start_a, end_a, C.PAUSE_ARC_STROKE)
+
+
+# ── v10: the Q-hold quit arc, reusable at any centre (START + GAME_OVER) ────────
+def draw_quit_arc(screen, center, q_hold_frames):
+    """The Q-hold quit arc at an arbitrary centre — thin wrapper over draw_hold_arc."""
+    draw_hold_arc(screen, center, q_hold_frames, C.PAUSE_QUIT_FRAMES)
 
 
 def draw_start_quit_arc(screen, q_hold_frames):
@@ -274,3 +267,13 @@ def draw_gameover_quit_arc(screen, q_hold_frames):
     """GAME_OVER: draw the whole widget ONLY while Q is held (art_spec v10 §V10.3)."""
     if q_hold_frames > 0:
         draw_quit_arc(screen, C.GAMEOVER_ARC_CENTER, q_hold_frames)
+
+
+# ── v12: the R-hold restart arc on PAUSE + GAME_OVER (art_spec §V12.9) ──────────
+def draw_gameover_restart_arc(screen, r_hold_frames):
+    """GAME_OVER: draw the whole R widget ONLY while R is held (art_spec v12 §V12.3),
+    mirroring draw_gameover_quit_arc. (PAUSE's R arc is drawn inside draw_pause with its
+    track always on, matching the Q arc per screen.)"""
+    if r_hold_frames > 0:
+        draw_hold_arc(screen, C.GAMEOVER_RESTART_ARC_CENTER,
+                      r_hold_frames, C.RESTART_HOLD_FRAMES)

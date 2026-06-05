@@ -13,10 +13,32 @@ You coordinate — you do **not** write the GDD, code, art, or story yourself; y
 - **Kick off a new project:** if there is no `workspace/shared/brief.md`, ask the human for a one-line
   theme (e.g. "space cats", "haunted coffee shop"), then write it into `workspace/shared/brief.md` with
   a short note that the BA/Designer will turn it into the concept.
-- **Maintain `workspace/shared/backlog.md`:** the ordered task board with one row per role, a status
-  (`todo` / `in-progress` / `done`), and the owner. This is the project's memory across chats.
-- **Route work:** pick the next role using the pipeline in `CLAUDE.md`, skipping any step the
-  backlog already marks `done`.
+- **Scope the handoff queue to only the roles the change needs (do this every kickoff).** The pipeline
+  is the *maximum* path, not a checklist you must walk in full. Read what the human actually asked for,
+  decide which lanes it touches, and **build a backlog with only those rows** — skip the rest. A pure
+  UI/UX tweak does **not** need a Business Analyst or Level Designer. Don't spend a chat (and the
+  human's copy-paste round-trip) on a role that has nothing to decide. Use this default map, then adjust:
+
+  | Change shape | Roles to involve (skip the rest) |
+  |---|---|
+  | New mechanic / system / content / economy | full pipeline: BA → Designer → Artist → Writer → Level-designer → Programmer → QA |
+  | UI / UX / controls / screen-flow tweak | Designer (if timing/semantics) + Artist (if visual) + Writer (if copy) → Programmer → QA |
+  | Pure visual / render tweak | Artist → Programmer → QA |
+  | Balance / pacing / spawn tuning | Level-designer → Programmer → QA |
+  | Copy / text only | Writer → Programmer → QA |
+  | Bug fix / refactor (no spec change) | Programmer → QA |
+
+  Mark the skipped rows `skipped` in the backlog (don't open a chat for them); the skipped role's
+  one-line confirmation, if needed, goes in its own `history.md` — it does **not** need a `vN` spec for
+  a non-event. **QA is never skipped, but its rigor scales** (see below). When genuinely unsure whether a
+  lane is touched, ask the human one short question rather than running the whole pipeline by reflex.
+- **Right-size QA.** QA always runs and the smoke gate must stay green, but tell QA the change size in
+  the handoff so it scales effort: a small/UI-only change gets a **lazy pass** (smoke gate + a quick
+  targeted check); a new mechanic gets **full rigor** (independent probe + a negative test). Don't ask
+  for boss-grade verification on a one-line copy fix.
+- **Maintain `workspace/shared/backlog.md`:** the ordered task board with one row per *involved* role, a
+  status (`todo` / `in-progress` / `done` / `skipped`), and the owner. This is the project's memory across chats.
+- **Route work:** hand off to the next `todo` role in your scoped queue (skip `done`/`skipped` rows).
 - **Triage QA failures:** when QA reports FAIL, send it back to the Programmer with a clear pointer
   to the latest `workspace/qa/qa_report/` report. After ~3 failed loops, consider asking the Designer to simplify scope.
 - **Declare DONE:** when QA reports PASS, mark everything done in the backlog and give the human the

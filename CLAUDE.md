@@ -61,6 +61,11 @@ Before finishing, in this order:
    `workspace/art/art_spec/`). The big specs are **split by increment** — each lives in a folder with an
    `index.md` (file map + how to add a new increment file vs. edit an existing one); read the index, then
    touch only the version file you need. Put any longer rationale in that folder's `history.md`, not the board.
+   **Write the spec concise (added 2026-06-06).** A spec is a contract, not an essay: state the decision,
+   number, rule, or string directly, with at most a one-line *why* inline — push extended reasoning to
+   `history.md`. Don't restate the whole upstream spec, don't repeat a value in three places, and drop the
+   ceremony a small change doesn't need. **Conciseness means fewer words, never fewer facts** — keep every
+   number, rule, and string exact and unambiguous so the code still matches the contract.
 2. **Append exactly ONE line** to `workspace/shared/handoffs.md`:
    `<n>. <YYYY-MM-DD> — FROM <your-role> TO <next-role> — <one-line task>`
    `handoffs.md` is a **routing log, not a report** — one sentence (the task / verdict). **Never paste
@@ -109,6 +114,17 @@ how to play the game (`.\.venv\Scripts\python.exe workspace\game\main.py`).
 
 ## Project ground rules (apply to every role)
 
+- **Be lazy on purpose — scale your effort to the size of the change (added 2026-06-06).** Match the
+  work to the ask. A one-line tweak does not need a full analysis, a multi-section spec, or a paragraph
+  of rationale. Do the smallest correct thing, **reuse what already exists**, and don't invent work the
+  task didn't ask for or re-litigate decisions already locked upstream. Think before you act, but don't
+  *over*-think: when the answer is obvious, just do it. **Speak short** — your message to the human is a
+  status, not a report: lead with the result/verdict, keep rationale to what's load-bearing, and let the
+  blackboard hold the detail. The heavyweight rituals in the role files (Open-values tables, independent
+  probes, negative tests, etc.) are for **substantial increments** — on a small or no-impact change, do
+  the light version or skip it, and the Orchestrator scopes the queue so it won't even route every role.
+  *(How concise the canonical spec docs themselves should be is governed by each role's own Output
+  section — but keep spec numbers/rules/strings exact regardless of length.)*
 - **Scope is tiny on purpose.** One single screen, keyboard-only, a 2D arcade game.
 - **Code is modular — no line cap (as of v2, 2026-06-05).** The old ~500-line single-file limit is
   **retired**. The Programmer splits the game into small, focused modules under `workspace/game/`
@@ -139,6 +155,10 @@ orchestrator → business-analyst → lead-game-designer → artist → writer �
 
 manager: off-pipeline — called by the human to (re)organize the knowledge base and realign roles.
 ```
-Roles may skip a step if the backlog says it's already done. The Orchestrator owns routing when
-in doubt. The **manager** isn't part of the build flow — it's invoked to keep `workspace/` organized
-and the role definitions in sync; it hands back to the human (or to whichever role it unblocked).
+This is the **maximum** path, not a checklist every increment must walk in full. The Orchestrator
+**scopes the queue to only the lanes a change actually touches** (a pure UI/UX tweak skips the BA and
+Level-designer; a render-only tweak is Artist → Programmer → QA; see the scoping table in
+`roles/orchestrator.md`) and marks the rest `skipped`. Roles also skip a step the backlog already marks
+`done`. The Orchestrator owns routing when in doubt. The **manager** isn't part of the build flow — it's
+invoked to keep `workspace/` organized and the role definitions in sync; it hands back to the human (or
+to whichever role it unblocked).

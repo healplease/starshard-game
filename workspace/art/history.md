@@ -80,3 +80,20 @@
   temperature from GAME_OVER's HP_RED; different hue from ENEMY magenta. Config constants block + draw recipe
   with CW arc math provided paste-ready (§V8.3.3/§V8.4). No new render layer — PAUSE slots into the existing
   state-overlay dispatch at layer 11.
+- 2026-06-05 (v12): art_spec/v12.md added (§V12.1–§V12.10). **R-restart arc placement on PAUSE + GAME_OVER.**
+  **Zero new palette / arc constants** — the R arc reuses the v8 Q arc verbatim (r=22, stroke 3, CW from
+  12 o'clock, `HP_AMBER` fill / `HP_BACK` track) via the generalised `draw_hold_arc(...)`; only the two
+  centres are new. **Placement rule = the Q-arc centre shifted 100 px LEFT, same y** → `PAUSE_RESTART_ARC_CENTER
+  =(200,483)`, `GAMEOVER_RESTART_ARC_CENTER=(200,545)`. Chose a **horizontal** offset (not vertical) because the
+  Q arc is locked centred at x=300 directly below each screen's text block, with no room to stack a second arc
+  between the hints and the Q arc; shifting 100 px left drops the R arc into the **same open lower band** the Q
+  arc already proved clear of all text, so it inherits that 25 px text clearance and only the new arc↔arc gap had
+  to be solved — **56 px** of clear space between the two rings (> a full radius) on each screen, well distinct.
+  Left (not right) so the R ring sits under the **restart** portion of the hint copy (PAUSE bottom hint /
+  GAME_OVER key-list left clause), mirroring how the Q arc anchors the quit hint. **Idle-visibility matches the
+  Q arc per screen** (GDD §V12.7.2): PAUSE R **track always-on** → PAUSE now shows two empty tracks side by side
+  (sanctioned fallback to track-only-while-held recorded if a playtest finds it cluttered); GAME_OVER R **whole
+  widget only-while-held**. Anti-collision proven in a table: each 44×44 R rect disjoint from the Q rect (56 px
+  x-gap) AND every text rect (below them in y by 25 px, so any Writer hint-width change is safe). `HP_AMBER` reads
+  in the lower band on both dims (α=110 / α=160). Coordinated the restart-hint slot with the Writer (each hint
+  stays one line; arc clears any width).
