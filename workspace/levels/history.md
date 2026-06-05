@@ -1,0 +1,58 @@
+# Level / Difficulty Spec — change log (level-designer)
+
+> Per-domain history. The current spec is `level_spec.md` (canonical). This file holds the dated
+> decision notes for this domain only. The cross-role story lives in `../shared/handoffs.md`.
+
+- 2026-06-05 (v1): level_spec.md created — tuned the ramp for 1–3 min runs (AC13). Key OVERRIDES of
+  GDD §7.2/§7.3: asteroid spawn `max(22,64−0.47·t)`; enemy threat now RAMPS (fixed GDD's
+  instant-saturation) via cap `min(6,2+t//20)` (2→6) and fire interval `max(55,95−0.35·t)`; enemy
+  spawn `max(60,130−0.60·t)`; large-rock chance drifts 25→40%; speed bonus CONFIRMED at +2.0. NEW
+  asteroid cap 16. ADDED +1 pt/sec survival bonus (kills still dominate). Tuning levers in §8 if QA finds it off.
+- 2026-06-05 (v2): level_spec.md v2 section added — bonus **spawn economy** all **CONFIRM GDD §V2.5**
+  (defaults proved sound). Drip cadence `randint(600,840) f` (12 s ±2 s, first draw at run start → first
+  bonus ~10–14 s in); enemy-drop **15 %** on **bullet-kills only** (ram-kills don't drop — already cost HP);
+  kind weights **R30/F20/Ra20/S15/Sc15** as a cumulative `r∈[0,99]` ladder, shared by both paths; on-screen
+  **cap 3** (both paths, skip-no-bank, missed = no penalty). **AC13 analysis:** Repair self-limits (clamps
+  at full HP → lifts the LOW tail, doesn't extend experts); Shield (5 s, 15 %) is the only real high-tail
+  extender + the first "too LONG" lever; Fan/Rapid are self-paying (collect diverts from dodging); Score×2
+  survival-neutral. Net shift bounded → **v1 ramp (§3) left UNCHANGED** per v1-QA's "don't touch unless
+  playtest confirms." v2 lever order in §V2.4 (Shield-weight 15→10 first, then cadence/drop, then v1 §8).
+  **Smoke seed CONFIRMED** (R28/R33/AC20): Rapid @(300,700) = player x, 20 px above → already inside the 26 px
+  collide range → collects ~f3 regardless of sweep; duration forced 60 f → expires ~f63; full
+  spawn→collect→apply→expire+revert well inside 120 f; normal drip (720 f) can't fire in 120 f so the seed is
+  the sole clean lifecycle.
+- 2026-06-05 (v5): level_spec.md v5 section added — enemy-**kind** spawn mix folded into the UNCHANGED v1
+  spawner (kind chosen at the instant `enemy_cap(t)`/`enemy_spawn_interval(t)` fire; **replaces** a REGULAR
+  slot, never adds count). Band weights **Warmup R100 · Heat-up R85/H15 · Squeeze R60/H15/Sc25 · Storm
+  R55/H15/Sc30**; gates `HEAVY_GATE=20 s` / `SCOUT_GATE=50 s`; deterministic `choose_enemy_kind(t,rng)`
+  ladder. **AC13:** variety = texture not volume (HEAVY tanky → over-represented but low weight; SCOUT 1-HP
+  fragile → self-limited despite high weight; the split/accuracy nudge the high tail down, SCOUT gate guards
+  the low tail). v2 enemy-drop (15 %/bullet-kill) unchanged for all kinds. **AC27 smoke split** confirmed
+  intact (smoke = t 0–2 s = Warmup = REGULAR-only). v1 ramp + v2 economy left UNCHANGED.
+- 2026-06-05 (v7): level_spec/v7-bosses.md added — **CONFIRM** the Designer's locked boss pacing (TIME breakpoint,
+  `BOSS_FIRST_MARK=75 s` mid-Squeeze before the median death, `BOSS_INTERVAL=90 s` → bosses 2+ are the expert tail;
+  option (a)+(b), no AC13 re-tune). **Own the freeze/resume contract:** gate the v1 asteroid + v5 enemy + v2 drip
+  spawners' *emit* on `not boss_active`, **skip-no-bank** (timers free-run, NO backlog dump → resume can't flood);
+  resume immediate on DEFEAT at current `t`, **`BOSS_RESUME_LULL = 0`** (mirrors v6's lull-0). **Fight economy:** bonus
+  drip **FROZEN**, minion pickup-drops **SUPPRESSED** (no farm), minion **SCORE ON** (normal v5 50/80/60) — score is
+  AC13-orthogonal because the gate is TIME not points. **+1000 reward CONFIRM** (12.5× HEAVY; Score×2→2000; points-only,
+  AC13-orthogonal). **AC13 held (median):** the run clock never pauses during the fight (GDD §V7.3), so the fight swaps
+  ~12–24 s of storm for an equally-dangerous economy-frozen boss arena (no discount); only the ~5 s entrance is genuinely
+  calmer, bounded + one-shot for the median run → parked "AC13 long runs" caveat **extended** (non-blocking). `BOSS_HP=120`
+  = primary AC13 lever (v7 lever order: HP↓ → marks↑ → §V2.4/v1 §8). **Smoke** confirmed coexistent: the TIME gate
+  (f4500) never fires in 120 f, so the forced boss @f40 is the sole boss, strictly after the v5 split (f16) + v6 bomb
+  (f20); free arrival flush leaves charge=1 (AC40); freeze exercised f40→120; exits 0. v1 ramp + v2/v5/v6 economy
+  UNCHANGED (only paused-and-resumed around the boss).
+- 2026-06-05 (v6): level_spec.md v6 section added — bomb-charge pickup **spawn weight = `BOMB = 6`** (rarest
+  kind; 5–8 % band; < Shield/Score 15), folded into the v2 kind table by **re-slicing**, not adding volume:
+  Shield 15→12, Score×2 15→12 (Repair/Fan/Rapid untouched) → table still sums 100, so **drip cadence /
+  enemy-drop % / on-screen cap are bit-for-bit v2**. **Why those source kinds:** protect Repair (low-tail
+  compressor), trim Shield (the only high-tail extender — AC13-helpful, offsets the bomb's own survival aid),
+  take the rest from survival-neutral Score×2. **Both paths** (drip + enemy-drop) via the single shared 6-kind
+  ladder — not drip-only (cleanest fold; 6 % already scarce; refill-as-offense reads well). Expected ~0.3–0.6
+  bomb pickups *collected*/run → a refill ~every 2–3 runs; reaching cap 4 uncommon (matches GDD §V6.8). **R55
+  lull → `BOMB_SPAWN_LULL = 0`** (no explicit lull — the flush + 18-f flash + natural post-flush spawn cadence
+  ~0.5–1.5 s already pay off; 0 keeps v6 strictly AC13-neutral on the lengthening side; lull stays a §V6.5
+  lever). **AC37 smoke** re-confirmed: the seeded activation uses the *starting* 2 charges + scripted X @~f20,
+  so it's weight-independent (no drip fires in 120 f; the v2/v5 seeds bypass the roll). v1 ramp + v2 economy +
+  v5 mix all left UNCHANGED. v6 lever order in §V6.5 (BOMB weight 6↔4/8 first, then lull, then §V2.4 / v1 §8).

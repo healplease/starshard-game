@@ -1,0 +1,194 @@
+r"""hud — score, health bar, buff-pill stack, repair popup, and the START /
+GAME_OVER text (art_spec §4 + §V2.3/§V2.4, story §2/§4/§V2). Read-only.
+"""
+
+import pygame
+
+from .. import config as C
+from ..world import TIMED_KINDS
+
+_FONTS = {}
+
+
+def set_fonts(fonts):
+    _FONTS.update(fonts)
+
+
+# ── PLAY HUD ─────────────────────────────────────────────────────────────────
+def draw_hud(screen, world):
+    p = world.player
+    # Score (R11) — top-left, zero-padded to 5 digits
+    screen.blit(_FONTS["hud"].render(f"SCORE {world.score:05d}", True, C.TEXT), (12, 10))
+    _draw_health_bar(screen, p.hp)
+    _draw_buff_pills(screen, p)
+    _draw_repair_popup(screen, world)
+    _draw_bomb_readout(screen, world)    # v6 — bomb count, top-right under the HP bar
+    _draw_bomb_popup(screen, world)      # v6 — transient "+1 BOMB" on collect
+    _draw_boss_bar(screen, world)        # v7 — boss health bar + label (active boss only)
+    _draw_boss_warn(screen, world)       # v7 — "WARNING / MOTHERSHIP INBOUND" during entrance
+    _draw_boss_defeat(screen, world)     # v7 — "MOTHERSHIP DOWN" + "+points" on defeat
+
+
+def _draw_health_bar(screen, hp):
+    rect = pygame.Rect(*C.HP_BAR)
+    pygame.draw.rect(screen, C.HP_BACK, rect)
+    inner_w = int((rect.width - 4) * max(0, hp) / 100)
+    color = C.HP_RED if hp < 20 else C.HP_AMBER if hp < 40 else C.HP_GREEN
+    pygame.draw.rect(screen, color, (rect.x + 2, rect.y + 2, inner_w, rect.height - 4))
+    pygame.draw.rect(screen, C.HP_BORDER, rect, 2)
+
+
+def _draw_buff_pills(screen, p):
+    """One pill per active timed buff, in stable enum order, packed downward.
+    Repair has no pill (it's instant). [14×14 letter box][gap][40×6 timer bar]."""
+    slot = 0
+    for kind in TIMED_KINDS:
+        remaining = p.buff(kind)
+        if remaining <= 0:
+            continue
+        full = C.BUFF_DURATION[kind.name]
+        color = C.BONUS_COLORS[kind.name]
+        y = C.PILL_TOP + slot * C.PILL_ROW_H
+        # letter box
+        box = pygame.Rect(C.PILL_X, y, C.PILL_BOX, C.PILL_BOX)
+        pygame.draw.rect(screen, color, box)
+        pygame.draw.rect(screen, C.HP_BORDER, box, 1)
+        glyph = _FONTS["pill"].render(C.BONUS_LETTERS[kind.name], True, C.BONUS_INK)
+        screen.blit(glyph, glyph.get_rect(center=box.center))
+        # shrinking timer bar (drains left→right), vertically centered on the box
+        bar_x = C.PILL_X + C.PILL_BOX + C.PILL_BAR_GAP
+        bar_y = y + (C.PILL_BOX - C.PILL_BAR_H) // 2
+        pygame.draw.rect(screen, C.PILL_TRACK, (bar_x, bar_y, C.PILL_BAR_W, C.PILL_BAR_H))
+        fill_w = int(C.PILL_BAR_W * remaining / full)
+        pygame.draw.rect(screen, color, (bar_x, bar_y, fill_w, C.PILL_BAR_H))
+        slot += 1
+
+
+def _draw_repair_popup(screen, world):
+    """Transient green "+40" by the HP bar while the popup timer is live (§V2.4)."""
+    if world.repair_popup_timer <= 0:
+        return
+    age = C.REPAIR_POPUP_LIFE - world.repair_popup_timer
+    cx, cy = C.REPAIR_POPUP_POS
+    surf = _FONTS["hud"].render(C.REPAIR_POPUP_TEXT, True, C.HP_GREEN)
+    screen.blit(surf, surf.get_rect(center=(cx, cy - 0.5 * age)))   # gentle upward drift
+
+
+def _draw_bomb_readout(screen, world):
+    """Bomb-charge count: a violet bomb-sphere icon + ×N, right-aligned under the HP
+    bar (art_spec §V6.3, GDD §V6.2). Reads the live charge integer so it is correct
+    by construction (−1 on a bomb, +1 on a pickup, →2 on restart). The 0 state dims
+    the text and hollows the icon → "out of bombs, X does nothing" (R47)."""
+    charges = world.charges
+    empty = charges == 0
+    col = C.TEXT_DIM if empty else C.TEXT
+    count_s = _FONTS["hud"].render(f"×{charges}", True, col)
+    tx = C.BOMB_HUD_RIGHT - count_s.get_width()
+    screen.blit(count_s, (tx, C.BOMB_HUD_Y))
+    icx, icy = tx - 8 - C.BOMB_ICON_R, C.BOMB_HUD_Y + 11
+    if empty:                                    # hollow violet ring — reads "empty"
+        pygame.draw.circle(screen, C.BONUS_BOMB, (icx, icy), C.BOMB_ICON_R, 2)
+    else:                                        # filled violet sphere + dark rim + fuse
+        pygame.draw.circle(screen, C.BONUS_BOMB, (icx, icy), C.BOMB_ICON_R)
+        pygame.draw.circle(screen, C.BONUS_INK, (icx, icy), C.BOMB_ICON_R, 1)
+        pygame.draw.line(screen, C.TEXT, (icx + 3, icy - 5), (icx + 6, icy - 9), 2)
+        pygame.draw.circle(screen, C.FLASH, (icx + 6, icy - 9), 1)   # spark at the fuse tip
+
+
+def _draw_bomb_popup(screen, world):
+    """Transient violet "+1 BOMB" under the bomb readout on collect (art_spec §V6.4),
+    mirroring Repair's "+40" — different row + color, so the two never read alike."""
+    if world.bomb_popup_timer <= 0:
+        return
+    age = C.REPAIR_POPUP_LIFE - world.bomb_popup_timer
+    surf = _FONTS["small"].render(C.BOMB_PICKUP_POPUP_TEXT, True, C.BONUS_BOMB)
+    screen.blit(surf, surf.get_rect(topright=(C.BOMB_HUD_RIGHT, int(58 - 0.5 * age))))
+
+
+def _draw_boss_bar(screen, world):
+    """Boss health bar + label — wide, center-top, magenta (enemy-faction), drains
+    right→left as boss_hp/BOSS_HP_MAX (art_spec §V7.3). Shown only while a boss is
+    active; AC47-clear of the HP bar / pills / bomb readout / score (center-top band)."""
+    boss = world.boss
+    if boss is None:
+        return
+    rect = pygame.Rect(*C.BOSS_BAR)
+    pygame.draw.rect(screen, C.BOSS_BAR_BACK, rect)                 # empty track
+    inner_w = int((rect.width - 4) * max(0, boss.hp) / C.BOSS_HP_MAX)
+    pygame.draw.rect(screen, C.BOSS_BAR_FILL,
+                     (rect.x + 2, rect.y + 2, inner_w, rect.height - 4))
+    pygame.draw.rect(screen, C.BOSS_BAR_EDGE, rect, 2)             # frame on top
+    label = _FONTS["hud"].render(C.BOSS_LABEL_TEXT, True, C.BOSS_BAR_FILL)
+    screen.blit(label, label.get_rect(midbottom=C.BOSS_LABEL_CENTER))
+
+
+def _draw_boss_warn(screen, world):
+    """Transient arrival klaxon (story §V7.3) — two centred lines while the boss is
+    still gliding in (ENTRANCE); auto-clears the moment it settles to ACTIVE."""
+    boss = world.boss
+    if boss is None or boss.state != "ENTRANCE":
+        return
+    cx, cy = C.BOSS_WARN_CENTER
+    line1 = _FONTS["mid"].render(C.BOSS_WARN_1, True, C.ENEMY)
+    line2 = _FONTS["small"].render(C.BOSS_WARN_2, True, C.ENEMY)
+    screen.blit(line1, line1.get_rect(center=(cx, cy - 18)))
+    screen.blit(line2, line2.get_rect(center=(cx, cy + 16)))
+
+
+def _draw_boss_defeat(screen, world):
+    """Transient defeat copy (story §V7.4): "MOTHERSHIP DOWN" + an honest "+points"
+    that tracks the ACTUAL award (1000, or 2000 under Score×2) — not a hardcoded literal."""
+    if world.boss_defeat_popup_timer <= 0:
+        return
+    cx, cy = C.BOSS_DEFEAT_CENTER
+    age = C.BOSS_DEFEAT_POPUP_LIFE - world.boss_defeat_popup_timer
+    line1 = _FONTS["mid"].render(C.BOSS_DEFEAT_TEXT, True, C.ENEMY)
+    line2 = _FONTS["hud"].render(f"+{world.boss_defeat_points}", True, C.TEXT)
+    screen.blit(line1, line1.get_rect(center=(cx, cy - 18 - 0.4 * age)))
+    screen.blit(line2, line2.get_rect(center=(cx, cy + 16 - 0.4 * age)))
+
+
+# Cached one-time flash overlay surface (art_spec §V6.5: one init-time Surface,
+# per-frame set_alpha) — sized once to the window, re-blitted while the flash runs.
+_FLASH_SURF = None
+
+
+def draw_flash(screen, world):
+    """Full-screen activation flash: FLASH_TINT overlay at a linearly fading alpha
+    (art_spec §V6.5). flash_timer counts down from FLASH_FRAMES, so the elapsed
+    frame f = FLASH_FRAMES − flash_timer and alpha = peak·(1 − f/FLASH_FRAMES) =
+    peak·flash_timer/FLASH_FRAMES → peak on the activation frame, gone at f=18."""
+    if world.flash_timer <= 0:
+        return
+    global _FLASH_SURF
+    if _FLASH_SURF is None:
+        _FLASH_SURF = pygame.Surface((C.W, C.H))
+        _FLASH_SURF.fill(C.FLASH_COLOR)
+    alpha = int(C.FLASH_PEAK_ALPHA * world.flash_timer / C.FLASH_FRAMES)
+    _FLASH_SURF.set_alpha(alpha)
+    screen.blit(_FLASH_SURF, (0, 0))
+
+
+# ── Full-screen states ───────────────────────────────────────────────────────
+def _center(screen, surf, y):
+    screen.blit(surf, (C.W // 2 - surf.get_width() // 2, y))
+
+
+def draw_start(screen, frame):
+    _center(screen, _FONTS["big"].render(C.TITLE, True, C.PLAYER), 250)
+    _center(screen, _FONTS["small"].render(C.PITCH, True, C.TEXT), 320)
+    _center(screen, _FONTS["small"].render(C.CONTROLS_1, True, C.TEXT_DIM), 470)
+    _center(screen, _FONTS["small"].render(C.CONTROLS_2, True, C.TEXT_DIM), 500)
+    if (frame // 30) % 2 == 0:                    # blink the prompt
+        _center(screen, _FONTS["small"].render(C.START_PROMPT, True, C.TEXT), 560)
+
+
+def draw_gameover(screen, world):
+    dim = pygame.Surface((C.W, C.H))
+    dim.set_alpha(160)
+    dim.fill(C.OVERLAY)
+    screen.blit(dim, (0, 0))
+    _center(screen, _FONTS["big"].render(C.GAMEOVER_TITLE, True, C.HP_RED), 300)
+    _center(screen, _FONTS["mid"].render(f"SCORE {world.score:05d}", True, C.TEXT), 380)
+    _center(screen, _FONTS["mid"].render(f"BEST {world.best:05d}", True, C.TEXT_DIM), 420)
+    _center(screen, _FONTS["small"].render(C.GAMEOVER_KEYS, True, C.TEXT_DIM), 480)

@@ -1,0 +1,3 @@
+# The only runtime dependency: the game library the Programmer role targets.
+# (The "agents" are Claude Code chat sessions, so they need no Python packages.)
+pygame-ce>=2.5.7
