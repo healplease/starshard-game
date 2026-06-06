@@ -40,6 +40,7 @@ def resolve(world):
                 if a.hits <= 0:
                     dead_ast.add(id(a))
                     scoring.award(world, a.score)
+                    world.store.asteroids_destroyed += 1   # v14 R93: count at the destroy/award site (1 per rock)
                     world.particles += make_burst(world.rng, a.x, a.y, a.color)
                 elif a.large:
                     a.flash = 5                  # survived hit → white flash (R17)
@@ -59,6 +60,7 @@ def resolve(world):
                 if e.hp <= 0:
                     dead_en.add(id(e))
                     scoring.award(world, e.score)   # minion SCORE on, normal v5 (§V7.3)
+                    world.store.enemies_killed += 1  # v14 R93: count at the destroy/award site (incl. boss minions)
                     world.particles += make_burst(world.rng, e.x, e.y, C.ENEMY)
                     # Minion pickup-DROPS are SUPPRESSED during a boss fight (§V7.3):
                     # no farming charges/buffs off boss-spawned adds (boss-active → skip).

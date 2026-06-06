@@ -34,6 +34,16 @@ import sys
 # Headless drivers must be set BEFORE pygame is imported (importing game pulls it in).
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
+# v14 R98/AC85: pin every store flush in this suite to a throwaway temp file so the
+# regression run never touches (reads or writes) the player's real save.
+import tempfile as _tempfile
+os.environ.setdefault("STARSHARD_SAVE_PATH",
+                      os.path.join(_tempfile.gettempdir(), "starshard_regression_stats.json"))
+# Start each suite run from a clean save (the balance probe + App-driven tests flush to
+# this shared temp path during the run) so no stale file leaks state between invocations.
+for _p in (os.environ["STARSHARD_SAVE_PATH"], os.environ["STARSHARD_SAVE_PATH"] + ".tmp"):
+    if os.path.exists(_p):
+        os.remove(_p)
 
 # Make the `game` package importable when run as a plain script (qa/ is a sibling of game/).
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -54,13 +64,14 @@ from game.entities.fx import make_burst
 from game.systems import combat, bombs, buffs, spawning, physics, encounter  # noqa: F401
 from game.input import InputState
 from game import app as app_mod
+from game import save
 from game.app import App, run_event_script, balance_probe
 from game.view import render, hud
 
 
 # ── tiny test framework ──────────────────────────────────────────────────────
 TESTS = []
-_GROUP_ORDER = ["v1", "v2", "v5", "v6", "v7", "v8", "v9", "v10", "v11", "v12"]
+_GROUP_ORDER = ["v1", "v2", "v5", "v6", "v7", "v8", "v9", "v10", "v11", "v12", "v14"]
 
 
 def test(group, ac, label):
@@ -749,6 +760,16 @@ def _t_string_widths():
         ("BOSS_WARN_2", C.BOSS_WARN_2, "small", C.W),
         ("BOSS_DEFEAT_TEXT", C.BOSS_DEFEAT_TEXT, "mid", C.W),
         ("BOMB_PICKUP_POPUP_TEXT", C.BOMB_PICKUP_POPUP_TEXT, "small", C.W),
+        # v14 STATS screen (story §V14.4): 5 FONT_MID labels ≤ 260 px rail; title within
+        # the centered band (≤400 px → ≤200 px each side of cx=300); hints against C.W.
+        ("STATS_TITLE", C.STATS_TITLE, "big", C.STATS_BAND_R - C.STATS_BAND_L),
+        ("STATS_LBL_HIGHSCORE", C.STATS_LBL_HIGHSCORE, "mid", 260),
+        ("STATS_LBL_RUNS", C.STATS_LBL_RUNS, "mid", 260),
+        ("STATS_LBL_ENEMIES", C.STATS_LBL_ENEMIES, "mid", 260),
+        ("STATS_LBL_ASTEROIDS", C.STATS_LBL_ASTEROIDS, "mid", 260),
+        ("STATS_LBL_BOSSES", C.STATS_LBL_BOSSES, "mid", 260),
+        ("STATS_HINT", C.STATS_HINT, "small", C.W),
+        ("START_STATS_HINT", C.START_STATS_HINT, "small", C.W),
     ]
     for name, text, font_key, budget in budgets:
         font = fonts[font_key]
@@ -815,6 +836,7 @@ def _start_text_rects(fonts):
     """The START text rects (centred at x=W//2), matching hud.draw_start blit sites."""
     lines = [(C.TITLE, "big", 250), (C.PITCH, "small", 320),
              (C.CONTROLS_1, "small", 470), (C.CONTROLS_2, "small", 500),
+             (C.START_STATS_HINT, "small", 530),               # v14 Tab-stats hint
              (C.START_PROMPT, "small", 560), (C.START_QUIT_HINT, "small", 600)]
     rects = []
     for text, fk, y in lines:
@@ -905,7 +927,7 @@ def _t_v12_render():
     # Reaching here without an exception is the pass (mirrors the v9/v10 render-smoke).
 
 
-@test("v12", "AC71", "R arc rect overlaps NEITHER the Q arc NOR any text on PAUSE / GAME_OVER")
+@test("v12", "AC71", "R arc is co-located with the Q arc (v13) and clears all text on PAUSE / GAME_OVER")
 def _t_v12_arc_rects():
     ensure_pygame()
     pygame.display.set_mode((C.W, C.H))
@@ -921,9 +943,11 @@ def _t_v12_arc_rects():
     go_q = arc_rect(C.GAMEOVER_ARC_CENTER)
     go_r = arc_rect(C.GAMEOVER_RESTART_ARC_CENTER)
 
-    # (a) the two arcs on each screen must not overlap each other (the new two-arc constraint)
-    expect(not pause_r.colliderect(pause_q), f"PAUSE R arc {tuple(pause_r)} overlaps Q arc {tuple(pause_q)}")
-    expect(not go_r.colliderect(go_q), f"GAME_OVER R arc {tuple(go_r)} overlaps Q arc {tuple(go_q)}")
+    # (a) v13 §V13.2 LOCKED: the R arc is now CO-LOCATED on its screen's Q-arc centre
+    # (overlap on dual-hold is intended; the violet R fill is drawn on top of amber Q).
+    # The v12 "must not overlap" rule was superseded — assert co-location (centres equal).
+    expect(tuple(pause_r) == tuple(pause_q), f"PAUSE R arc {tuple(pause_r)} not co-located with Q arc {tuple(pause_q)}")
+    expect(tuple(go_r) == tuple(go_q), f"GAME_OVER R arc {tuple(go_r)} not co-located with Q arc {tuple(go_q)}")
     # (b) the R arc must clear every text rect on its screen
     for tr in _pause_text_rects(fonts):
         expect(not pause_r.colliderect(tr), f"PAUSE R arc {tuple(pause_r)} overlaps text {tuple(tr)}")
@@ -1192,6 +1216,253 @@ def _t_v11_pulse():
     render._draw_player(screen, p)
     expect(tuple(screen.get_at((int(p.x), int(p.y)))[:3]) == C.PLAYER_EDGE,
            "solid ship centre not drawn at full colour when not invulnerable")
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# v14 — save system (one-file JSON) + lifetime-stats screen (AC78–AC85)
+# ════════════════════════════════════════════════════════════════════════════
+def _tmp_save_path(name):
+    """A throwaway save path under the temp dir, removed up-front so each test starts
+    from a known fresh-install state (no leftover file from a prior run)."""
+    path = os.path.join(_tempfile.gettempdir(), name)
+    for p in (path, path + ".tmp"):
+        if os.path.exists(p):
+            os.remove(p)
+    return path
+
+
+@test("v14", "AC78", "fresh install: missing file loads zeros; first save writes the 6 keys")
+def _t_v14_fresh_install():
+    path = _tmp_save_path("starshard_t_fresh.json")
+    s = save.load(path)                       # no file present
+    expect(all(getattr(s, f) == 0 for f in save.COUNT_FIELDS), "missing file did not load all-zeros")
+    expect(s.version == save.SCHEMA_VERSION and not os.path.exists(path), "load must not create the file")
+    s.runs = 3
+    save.save(s, path)                        # first flush creates it
+    expect(os.path.exists(path), "first save did not create the file")
+    import json
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    expect(set(data) == {"version", *save.COUNT_FIELDS}, f"on-disk keys wrong: {sorted(data)}")
+    expect(data["version"] == 1 and data["runs"] == 3, "first save content wrong")
+
+
+@test("v14", "AC79", "round-trip: saved values reload identical in a new load")
+def _t_v14_round_trip():
+    path = _tmp_save_path("starshard_t_roundtrip.json")
+    s = save.Store(highscore=4200, runs=9, enemies_killed=130,
+                   asteroids_destroyed=58, bosses_killed=2)
+    save.save(s, path)
+    r = save.load(path)
+    expect(all(getattr(r, f) == getattr(s, f) for f in save.COUNT_FIELDS),
+           "reloaded values differ from what was saved")
+    expect(r.version == 1, "reloaded version wrong")
+
+
+@test("v14", "AC80", "corrupt/partial file -> zeros or per-field recovery, never crash")
+def _t_v14_corrupt():
+    # (a) unparseable garbage → all zeros
+    p1 = _tmp_save_path("starshard_t_garbage.json")
+    with open(p1, "w", encoding="utf-8") as f:
+        f.write("}{ not json at all")
+    s1 = save.load(p1)
+    expect(all(getattr(s1, f) == 0 for f in save.COUNT_FIELDS), "garbage file did not fall back to zeros")
+    # (b) root is a JSON array (not an object) → all zeros
+    p2 = _tmp_save_path("starshard_t_array.json")
+    with open(p2, "w", encoding="utf-8") as f:
+        f.write("[1, 2, 3]")
+    expect(all(getattr(save.load(p2), f) == 0 for f in save.COUNT_FIELDS), "non-object root not treated as corrupt")
+    # (c) partial / mistyped fields → per-field recovery (keep good, default bad to 0)
+    p3 = _tmp_save_path("starshard_t_partial.json")
+    with open(p3, "w", encoding="utf-8") as f:
+        f.write('{"version": 1, "runs": 7, "enemies_killed": -4, "asteroids_destroyed": "x"}')
+    s3 = save.load(p3)
+    expect(s3.runs == 7, "valid field not recovered")
+    expect(s3.enemies_killed == 0 and s3.asteroids_destroyed == 0, "negative/non-int not defaulted to 0")
+    expect(s3.highscore == 0 and s3.bosses_killed == 0, "missing fields not defaulted to 0")
+    # (d) unknown version → distrust the whole shape → all zeros
+    p4 = _tmp_save_path("starshard_t_ver.json")
+    with open(p4, "w", encoding="utf-8") as f:
+        f.write('{"version": 99, "runs": 5}')
+    expect(save.load(p4).runs == 0, "unknown version was trusted instead of zeroed")
+
+
+@test("v14", "AC82", "count accuracy: asteroid/enemy/boss kills count at the award site only")
+def _t_v14_counts():
+    # asteroid: a large rock takes 2 hits but counts exactly 1 on destroy
+    w = fresh_world()
+    al = Asteroid(100, 100, 0, 0, C.AST_L_R, 2, True)
+    w.asteroids = [al]
+    w.pbullets = [PlayerBullet(100, 100, 0, -10)]
+    combat.resolve(w)
+    expect(w.store.asteroids_destroyed == 0 and al.hits == 1, "large rock counted on a non-killing hit")
+    w.pbullets = [PlayerBullet(100, 100, 0, -10)]
+    combat.resolve(w)
+    expect(w.store.asteroids_destroyed == 1, "large rock not counted exactly once on destroy")
+    # enemy bullet-kill counts; a ram-kill does NOT (no award site)
+    w2 = fresh_world()
+    e = make_enemy(w2.rng, 0, "REGULAR")
+    e.x, e.y, e.hp = 100, 100, 1
+    w2.enemies = [e]
+    w2.pbullets = [PlayerBullet(100, 100, 0, -10)]
+    combat.resolve(w2)
+    expect(w2.store.enemies_killed == 1, "enemy bullet-kill not counted")
+    w3 = fresh_world()
+    er = make_enemy(w3.rng, 0, "REGULAR")
+    er.x, er.y = w3.player.x, w3.player.y           # ram → collision-consume, no award
+    w3.enemies = [er]
+    combat.resolve(w3)
+    expect(er not in w3.enemies and w3.store.enemies_killed == 0, "a ram-kill wrongly counted as an enemy kill")
+    # bomb clear counts nothing
+    w4 = fresh_world()
+    w4.enemies = [make_enemy(w4.rng, 0)]
+    w4.asteroids = [make_asteroid(w4.rng, 0)]
+    bombs.update(w4, True)
+    expect(w4.store.enemies_killed == 0 and w4.store.asteroids_destroyed == 0, "bomb flush wrongly counted kills")
+    # boss defeat counts bosses_killed (+1) and NEVER enemies_killed
+    w5 = fresh_world()
+    w5.boss = Boss(x=300.0, y=400.0, hp=1)
+    w5.pbullets = [PlayerBullet(300, 400, 0, -10)]
+    combat.resolve(w5)
+    expect(w5.boss is None and w5.store.bosses_killed == 1, "boss defeat not counted")
+    expect(w5.store.enemies_killed == 0, "boss defeat wrongly counted toward enemies_killed")
+
+
+@test("v14", "AC82r", "runs counts once per run begun (initial start + each restart), not on resume")
+def _t_v14_runs():
+    ensure_pygame()
+    app = App()
+    app.world = fresh_world()
+    app.store = save.Store()
+    app.world.store = app.store
+    app.state = GameState.START
+    # initial START → PLAY (a non-Q/non-Tab key) counts one run
+    pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_z))
+    app._handle_events()
+    expect(app.state is GameState.PLAY and app.store.runs == 1, "initial run begin not counted")
+    # Esc→PAUSE then Esc→PLAY (resume) must NOT count a new run
+    pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE))
+    app._handle_events()
+    pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE))
+    app._handle_events()
+    expect(app.state is GameState.PLAY and app.store.runs == 1, "Esc-resume wrongly counted a run")
+    # a hold-R restart counts a new run
+    app.state = GameState.PAUSE
+    app.r_hold_frames = C.RESTART_HOLD_FRAMES - 1
+    app.event_script = {"held": {app.frame: [pygame.K_r]}}
+    app._restart_hold_step()
+    expect(app.state is GameState.PLAY and app.store.runs == 2, "hold-R restart did not count a new run")
+
+
+@test("v14", "AC81", "flush only on GAME_OVER + hold-Q quit — not on restart")
+def _t_v14_flush_triggers():
+    ensure_pygame()
+    # A hold-R restart must NOT write the file.
+    path = _tmp_save_path("starshard_t_flush.json")
+    app = App(save_path=path)
+    app.world = fresh_world()
+    app.store = save.load(path)
+    app.world.store = app.store
+    app.state = GameState.PAUSE
+    app.r_hold_frames = C.RESTART_HOLD_FRAMES - 1
+    app.event_script = {"held": {app.frame: [pygame.K_r]}}
+    app._restart_hold_step()
+    expect(app.state is GameState.PLAY and not os.path.exists(path), "restart wrongly flushed the file")
+    # GAME_OVER flushes (writes the file).
+    app.world.player.hp = 1
+    p = app.world.player
+    app.world.asteroids = [Asteroid(p.x, p.y, 0, 0, C.AST_L_R, 2, True)]
+    app._step_play(InputState(0, 0, False))
+    expect(app.state is GameState.GAME_OVER and os.path.exists(path), "GAME_OVER did not flush the file")
+
+
+@test("v14", "AC83", "highscore = max over flushes, reflects Score×2, never decreases")
+def _t_v14_highscore():
+    s = save.Store(highscore=500)
+    s.record_highscore(300)                     # lower score must not lower the high
+    expect(s.highscore == 500, "highscore decreased on a lower score")
+    s.record_highscore(900)
+    expect(s.highscore == 900, "highscore did not rise to a new best")
+    # Score×2 is baked into world.score before the flush reads it → a doubled score persists.
+    w = fresh_world()
+    w.player.buff_timers[BonusKind.SCORE] = 100   # Score×2 active
+    a = Asteroid(100, 100, 0, 0, C.AST_S_R, 1, False)
+    w.asteroids = [a]
+    w.pbullets = [PlayerBullet(100, 100, 0, -10)]
+    combat.resolve(w)
+    expect(w.score == C.AST_S_SCORE * C.SCORE_MULT, "Score×2 not applied to the run score")
+    w.store.record_highscore(w.score)
+    expect(w.store.highscore == C.AST_S_SCORE * C.SCORE_MULT, "flush did not capture the doubled score")
+
+
+@test("v14", "AC85", "headless-safe: a smoke App resolves a temp save path, not the real one")
+def _t_v14_headless_safe():
+    app = App(smoke=True)
+    expect(app.save_path != save.default_save_path(), "smoke App targets the real user save path")
+    # resolve_path with no env/override falls back to a temp file for headless runs.
+    saved = os.environ.pop(save.SAVE_PATH_ENV, None)
+    try:
+        hp = save.resolve_path(headless=True)
+        expect(hp != save.default_save_path() and hp.endswith(".json"), "headless fallback is not a temp file")
+    finally:
+        if saved is not None:
+            os.environ[save.SAVE_PATH_ENV] = saved
+
+
+@test("v14", "AC84", "STATS render-smoke: draw_stats raises nothing and rows don't overlap")
+def _t_v14_stats_render():
+    ensure_pygame()
+    screen = pygame.display.set_mode((C.W, C.H))
+    fonts = make_fonts()
+    render.set_fonts(fonts)
+    hud.set_fonts(fonts)
+    store = save.Store(highscore=98765, runs=321, enemies_killed=1234,
+                       asteroids_destroyed=987, bosses_killed=12)
+    screen.fill(C.BG)
+    render.draw_starfield(screen, fresh_world())
+    hud.draw_stats(screen, store)                # (a) no draw raises
+    # (b) the populated text rects are mutually non-overlapping (art §V14a.8 gate).
+    rects = []
+    title = fonts["big"].render(C.STATS_TITLE, True, C.PLAYER)
+    rects.append(title.get_rect(midtop=(C.W // 2, C.STATS_TITLE_Y)))
+    rows = [(C.STATS_LBL_HIGHSCORE, store.highscore), (C.STATS_LBL_RUNS, store.runs),
+            (C.STATS_LBL_ENEMIES, store.enemies_killed), (C.STATS_LBL_ASTEROIDS, store.asteroids_destroyed),
+            (C.STATS_LBL_BOSSES, store.bosses_killed)]
+    for (label, value), cy in zip(rows, C.STATS_ROW_CY):
+        rects.append(fonts["mid"].render(label, True, C.TEXT).get_rect(midleft=(C.STATS_BAND_L, cy)))
+        rects.append(fonts["mid"].render(str(value), True, C.TEXT).get_rect(midright=(C.STATS_BAND_R, cy)))
+    rects.append(fonts["small"].render(C.STATS_HINT, True, C.TEXT_DIM).get_rect(midtop=(C.W // 2, C.STATS_HINT_Y)))
+    for i in range(len(rects)):
+        for j in range(i + 1, len(rects)):
+            expect(not rects[i].colliderect(rects[j]),
+                   f"STATS rect {i} {tuple(rects[i])} overlaps rect {j} {tuple(rects[j])}")
+
+
+@test("v14", "nav", "Tab opens STATS from START; Tab/Esc return; other keys inert in STATS")
+def _t_v14_nav():
+    ensure_pygame()
+    app = App()
+    app.world = fresh_world()
+    app.store = save.Store()
+    app.world.store = app.store
+    app.state = GameState.START
+    # Tab on START → STATS (and does NOT start a run)
+    pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_TAB))
+    app._handle_events()
+    expect(app.state is GameState.STATS and app.store.runs == 0, "Tab did not open STATS (or wrongly began a run)")
+    # a non-Tab/Esc key in STATS is inert (no start, no quit)
+    pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_z))
+    app._handle_events()
+    expect(app.state is GameState.STATS, "a stray key left STATS")
+    # Tab toggles back to START
+    pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_TAB))
+    app._handle_events()
+    expect(app.state is GameState.START, "Tab did not toggle STATS→START")
+    # Esc also backs out STATS→START
+    app.state = GameState.STATS
+    pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE))
+    app._handle_events()
+    expect(app.state is GameState.START, "Esc did not back STATS→START")
 
 
 # ── the in-process full smoke run is LAST: App.run() calls pygame.quit() at the end ──

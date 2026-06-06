@@ -15,6 +15,7 @@ then builds and runs the App (or a v9 headless gate).
 
 import os
 import sys
+import tempfile
 
 
 def _import_app():
@@ -38,6 +39,11 @@ def main():
     if smoke or event_script or balance:
         os.environ["SDL_VIDEODRIVER"] = "dummy"
         os.environ["SDL_AUDIODRIVER"] = "dummy"
+        # v14 R98/AC85: every headless mode targets a throwaway save file so it never
+        # mutates the player's real lifetime stats (the balance probe builds a non-headless
+        # App, so the env override — not App's headless flag — is what guarantees this).
+        os.environ.setdefault("STARSHARD_SAVE_PATH",
+                              os.path.join(tempfile.gettempdir(), "starshard_headless_stats.json"))
 
     app_mod = _import_app()
 

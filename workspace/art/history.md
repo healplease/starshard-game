@@ -17,6 +17,14 @@
   while shield>0, visible frames) distinguishes 5 s shield from ~1 s i-frame blink. Added FONT_PICKUP(22)/
   FONT_PILL(18); updated render order (pickups in hazard layer; ring after player; collect-burst particles;
   pills+popup in HUD). BONUS_STYLE registry provided.
+- 2026-06-06 (v14): `v14.md` added — STATS-screen layout. Five ledger rows = the five R92 fields
+  (highscore headline + runs/enemies/asteroids/bosses counters), title `STATS` + back hint. Reuses
+  START's treatment: scrolling starfield, **no dim, no arc, no in-run HUD** (it's a between-runs menu,
+  not an end-of-run panel). **No new palette** — 8 reused constants (PLAYER title, STAR_FAR dividers,
+  TEXT/TEXT_DIM rows). Two-column ledger: label `midleft` x=100, value `midright` x=500 (≥20 px gap,
+  label budget ≤260 px so the Writer's longest label can't collide with the value). Locked y: title 130,
+  dividers 204/304, rows cy 264/344/404/464/524, hint 712. Resolved the GDD's "six rows" wording =
+  title + 5 data rows (R92 schema has exactly 5 values) — not a blocker. Strings delegated to Writer.
 - 2026-06-05 (v5): art_spec.md v5 section added (§V5.1–§V5.6). **3 enemy bodies** kept on one magenta `ENEMY`
   fill (friend/foe unchanged) and told apart by **silhouette + size + outline weight**, not color: HEAVY =
   armored octagon 36×32 / 3px edge (r=18), REGULAR = v1 chevron 26×24 / 2px (r=13, unchanged), SCOUT = small

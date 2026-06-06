@@ -3,6 +3,25 @@
 > Per-domain history. The current spec is `gdd.md` (canonical). This file holds the dated decision
 > notes for this domain only. The cross-role story lives in `../shared/handoffs.md`.
 
+- 2026-06-06 (v14): GDD `v14.md` added (§V14.1–V14.11) — **lifetime-stats screen placement + navigation
+  (Designer slice of R97).** **★ Placement = a new first-class `STATS` GameState** (peer of START/PLAY/
+  PAUSE/GAME_OVER, mirrors how v8 §V8.2 made PAUSE first-class). Rejected a **GAME_OVER panel** (that
+  screen is already full — title/score/best/keys + Q & R arcs near y=505–545 — and lifetime totals are a
+  between-runs concern, not end-of-run) and a **PLAY toggle** (collides with Esc=pause). **★ Nav:** Tab
+  toggles **START⇄STATS**, **Esc** also backs STATS→START (Esc still never quits, v8 R73); **no other key
+  acts in STATS** (can't accidentally start a run or quit). **Entry from START only** → flat state machine.
+  **★ Integration decision (locked, not delegated):** START starts on *any* key except Q (v10 carve-out)
+  — **carve Tab out too** so Tab opens STATS instead of starting; every other key still starts. **Reset
+  spine** (v10 §V10.4 / v12 §V12.4) extended to the 2 new transitions (START→STATS, STATS→START zero both
+  hold counters — hygiene; Q/R inactive in STATS). **Active sets UNCHANGED** — STATS is NOT added to the
+  Q-hold (START+PAUSE+GAME_OVER) or R-hold (PAUSE+GAME_OVER) sets → STATS draws no arc, needs no arc
+  placement. Highscore already shows on GAME_OVER's **BEST** line (now reads the persisted store);
+  STATS is the single full ledger of all 5 values + highscore. **No new Designer const.** Smoke
+  unchanged (forces PLAY, never Tabs into STATS); the v9 render-smoke gains a STATS case (the real AC84
+  gate). DELEGATED: Artist = STATS layout/palette (arc-free); Writer = title + 5 row labels + highscore
+  label + START "TAB Stats" hint + STATS back-hint; Programmer = `STATS` enum + carve-out/branches +
+  render + render-smoke case.
+  *(Also corrected the index: v12 status `in progress 🚧` → `shipped ✅`, matching the backlog.)*
 - 2026-06-05 (v12): `gdd/v12.md` added — hold-R-to-restart on PAUSE + GAME_OVER. **Threshold REUSED**
   (`RESTART_HOLD_FRAMES = PAUSE_QUIT_FRAMES` = 30 f / 0.5 s — a coupled alias so quit + restart stay
   symmetric from one source of truth; no distinct value, no deviation). **Two independent counters**

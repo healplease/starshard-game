@@ -181,11 +181,47 @@ def draw_start(screen, frame):
     _center(screen, _FONTS["small"].render(C.PITCH, True, C.TEXT), 320)
     _center(screen, _FONTS["small"].render(C.CONTROLS_1, True, C.TEXT_DIM), 470)
     _center(screen, _FONTS["small"].render(C.CONTROLS_2, True, C.TEXT_DIM), 500)
+    # v14 (story §V14.2): teach that Tab opens the STATS screen — FONT_SMALL / TEXT_DIM,
+    # y530, between CONTROLS_2 (500) and START_PROMPT (560); same treatment as CONTROLS_2.
+    _center(screen, _FONTS["small"].render(C.START_STATS_HINT, True, C.TEXT_DIM), 530)
     if (frame // 30) % 2 == 0:                    # blink the prompt
         _center(screen, _FONTS["small"].render(C.START_PROMPT, True, C.TEXT), 560)
     # v10: the Q-hold-to-quit hint — always visible (only the arc below is held-gated),
     # FONT_SMALL / TEXT_DIM, top-y 600; the arc sits 56 px below at START_ARC_CENTER.
     _center(screen, _FONTS["small"].render(C.START_QUIT_HINT, True, C.TEXT_DIM), 600)
+
+
+def draw_stats(screen, store):
+    """v14 STATS screen (art_spec §V14a.5): title + 5-row lifetime ledger + back hint,
+    over the scrolling starfield (no dim, no arc). `store` exposes the five R92 ints.
+    Labels are dim, values bright; highscore is the headline, set apart by two dividers."""
+    cx = C.W // 2  # 300
+
+    # Title (cyan, like START)
+    title = _FONTS["big"].render(C.STATS_TITLE, True, C.PLAYER)
+    screen.blit(title, title.get_rect(midtop=(cx, C.STATS_TITLE_Y)))
+
+    # Two divider rules (under title, under the highscore headline)
+    for y in (C.STATS_DIV_HEADER_Y, C.STATS_DIV_HEADLINE_Y):
+        pygame.draw.line(screen, C.STAR_FAR, (C.STATS_BAND_L, y), (C.STATS_BAND_R, y), 1)
+
+    # Ledger rows: (label, value, label_color); field order = art §V14a.1.
+    rows = [
+        (C.STATS_LBL_HIGHSCORE, store.highscore,           C.TEXT),       # headline (bright label)
+        (C.STATS_LBL_RUNS,      store.runs,                C.TEXT_DIM),
+        (C.STATS_LBL_ENEMIES,   store.enemies_killed,      C.TEXT_DIM),
+        (C.STATS_LBL_ASTEROIDS, store.asteroids_destroyed, C.TEXT_DIM),
+        (C.STATS_LBL_BOSSES,    store.bosses_killed,       C.TEXT_DIM),
+    ]
+    for (label, value, lbl_color), cy in zip(rows, C.STATS_ROW_CY):
+        lab = _FONTS["mid"].render(label, True, lbl_color)
+        val = _FONTS["mid"].render(str(value), True, C.TEXT)   # natural int, not zero-padded
+        screen.blit(lab, lab.get_rect(midleft=(C.STATS_BAND_L, cy)))
+        screen.blit(val, val.get_rect(midright=(C.STATS_BAND_R, cy)))
+
+    # Back hint (Tab/Esc — Back)
+    hint = _FONTS["small"].render(C.STATS_HINT, True, C.TEXT_DIM)
+    screen.blit(hint, hint.get_rect(midtop=(cx, C.STATS_HINT_Y)))
 
 
 def draw_gameover(screen, world):

@@ -128,6 +128,7 @@ def on_defeat(world):
     mult = C.SCORE_MULT if world.player.score_mult_active else 1
     world.boss_defeat_points = C.BOSS_KILL_SCORE * mult   # honest "+points" (1000 or 2000)
     scoring.award(world, C.BOSS_KILL_SCORE)               # award() applies the same mult
+    world.store.bosses_killed += 1                        # v14 R93: only site a boss dies (never enemies_killed)
     world.boss_defeat_popup_timer = C.BOSS_DEFEAT_POPUP_LIFE
     world.boss = None                                     # surviving minions persist (§V7.9)
 

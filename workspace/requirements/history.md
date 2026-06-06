@@ -72,3 +72,26 @@
   render-smoke key-rect check is the gate); the two quit-hint strings → Writer (width-safe, no stale
   "Esc Quit"); economy = confirmed no-op (Level-designer confirm/skip). Smoke stays a no-op (Q never
   held headlessly) — the real new-code gate is the v9 **render-smoke** on START+GAME_OVER (AC68).
+- 2026-06-06 (v14): `requirements/v14.md` added. **R92–R98 MUST/SHOULD**, **AC78–AC85**. One-file JSON
+  save (versioned schema, per-user folder) + 5 lifetime counts + flush-only-on-GAME_OVER/quit + corrupt
+  fallback + lifetime-stats screen. **Key BA stance — one governing principle anchors all five counts:**
+  *a kill/destroy counts only at the exact code site that already calls `scoring.award` for that entity*
+  (combat.py `a.hits<=0` / `e.hp<=0`, encounter.py `on_defeat`). That one rule resolves every kickoff
+  edge question by reading the live code, not by inventing policy: GREEN→RED split children **don't
+  count** (they're enemy *bullets*, not ships — never reach a destroy site); **bomb-flush and
+  boss-arrival clears don't count** (silent `.clear()`, no award); **ram-consumes don't count** (player
+  takes damage, no award); **boss minions DO count** as enemies (they're scored v5 Enemies); boss defeat
+  counts toward `bosses_killed` only (its own entity, never `enemies_killed`); large asteroid = 1 (per
+  entity, not per hit). **Rulings made (not delegated):** (1) **runs increments the instant a run
+  begins** (fresh-world PLAY entry) — fires on initial start + each hold-R restart, NOT on resume/launch/
+  game-over; so a quit-or-restarted-mid-game run still counts because it was counted at its *start*.
+  (2) **Counting is decoupled from writing** — counters tick at event sites; the file writes only at a
+  flush. This is the correctness spine: multiple flushes (GAME_OVER then quit-from-GAME_OVER) never
+  double-count, and restart resets the world but NOT the process-lifetime counters (R94). (3) **highscore
+  = max(stored, world.score) refreshed at every flush** — captures the run high-water mark, reflects the
+  baked-in Score×2, never decreases. (4) **Fallback is per-field defensive** (R96): missing file →
+  zeros; unparseable/non-object/unknown-version → all-zeros; otherwise coerce any missing/non-int/
+  negative field to 0 — never crash, next flush overwrites. (5) **Smoke must not touch the real save
+  file** (R98) — path overridable for headless. **Delegated:** stats-screen state placement+nav →
+  Designer; layout/colors → Artist; labels+title → Writer; file path/atomic-write/counter wiring →
+  Programmer. (Also flipped v12 index status to shipped ✅ — v1–v13 are shipped per the backlog.)

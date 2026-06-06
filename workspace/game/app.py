@@ -12,6 +12,7 @@ import sys
 import pygame
 
 from . import config as C
+from . import save
 from .world import World, GameState
 from .input import read_input, smoke_input, InputState
 from .systems import spawning, physics, combat, buffs, scoring, bombs, encounter
@@ -19,8 +20,14 @@ from .view import render, hud
 
 
 class App:
-    def __init__(self, smoke=False, event_script=None):
+    def __init__(self, smoke=False, event_script=None, save_path=None):
         self.smoke = smoke
+        # v14: the process-lifetime stats store (R94), loaded once from disk (R96 — a
+        # missing/corrupt file yields zeros, never raises). Headless runs resolve to a
+        # throwaway temp path so they never touch the player's real save (R98/AC85).
+        headless = smoke or event_script is not None
+        self.save_path = save.resolve_path(save_path, headless=headless)
+        self.store = save.load(self.save_path)
         # v9: a headless event-script drives scripted KEYDOWN edges through the REAL
         # `_handle_events` (behavioral test of pause/bomb/quit, retro T1/A13). It is a
         # dict: {"frames": int, "keydowns": {frame: [pygame key, …]},
@@ -54,6 +61,11 @@ class App:
         headless = self.smoke or self.event_script is not None
         rng = random.Random(C.SMOKE_SEED) if headless else random.Random()
         self.world = World(rng)
+        # v14: point the World at the disk-loaded lifetime store (the combat/encounter
+        # counters read world.store) and seed the session BEST from the persisted high so
+        # GAME_OVER's BEST line shows the lifetime highscore, not a session-only value (V14.6).
+        self.world.store = self.store
+        self.world.best = self.store.highscore
         if headless:
             # Force PLAY immediately + seed hazards for collision coverage (GDD §11).
             # The event-script gate starts in PLAY too, with a field present, so a
@@ -77,6 +89,17 @@ class App:
             self.q_hold_frames = 0      # v10 transition #4 (§V10.4) — dying with Q held must NOT instant-quit
             self.r_hold_frames = 0      # v12 transition #4 (§V12.4) — dying with R held must NOT instant-restart
             self.state = GameState.GAME_OVER
+            self._flush_store()         # v14 R95 flush #1: write on the PLAY→GAME_OVER frame
+
+    def _flush_store(self):
+        """v14 flush (R95): refresh the lifetime highscore from the live run score, then
+        atomically persist the whole store. Called on GAME_OVER and on a confirmed hold-Q
+        quit — never on pause/resume/restart or per-event. Idempotent (counting ≠ writing,
+        R93), so a GAME_OVER flush followed by a quit-from-GAME_OVER re-writes harmlessly.
+        (BEST on GAME_OVER tracks the lifetime high via the `_new_world` seed + the
+        `max(best, score)` in `_step_play`, so the flush only persists — it doesn't touch best.)"""
+        self.store.record_highscore(self.world.score)
+        save.save(self.store, self.save_path)
 
     # ── event handling (discrete transitions: quit / start / restart) ──────────
     def _handle_events(self):
@@ -95,18 +118,35 @@ class App:
                         self.state = GameState.PLAY
                         self.q_hold_frames = 0       # v10 transition #3 (§V10.4)
                         self.r_hold_frames = 0       # v12 transition #3 (§V12.4)
+                    elif self.state is GameState.STATS:
+                        self.state = GameState.START  # v14 §V14.3: Esc backs STATS→START (transition #8)
+                        self.q_hold_frames = 0        # v14 §V14.5: zero both counters
+                        self.r_hold_frames = 0
                     # else: START or GAME_OVER — silent no-op
                     continue
-                # v10 §V10.5: Q is carved out of "any key starts" on START — it's reserved
-                # for the hold-to-quit gesture (else a Q tap would start the run before the
-                # hold counter could reach 30). Every OTHER key still starts.
-                if self.state is GameState.START and event.key != pygame.K_q:
-                    self.q_hold_frames = 0           # v10 transition #1 (§V10.4)
-                    self.r_hold_frames = 0           # v12 transition #1 (§V12.4 — defensive; R inactive in START)
-                    self.state = GameState.PLAY
+                # v10 §V10.5 + v14 §V14.4: on START, Q is reserved for hold-to-quit and Tab
+                # is carved out to open STATS (else either would start the run); every OTHER
+                # key still starts. v14 §V14.3: in STATS, only Tab acts (toggles back to START);
+                # any other key is inert (Esc-back is handled in the Esc branch above).
+                if self.state is GameState.START:
+                    if event.key == pygame.K_q:
+                        pass                          # v10: reserved for hold-Q-to-quit
+                    elif event.key == pygame.K_TAB:
+                        self.q_hold_frames = 0        # v14 transition #7 (§V14.5): zero both
+                        self.r_hold_frames = 0
+                        self.state = GameState.STATS  # §V14.4: Tab opens the ledger
+                    else:
+                        self.q_hold_frames = 0        # v10 transition #1 (§V10.4)
+                        self.r_hold_frames = 0        # v12 transition #1 (§V12.4)
+                        self.state = GameState.PLAY
+                        self.store.runs += 1          # v14 R93 §runs: a run begins (initial START→PLAY)
                 # v12 §V12.5: the two K_r KEYDOWN restart branches (GAME_OVER + PAUSE) are
                 # REMOVED — a single R press no longer restarts. Restart is now the held
                 # gesture in the main-loop R-hold block (_restart_hold_step, transitions #5/#6).
+                elif self.state is GameState.STATS and event.key == pygame.K_TAB:
+                    self.q_hold_frames = 0            # v14 transition #8 (§V14.5): zero both
+                    self.r_hold_frames = 0
+                    self.state = GameState.START      # §V14.3: Tab toggles back out
                 elif self.state is GameState.PLAY and event.key == pygame.K_x:
                     self.bomb_fired = True            # X key-down edge → bomb (§V6.4)
         return True
@@ -126,6 +166,8 @@ class App:
             render.draw_world(self.screen, self.world)
             hud.draw_hud(self.screen, self.world)
             hud.draw_pause(self.screen, self.q_hold_frames, self.r_hold_frames)  # v12: both arcs
+        elif self.state is GameState.STATS:            # v14: lifetime ledger over the starfield
+            hud.draw_stats(self.screen, self.store)    # no world, no in-run HUD (art §V14a.7)
         else:  # GAME_OVER — frozen field + dim + text
             render.draw_world(self.screen, self.world)
             hud.draw_hud(self.screen, self.world)
@@ -190,6 +232,7 @@ class App:
             self.r_hold_frames += 1
             if self.r_hold_frames >= C.RESTART_HOLD_FRAMES:
                 self.world.reset_run()
+                self.store.runs += 1        # v14 R93 §runs: each hold-R restart is a new run
                 self.q_hold_frames = 0      # transitions #5/#6: zero BOTH atomically
                 self.r_hold_frames = 0
                 self.state = GameState.PLAY
@@ -228,6 +271,7 @@ class App:
                         # v9: end the loop via a flag instead of sys.exit() inline, so
                         # the quit is observable to a harness; `main()` still exit(0)s
                         # and `pygame.quit()` below still runs — same live behavior.
+                        self._flush_store()     # v14 R95 flush #2: persist before the process exits
                         self.quit_via_qhold = True
                         running = False
                 else:

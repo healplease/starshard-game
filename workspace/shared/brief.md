@@ -26,22 +26,35 @@ v1–v12 shipped & passed QA — see `backlog.md` for the capability summary and
 each role folder. Closed-increment framings (v2, v5, v7–v12) are archived in
 `../archive/brief-increments-*.md`.
 
-## Current increment — v13: unify the restart hold-progress UI with quit
+## Current increment — v14: save system + lifetime-stats screen
 
-**Human's words:** holding **R** (restart) should use the **same progress bar position** as holding
-**Q** (quit) — one UI element/location instead of two separate circle progresses. If R and Q are both
-held they may overlap (drawing on the same spot) or only one shows; either is fine. **Hold behavior
-does not change** — the only changes are (1) the restart progress arc's **position now matches the quit
-arc's position** on each screen, and (2) the restart arc is **violet**.
+**Human's words:** add a **save system** — a single-file **JSON**-based store that currently persists:
+(1) **highscore**, (2) **number of runs**, (3) **number of enemies killed**, (4) **number of asteroids
+destroyed**, (5) **number of bosses killed**. File I/O is expensive, so **keep data in memory and write
+to disk only occasionally**, not every change. The save file lives **somewhere in the user folder, in a
+subfolder for the game**. Plus (confirmed via kickoff Q&A): **surface a lifetime-stats screen** showing
+these values on-screen.
 
-**Lightly framed:** v12 placed the R-arc 100 px left of the Q-arc (`(200,…)` vs `(300,…)`). v13
-collapses the R-arc onto the Q-arc centre (same x and y) and recolors it violet. PAUSE & GAME_OVER both
-have a restart arc; START has only quit (no restart there — unchanged).
+**Decisions locked at kickoff (2026-06-06):**
+- **Display scope:** *Save + full stats screen* — persist all 5 values AND surface a lifetime-stats
+  view (runs, enemies, asteroids, bosses + highscore). So this is NOT invisible persistence; it adds UI.
+- **Write cadence:** *flush on GAME_OVER and on hold-Q quit.* Accumulate stats in memory during a run;
+  write once when the run ends and once on quit. No per-event or timer writes (honors the "writes are
+  expensive" constraint; a hard crash mid-run may lose that run's partial stats — accepted).
+- **File location:** a per-user game subfolder (e.g. Windows `%APPDATA%\Starshard\`). Exact path +
+  cross-platform choice delegated to the Programmer; schema should carry a version field for future migration.
 
-**Open question delegated to Artist:** pick the violet hex (a `BONUS_BOMB #B464F5`-style violet already
-exists in the palette — reuse or pick a distinct violet) and confirm the two new R-arc centres = the
-Q-arc centres. Note that with R & Q at the same centre, render order decides which arc shows on top when
-both are held — that overlap is human-approved, so no anti-collision constraint between R and Q anymore.
+**Open questions delegated downstream:**
+- **BA:** lock the exact stat semantics — what counts as an "enemy killed" vs "asteroid destroyed" vs
+  "boss killed" (do GREEN→RED split children count? do bombed/boss-cleared kills count? does a run that
+  quits mid-game still increment "runs"?), the save-file schema (fields + version + corruption/missing-file
+  fallback to zeros), and the flush trigger contract. These are persisted *counts*, so definitions must be exact.
+- **Designer:** decide WHERE the stats screen lives in the state machine (new STATS state reachable from
+  START? a panel on GAME_OVER? toggled by a key?) and how the player navigates to/from it — no new gameplay,
+  just UX placement, keeping keyboard-only + single-screen constraints.
+- **Artist:** layout/placement/colors for the stats screen (reuse existing panel/HUD palette + arc style;
+  no new assets) and the highscore readout.
+- **Writer:** the labels/copy for each stat row + screen title (short, fits the panel).
 
-**Scoped roles:** Artist → Programmer → QA (lazy pass). BA / Designer / Writer / Level-designer skipped
-(no scope/timing/economy/copy change).
+**Scoped roles:** BA → Designer → Artist → Writer → Programmer → QA. **Level-designer skipped** (no
+spawn/wave/difficulty/economy change — stats only *observe* existing events).

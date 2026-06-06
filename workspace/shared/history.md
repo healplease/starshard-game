@@ -266,3 +266,44 @@
   held path; added "v12" to `_GROUP_ORDER`. No AC1–AC68 regression.
 
 **v13 (2026-06-06, programmer).** Co-located the R-restart arc onto its screen Q-quit arc centre (PAUSE (300,483), GAME_OVER (300,545)) in config.py, and added a `fill_color` param to `draw_hold_arc` (default HP_AMBER) so the R calls pass BONUS_BOMB violet while Q stays amber. R is drawn after Q on both screens (already the call order), so violet wins on dual-hold. Hold timing/semantics & idle-visibility untouched; smoke gate green.
+
+## v14 — Save system (one-file JSON) + lifetime-stats screen (programmer, 2026-06-06)
+- **New `game/save.py`** (pure stdlib I/O, no pygame/game imports → no cycle). `Store` = the R94
+  process-lifetime object: `version` + the five frozen snake_case ints (`highscore, runs, enemies_killed,
+  asteroids_destroyed, bosses_killed`). `load()` never raises (R96): missing/unreadable/unparseable JSON,
+  a non-object root, or an unknown `version` → all-zeros; a partly-valid object recovers each count field
+  independently (missing / non-int / **bool is not int** / negative → that field 0). `save()` is atomic —
+  write `path+'.tmp'` then `os.replace()` (atomic on Win+POSIX) so a crash mid-write keeps the old file (R95).
+  **Path (R92):** `default_save_path()` = `%APPDATA%\Starshard\stats.json` (Win) / `~/Library/Application
+  Support/Starshard/` (mac) / `$XDG_DATA_HOME|~/.local/share/Starshard/` (Linux). `resolve_path(override,
+  headless)` order = explicit arg → `STARSHARD_SAVE_PATH` env → headless temp → real path (**R98/AC85**).
+- **Store wiring.** `World.__init__` holds a default `Store()` (so a bare world in tests always has a home
+  for the counters); `reset_run()` deliberately never touches it (R94 — counters carry across restarts).
+  `App.__init__` loads the disk store once; `_new_world` points `world.store` at it AND seeds
+  `world.best = store.highscore` so GAME_OVER's BEST line shows the **persisted lifetime** high (V14.6) with
+  no `draw_gameover` signature change — the existing `max(w.best,w.score)` keeps it current. (The flush does
+  NOT write `world.best`, else `balance_probe`'s shared-temp flushes would pollute AC10's `best==123`.)
+- **Counters (R93) at the award sites only.** `combat.py` step 1 `a.hits<=0` → `+1 asteroids_destroyed`
+  (1 per rock, large=1); step 2 `e.hp<=0` → `+1 enemies_killed` (incl. boss minions); `encounter.on_defeat`
+  → `+1 bosses_killed` (never enemies). Bomb/arrival clears + ram-consumes have no award site → never count.
+  `runs += 1` at the two run-begin transitions only: `_handle_events` START→PLAY (non-Q/non-Tab) and
+  `_restart_hold_step` restart; NOT on Esc-resume.
+- **Flush (R95) at exactly two points:** `_flush_store()` (record_highscore + atomic save) called on the
+  PLAY→GAME_OVER frame in `_step_play`, and just before the hold-Q quit ends the loop. No pause/resume/restart
+  or per-event writes; idempotent.
+- **STATS screen.** New `GameState.STATS` (peer off START). `_handle_events`: Tab carved out of "any key
+  starts" → STATS; Esc/Tab back to START; both transitions zero both hold counters (V14.5); no other key acts
+  in STATS (V14.3). `_draw` STATS branch renders starfield + `hud.draw_stats(screen, store)` only (no world,
+  no in-run HUD; main loop runs no `_step_play` in STATS). `hud.draw_stats` = title + 2 dividers + 5-row
+  two-rail ledger + back hint per art §V14a.5; `draw_start` gains the `START_STATS_HINT` "Tab  Stats" line at
+  y530. Config got the §V14a.6 geometry block + the Writer's 7 STATS strings + `START_STATS_HINT`.
+- **Headless safety.** `main.py` sets `STARSHARD_SAVE_PATH` to a temp file for every headless mode (covers
+  `balance_probe`'s non-headless `App()`); the harness pins + clears its own temp save at startup. Smoke run
+  confirmed to NOT create the real `%APPDATA%\Starshard\` dir.
+- **Verification.** Regression harness **75/75** (10 new v14: fresh-install/round-trip/corrupt+partial/
+  unknown-version, count-accuracy, runs-semantics, flush-triggers, highscore-max+Score×2, headless-safe,
+  STATS render-smoke non-overlap, Tab/Esc nav). Smoke + `--event-script` (5/5) + `--balance-probe` all exit 0.
+  **Also fixed a pre-existing v12 `AC71` red** (NOT introduced by v14): v13 deliberately **co-located** the
+  R+Q arcs but left the v12 "arcs must not overlap" assertion in place (HEAD was silently 64/65, not the
+  backlog's "65/65"). Updated that one sub-assertion to assert **co-location** per the v13 §V13.2 locked
+  design. cp1252 console note: kept v14 test labels ASCII (a `→` in a label crashes the Windows print).

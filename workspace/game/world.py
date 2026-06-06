@@ -12,12 +12,14 @@ from enum import Enum
 from . import config as C
 from .entities.player import Player
 from .entities.fx import make_starfield
+from .save import Store
 
 
 class GameState(Enum):
     START = "START"
     PLAY = "PLAY"
     PAUSE = "PAUSE"
+    STATS = "STATS"          # v14: lifetime-stats ledger, reached from START via Tab (GDD §V14.2)
     GAME_OVER = "GAME_OVER"
 
 
@@ -44,6 +46,11 @@ class World:
     def __init__(self, rng):
         self.rng = rng
         self.best = 0
+        # v14 lifetime-stats store (R94): process-lifetime, NOT run state — `reset_run`
+        # deliberately never touches it, so the five counters carry across every run in
+        # the session. The App swaps in the disk-loaded store after construction; a bare
+        # World (tests) gets a zeroed one so the combat/encounter counters always have a home.
+        self.store = Store()
         self.stars = make_starfield(rng)   # cosmetic; persists across runs
         self.reset_run()
 

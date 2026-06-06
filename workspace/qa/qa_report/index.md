@@ -9,6 +9,7 @@
 ## Run reports (newest first)
 | File | Increment | Verdict | Covers |
 |------|-----------|---------|--------|
+| `v14.md` | v14 — one-file JSON save system + lifetime-stats screen | ✅ PASS | AC78–AC85 + STATS nav + 2 QA-authored probes (pause/resume-no-flush, idempotent double-flush) + code reads of every award/flush/runs site; real save provably untouched; harness 75/75; no AC1–AC77 regression |
 | `v12.md` | v12 — hold-R-to-restart on PAUSE + GAME_OVER | ✅ PASS | AC69–AC77 + 11 QA-authored probes (GAME_OVER hold-R e2e, die-with-R-held #1-risk, both-Q+R independence, exact-29/30 boundary, negative PLAY-exclusion); harness 65/65; no AC1–AC68 regression |
 | `v11.md` | v11 — softer invulnerability pulse | ✅ PASS | smooth 128↔255 cosine pulse via real-surface alpha; harness 59/59; no AC1–AC68 regression |
 | `v10.md` | v10 — Q-hold-to-quit on START + GAME_OVER | ✅ PASS | AC61–AC68 + 11 QA-authored probes (exact-30 boundary, die-with-Q-held end-to-end, negative PLAY test); no v1–v9 regression |

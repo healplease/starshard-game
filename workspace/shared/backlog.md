@@ -7,7 +7,7 @@ row when finishing. Status: `todo` | `in-progress` | `done` | `blocked`.
 > `history.md`; the cross-role story is in `handoffs.md`. Full v1–v12 detail (per-version task tables
 > + status prose) is archived → `../archive/backlog-v1-v12.md`. See `../README.md` for the map.
 
-## Current game state — "Starshard" (v1–v13 shipped & passed QA, as of 2026-06-06)
+## Current game state — "Starshard" (v1–v14 shipped & passed QA, as of 2026-06-06)
 
 Top-down auto-scrolling space shooter, modular `pygame-ce` package under `game/`. Shipped capabilities:
 
@@ -26,20 +26,23 @@ Top-down auto-scrolling space shooter, modular `pygame-ce` package under `game/`
   PAUSE / GAME_OVER. AC69–AC77.
 - **Polish (v13):** restart (R) hold-arc co-located on its screen's quit (Q) arc centre (PAUSE 300,483 /
   GAME_OVER 300,545), recolored violet `BONUS_BOMB`; keys told apart by colour not position. Render-only.
+- **Save + stats (v14):** one-file versioned JSON save (`game/save.py`, atomic write, %APPDATA%\Starshard
+  path, env-overridable for headless) persisting 5 lifetime values — highscore, runs, enemies/asteroids/
+  bosses killed; counted at the `scoring.award` destroy sites, flushed **only** on GAME_OVER + hold-Q quit;
+  missing/corrupt/unknown-version → zeros. New first-class **STATS** GameState off START (**Tab** toggles
+  START⇄STATS, **Esc** backs out; arc-free). AC78–AC85.
 
-Contract totals: **R1–R91**, **AC1–AC77**; regression harness **65/65**. Standing QA docs:
+Contract totals: **R1–R98**, **AC1–AC85**; regression harness **75/75**. Standing QA docs:
 `qa/feature_inventory.md`, `qa/test_plan.md`. (v3 = KB reorg, v4 = QA docs, v9 = process hardening —
 no game-feature change.)
 
 **Play:** `.\.venv\Scripts\python.exe workspace\game\main.py` — Z fire · X bomb · Esc pause ·
-hold Q quit · hold R restart (on PAUSE/GAME_OVER).
+hold Q quit · hold R restart (on PAUSE/GAME_OVER) · Tab stats (on START).
 
-## Active increment — none (v13 shipped 2026-06-06)
+## Active increment — none
 
-v13 (restart hold-arc co-located on quit-arc centre + recolored violet) is **shipped & passed QA**
-(smoke green; R/Q arcs co-located PAUSE 300,483 / GAME_OVER 300,545; R fill violet `BONUS_BOMB` on top
-of amber Q; hold timing & idle-visibility unchanged; no AC regression). *Why* → `art/history.md`.
-Awaiting next theme/increment from the human.
+v14 shipped & passed QA (75/75). Project complete; awaiting next theme/increment from the human.
+Most recent shipped increment (v14: save system + STATS screen) folded into the game-state summary above.
 
 ## Parked (non-blocking)
 

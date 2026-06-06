@@ -21,3 +21,10 @@
   Writing the checklists surfaced **no defect** → no route-back to programmer. → orchestrator (declare v4 DONE).
   Rationale for keeping these separate from `qa_report.md`: the report is an append-only *verdict* log;
   these are durable *method/map* docs that outlive any single run (per the human's v4 request).
+- 2026-06-06 (v14): VERDICT **PASS** (full report → `qa_report/v14.md`). Save system + STATS screen.
+  Beyond re-running the author's harness (75/75), independently read every award/flush/runs/nav site in
+  the live code and authored two negative-style probes (pause/resume writes no file; a GAME_OVER→quit
+  double-flush doesn't double-count). Proved the real `%APPDATA%\Starshard\stats.json` is byte-identical
+  before/after smoke ×2 + event-script + balance (AC85). Confirmed the programmer's pre-existing-v12-AC71
+  fix is sound (co-location assertion now matches the locked v13 design, not masking a regression). No
+  FAIL → no route-back. → orchestrator (declare v14 DONE).

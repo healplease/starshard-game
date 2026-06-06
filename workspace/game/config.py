@@ -404,6 +404,27 @@ RESTART_HOLD_FRAMES = PAUSE_QUIT_FRAMES   # 30 — coupled to PAUSE_QUIT_FRAMES,
 START_ARC_CENTER    = (W // 2, 665)   # (300, 665) — 56 px below the START quit-hint (top 600)
 GAMEOVER_ARC_CENTER = (W // 2, 545)   # (300, 545) — 56 px below GAMEOVER_KEYS (centre 489)
 
+# ── v14 STATS screen geometry (art_spec §V14a.4) ─────────────────────────────
+STATS_TITLE_Y        = 130            # midtop of title (FONT_BIG)
+STATS_DIV_HEADER_Y   = 204            # rule under title
+STATS_DIV_HEADLINE_Y = 304            # rule under the highscore headline
+STATS_BAND_L         = 100            # label rail (midleft x) / divider left
+STATS_BAND_R         = 500            # value rail (midright x) / divider right
+STATS_ROW_CY         = (264, 344, 404, 464, 524)  # center-y per row, order = V14a.1
+STATS_HINT_Y         = 712            # midtop of back hint (FONT_SMALL)
+
+# ── v14 STATS-screen strings (story §V14.1; row labels = R92 fields → human) ──
+STATS_TITLE          = "LIFETIME STATS"   # FONT_BIG, PLAYER cyan (like START title)
+STATS_LBL_HIGHSCORE  = "HIGH SCORE"       # FONT_MID, headline row (= GAME_OVER BEST datum)
+STATS_LBL_RUNS       = "RUNS"             # FONT_MID
+STATS_LBL_ENEMIES    = "ENEMIES"          # FONT_MID
+STATS_LBL_ASTEROIDS  = "ASTEROIDS"        # FONT_MID
+STATS_LBL_BOSSES     = "BOSSES"           # FONT_MID
+STATS_HINT           = "Tab / Esc  Back"  # FONT_SMALL, TEXT_DIM, back hint
+
+# ── v14 START Tab-stats hint line (story §V14.2; FONT_SMALL / TEXT_DIM, centered, y≈530) ──
+START_STATS_HINT     = "Tab  Stats"       # START: Tab opens the STATS screen (gdd §V14.3)
+
 # ── v13 Restart-arc shares the Q-arc centre + violet fill (art_spec §V13.2/§V13.3) ──
 # R arc now = its screen's Q-arc centre (co-located; overlap on dual-hold is intended).
 # Geometry/fill-mapping/idle-visibility all per v12; ONLY centre + fill colour change.
