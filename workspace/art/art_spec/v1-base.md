@@ -117,6 +117,10 @@ enemy_pts  = [(cx,      cy + 12),   # bottom point (aimed at player)
 - `FONT_HUD`, color `TEXT`, top-left at **`(12, 10)`**, zero-padded to 5 digits: `f"SCORE {score:05d}"`.
 
 ### 4.3 Health bar (R10) — the green/amber/red thresholds
+> **⚠ Fill color SUPERSEDED by `v17-hp-feedback-bullet-clarity.md` §V17.1** (continuous green→amber→red
+> gradient replaces the stepped selector below). The bar geometry/track/border/`inner_w` here are unchanged;
+> only the 3-line color `if` is replaced by `color = hp_bar_color(health)`.
+
 Outlined bar, **120 × 14 px**, top-left of the bar at **`(468, 12)`** (GDD §9).
 
 ```python

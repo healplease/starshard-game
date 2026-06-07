@@ -31,11 +31,27 @@ def draw_hud(screen, world):
     _draw_boss_defeat(screen, world)  # v7 — "MOTHERSHIP DOWN" + "+points" on defeat
 
 
+def _lerp(c1, c2, t):  # t 0→1 returns c1→c2, rounded int RGB (art_spec §V17.1)
+    return tuple(int(round(a + (b - a) * t)) for a, b in zip(c1, c2))
+
+
+def hp_bar_color(health):
+    """Continuous 2-segment green→amber→red gradient through the v1 palette anchors
+    (art_spec §V17.1, supersedes the stepped §4.3 thresholds). Amber anchors the
+    midpoint so the ramp never muddies to olive."""
+    h = max(0, min(100, health))
+    if h >= C.HP_GRAD_PIVOT:  # 100→50 : green → amber
+        t = (h - C.HP_GRAD_PIVOT) / (100 - C.HP_GRAD_PIVOT)
+        return _lerp(C.HP_AMBER, C.HP_GREEN, t)  # t=1 → green, t=0 → amber
+    t = h / C.HP_GRAD_PIVOT  # 50→0 : amber → red
+    return _lerp(C.HP_RED, C.HP_AMBER, t)  # t=1 → amber, t=0 → red
+
+
 def _draw_health_bar(screen, hp):
     rect = pygame.Rect(*C.HP_BAR)
     pygame.draw.rect(screen, C.HP_BACK, rect)
     inner_w = int((rect.width - 4) * max(0, hp) / 100)
-    color = C.HP_RED if hp < 20 else C.HP_AMBER if hp < 40 else C.HP_GREEN
+    color = hp_bar_color(hp)
     pygame.draw.rect(screen, color, (rect.x + 2, rect.y + 2, inner_w, rect.height - 4))
     pygame.draw.rect(screen, C.HP_BORDER, rect, 2)
 

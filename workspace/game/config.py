@@ -42,6 +42,22 @@ TEXT = (235, 240, 255)
 TEXT_DIM = (140, 148, 170)
 OVERLAY = (10, 12, 22)
 
+# ── v17: HP-bar gradient + low-HP red vignette (art_spec v17, render-only) ───
+# HP bar is now a continuous green→amber→red gradient (supersedes the stepped
+# v1 §4.3 thresholds); amber is the mid-anchor at HP 50, not a threshold.
+HP_GRAD_PIVOT = 50  # HP where the bar is pure HP_AMBER (the green↔red midpoint anchor)
+# Low-HP red edge vignette — subtle, edge-only danger glow while hp < trigger (§V17.2).
+VIGNETTE_TINT = (
+    HP_RED  # (230,60,60) #E63C3C — reuse the critical-HP red (ties to the bar's red end)
+)
+VIGNETTE_HP_TRIGGER = 25  # show while hp < 25; not drawn at hp >= 25
+VIGNETTE_MAX_ALPHA = 110  # edge alpha at pulse PEAK (~43%) — corners only; subtle
+VIGNETTE_MIN_ALPHA = 60  # edge alpha at pulse TROUGH (~24%) — always-on glow floor while active
+VIGNETTE_INNER_R = 300  # px from center (300,400) kept fully CLEAR (protects the play area)
+VIGNETTE_OUTER_R = 500  # px from center = corner distance (hypot(300,400)) → full edge alpha
+VIGNETTE_FALLOFF_K = 1.5  # ramp exponent: gentle past the inner radius, stronger toward the edge
+VIGNETTE_PULSE_PERIOD = 60  # frames per breathe cycle (~1.0 s @60fps) — a slow, calm pulse
+
 # ── Palette — v2 bonuses (art_spec §V2.1; 4 new + reuses) ────────────────────
 BONUS_REPAIR = HP_GREEN  # reuse — ties repair to the health color
 BONUS_FAN = (255, 140, 40)  # #FF8C28 new orange
@@ -183,11 +199,12 @@ CHILD_SPEED = 4.5  # red child speed (= EB_SPEED / pellet speed)
 
 # Enemy-bullet family colors (art_spec §V5.2 final hex). RED reuses v1 BULLET_E.
 EB_COLOR_RED = BULLET_E  # #FF5A28 — regular + ALL split children
-EB_COLOR_GREEN = (140, 240, 60)  # #8CF03C toxic lime — heavy pellet (drawn larger)
+EB_COLOR_PURPLE = (210, 48, 220)  # #D230DC vivid orchid-purple — heavy pellet (v17 §V17.3,
+#                                   was lime #8CF03C; off the green family to clear the HP green)
 EB_COLOR_CYAN = (45, 205, 255)  # #2DCDFF electric ice — scout streak
 EB_COLORS = {
     "RED": EB_COLOR_RED,
-    "GREEN": EB_COLOR_GREEN,
+    "GREEN": EB_COLOR_PURPLE,  # family key stays "GREEN" (a spawn id); the hue is now purple
     "CYAN": EB_COLOR_CYAN,
     "YELLOW": EB_COLOR_YELLOW,  # v7 boss fan (GDD §V7.12)
     "NOVA": NOVA_BULLET,  # v16 NOVA plasma azure (art_spec §V16.3)

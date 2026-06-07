@@ -73,7 +73,8 @@ pygame.draw.polygon(screen, ENEMY_EDGE, scout_pts, width=1)
 # Bodies stay magenta; bullets carry the per-kind read. All three are distinct in HUE and kept
 # clear of the player cyan, the Repair/HP green, and the magenta enemy body.
 EB_COLOR_RED   = BULLET_E          # #FF5A28 (255, 90, 40)  — REUSE v1 orange-red. Regular + ALL split children.
-EB_COLOR_GREEN = (140, 240, 60)    # #8CF03C  toxic lime    — NEW. Heavy pellet (drawn larger; see V5.3).
+EB_COLOR_GREEN = (140, 240, 60)    # #8CF03C  toxic lime    — ⚠ SUPERSEDED by v17 §V17.3: HEAVY pellet is now
+                                   #          EB_COLOR_PURPLE = (210, 48, 220) #D230DC (lime still clashed w/ HP green).
 EB_COLOR_CYAN  = (45, 205, 255)    # #2DCDFF  electric ice  — NEW. Scout bullet (drawn as a fast streak).
 ```
 

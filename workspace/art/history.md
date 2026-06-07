@@ -25,6 +25,18 @@
   label budget ≤260 px so the Writer's longest label can't collide with the value). Locked y: title 130,
   dividers 204/304, rows cy 264/344/404/464/524, hint 712. Resolved the GDD's "six rows" wording =
   title + 5 data rows (R92 schema has exactly 5 values) — not a blocker. Strings delegated to Writer.
+- 2026-06-07 (v17): `v17-hp-feedback-bullet-clarity.md` added — three render-only changes. (1) **HP bar
+  gradient** supersedes v1-base §4.3 stepped thresholds: continuous 2-segment linear RGB lerp through the
+  existing anchors (green 100 → amber 50 → red 0); piecewise (not a single green→red lerp) so it passes
+  through a clean amber instead of olive/brown, preserving the old danger zones as a smooth fade. **No new
+  palette.** (2) **Low-HP red vignette** (NEW) at health<25: reuses `HP_RED`, edge-only radial falloff (clear
+  within r=300 → α110 at the r=500 corners, k=1.5), slow cosine breathe 60↔110 over 60 f; subtle/non-obscuring,
+  drawn below the HUD, distinct from the v6 near-white full-screen bomb flash; per-pixel-alpha pulse via
+  `BLEND_RGBA_MULT` to dodge the v11 §V11.5 SRCALPHA `set_alpha` gotcha. (3) **HEAVY pellet** `#8CF03C` lime →
+  `#D230DC` orchid-purple (hue ~296°) — the human's playtest showed lime still clashed with the Repair/HP green
+  `#3CD25A`; purple is the widest open non-green gap (between bomb violet 268° and enemy magenta 324°, ~28° from
+  each, further split by hue-lean + shape + white core). Rename `EB_COLOR_GREEN`→`EB_COLOR_PURPLE`; color only
+  (shape/size/core/collision unchanged). Anti-clash proven vs all 13 entity groups.
 - 2026-06-05 (v5): art_spec.md v5 section added (§V5.1–§V5.6). **3 enemy bodies** kept on one magenta `ENEMY`
   fill (friend/foe unchanged) and told apart by **silhouette + size + outline weight**, not color: HEAVY =
   armored octagon 36×32 / 3px edge (r=18), REGULAR = v1 chevron 26×24 / 2px (r=13, unchanged), SCOUT = small

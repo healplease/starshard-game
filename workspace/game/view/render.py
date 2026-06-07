@@ -82,8 +82,8 @@ def _draw_enemy(screen, e):
 def _draw_enemy_bullet(screen, b):
     """Three families, one collision radius (EB_R=5); draws are render-only (§V5.3)."""
     x, y = int(b.x), int(b.y)
-    if b.family == "GREEN":  # heavy pellet — drawn larger with a hot core
-        pygame.draw.circle(screen, C.EB_COLOR_GREEN, (x, y), C.PELLET_DRAW_R)
+    if b.family == "GREEN":  # heavy pellet — drawn larger with a hot core (purple hue, v17)
+        pygame.draw.circle(screen, C.EB_COLOR_PURPLE, (x, y), C.PELLET_DRAW_R)
         pygame.draw.circle(screen, C.FLASH, (x, y), 2)
     elif b.family == "CYAN":  # scout — a fast streak along its heading
         inv = 1.0 / max(1e-6, math.hypot(b.vx, b.vy))
@@ -231,6 +231,46 @@ def _draw_player(screen, p):
     # screen OUTSIDE the alpha surface, so it never pulses or strobes (§V11.4).
     if p.shield_active:
         pygame.draw.circle(screen, C.BONUS_SHIELD, (int(cx), int(cy)), 18, 2)
+
+
+# ── v17 §V17.2: low-HP red edge vignette (PLAY only, below the HUD, hp < 25) ───
+# Baked ONCE at PEAK alpha (cheap concentric-circle fill — no per-pixel loop): alpha
+# ≈ 0 inside r=300, ramping to VIGNETTE_MAX_ALPHA at the corners (r=500). The bake has
+# per-pixel alpha, so set_alpha() is unreliable (v11 §V11.5 gotcha) — the per-frame
+# pulse scales it with BLEND_RGBA_MULT instead.
+_VIGNETTE = None
+_VCX, _VCY = C.W // 2, C.H // 2  # screen center (300, 400)
+
+
+def _build_vignette():
+    surf = pygame.Surface((C.W, C.H), pygame.SRCALPHA)  # per-pixel alpha
+    span = C.VIGNETTE_OUTER_R - C.VIGNETTE_INNER_R
+    for d in range(
+        C.VIGNETTE_OUTER_R, C.VIGNETTE_INNER_R, -1
+    ):  # large→small; inner overwrites center
+        f = (d - C.VIGNETTE_INNER_R) / span
+        a = int(C.VIGNETTE_MAX_ALPHA * (f**C.VIGNETTE_FALLOFF_K))
+        pygame.draw.circle(surf, (*C.VIGNETTE_TINT, a), (_VCX, _VCY), d)
+    return surf
+
+
+def draw_low_hp_vignette(screen, world):
+    """Subtle red edge glow that breathes while hp < trigger (art_spec §V17.2).
+    Center stays clear; only the corners reach peak alpha; a slow ~1 s cosine pulse
+    between MIN and MAX alpha. Distinct from the v6 bomb flash (full-screen near-white
+    one-shot, above the HUD)."""
+    if world.player.hp >= C.VIGNETTE_HP_TRIGGER:
+        return
+    global _VIGNETTE
+    if _VIGNETTE is None:
+        _VIGNETTE = _build_vignette()
+    phase = (world.frame % C.VIGNETTE_PULSE_PERIOD) / C.VIGNETTE_PULSE_PERIOD
+    pulse = 0.5 - 0.5 * math.cos(2 * math.pi * phase)  # smooth 0→1→0
+    edge_a = C.VIGNETTE_MIN_ALPHA + (C.VIGNETTE_MAX_ALPHA - C.VIGNETTE_MIN_ALPHA) * pulse
+    mul = int(round(255 * edge_a / C.VIGNETTE_MAX_ALPHA))  # scale baked PEAK down to current
+    frame_v = _VIGNETTE.copy()  # the baked peak is read-only; scale a per-frame copy
+    frame_v.fill((255, 255, 255, mul), special_flags=pygame.BLEND_RGBA_MULT)  # scale alpha only
+    screen.blit(frame_v, (0, 0))
 
 
 # Fonts are injected once by the app (kept here so render stays a pure consumer).

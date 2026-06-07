@@ -69,3 +69,14 @@ BLOCKER (route upstream): `<n>. <YYYY-MM-DD> — FROM <role> TO <upstream-role> 
 125. 2026-06-07 — FROM qa-tester TO orchestrator — v16 PASS: AC86–AC93 verified (extensible length-driven pool, uniform seedable pick ≈½/½, cadence unchanged, NOVA distinct + zero ships + deadlier every axis 25>15, Mothership parity), full pytest 91/91 + smoke exit 0, no AC1–AC85 regression.
 
 126. 2026-06-07 — FROM orchestrator TO human — v16 SHIPPED & DONE: backlog ticked, project state → v1–v16 (R1–R105, AC1–AC93, pytest 91/91); awaiting next theme/increment.
+
+127. 2026-06-07 — FROM human TO orchestrator — v17: UI/UX polish — HP bar fades green→red gradually, a subtle red vignette below 25% HP, and recolor the green HEAVY enemy bullet (clashes with the green HP bonus).
+128. 2026-06-07 — FROM orchestrator TO artist — v17 (render-only polish): make the HP bar a continuous green→red gradient (replaces v1-base §4.3 steps), add a subtle non-distracting red vignette at HP<25%, and recolor the HEAVY green pellet to a non-green hue clear of all entities; scoped Artist → Programmer → QA (BA/Designer/Writer/Level-designer skipped).
+
+129. 2026-06-07 — FROM artist TO programmer — v17: specced the HP-bar green→amber→red gradient (`hp_bar_color()`, supersedes v1-base §4.3), the HP<25 red vignette (`#E63C3C`, edge-only falloff + slow pulse), and the HEAVY pellet recolor `#8CF03C`→`#D230DC` (rename `EB_COLOR_GREEN`→`EB_COLOR_PURPLE`, anti-clash proven) → art_spec/v17-hp-feedback-bullet-clarity.md; implement all three render changes.
+
+130. 2026-06-07 — FROM programmer TO qa-tester — v17: implemented all three render changes (gradient `hp_bar_color()`, low-HP red vignette at slot 8.5, pellet recolor + `EB_COLOR_GREEN`→`EB_COLOR_PURPLE`); unit pytest 59/59 + smoke exit 0, pyright clean on changed files.
+
+131. 2026-06-07 — FROM qa-tester TO orchestrator — v17 PASS: HP bar smooth green→amber→red (no stepped jumps), red vignette only <25% HP (edge-only/center-clear, breathes, distinct from v6 flash), HEAVY pellet now orchid `#D230DC` (clash-free), full pytest 94/94 (+3 e2e) + smoke exit 0, no AC1–AC93 regression.
+
+132. 2026-06-07 — FROM orchestrator TO human — v17 SHIPPED & DONE: backlog ticked, project state → v1–v17 (R1–R105, AC1–AC93, pytest 94/94); awaiting next theme/increment.

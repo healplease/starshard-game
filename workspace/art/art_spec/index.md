@@ -19,13 +19,15 @@
 | `v14.md` | v14 | **§V14a.1 five ledger rows** (= R92 fields) · **§V14a.2 no new palette** (8 reused) · **§V14a.4 exact pixel layout** (title y130, rules y204/304, rows cy 264/344/404/464/524, hint y712; label rail x100 / value rail x500) · §V14a.5 `draw_stats` recipe · §V14a.6 config · **§V14a.7 render order** (STATS over starfield, no dim/arc/in-run HUD) · §V14a.8 render-smoke rects | spec ✅ |
 | `v16-second-boss.md` | v16 | **§V16.1 blue pulsar palette** (`NOVA_BODY`/`NOVA_RAY`/`NOVA_BULLET` + bar colors) · **§V16.2 NOVA silhouette** (disc r=62 + 12 spikes, paste-ready, r=60 coverage) · §V16.3 plasma-azure bullets · **§V16.4 NOVA boss bar** (reuse v7 geometry, recolor blue) · §V16.5 render order · DoD | spec ✅ |
 | `v13.md` | v13 | **§V13.2 R-arc centres = Q-arc centres** (`PAUSE_RESTART_ARC_CENTER=(300,483)`, `GAMEOVER_RESTART_ARC_CENTER=(300,545)`; co-located, supersedes §V12.4) · **§V13.3 R fill recolored violet `BONUS_BOMB #B464F5`** (reused, no new palette; Q stays amber) · **§V13.4 overlap + render order** (R drawn after Q → violet on top; §V12.5 R-vs-Q constraint dropped, human-approved) · §V13.5 config · §V13.6 draw recipe (`fill_color` param) | spec ✅ |
+| `v17-hp-feedback-bullet-clarity.md` | v17 | **§V17.1 HP-bar green→amber→red gradient** (`hp_bar_color()`, anchors HP 100/50/0, **supersedes v1-base §4.3**) · **§V17.2 low-HP red vignette** (`#E63C3C`, health<25, edge-only radial falloff + slow pulse) · **§V17.3 HEAVY pellet `#8CF03C`→`#D230DC`** purple (`EB_COLOR_GREEN→EB_COLOR_PURPLE`, **supersedes v5 §V5.2 GREEN**) + anti-clash proof · §V17.4 render order · DoD | spec ✅ |
 
 ## Where is …? (topic → file)
 - **Palette / named colors** → `v1-base.md` §1 (+ extensions: `v2…` §V2.1, `v5…` §V5.2, `v6…` §V6.1)
-- **Health-bar green/amber/red thresholds** → `v1-base.md` §4.3
+- **Health-bar fill color** → ~~`v1-base.md` §4.3 (stepped ≥40/<40/<20)~~ **superseded by** `v17-hp-feedback-bullet-clarity.md` §V17.1 (continuous green→amber→red gradient)
+- **Low-HP red vignette (edge glow, health<25)** → `v17-hp-feedback-bullet-clarity.md` §V17.2
 - **Render order (layering)** → `v1-base.md` §7 → **superseded by** `v2-bonus-pickups.md` §V2.6 (extended in §V5.5, §V6.6)
 - **Bonus diamond pickups + buff pills + repair popup** → `v2-bonus-pickups.md`
-- **Enemy body silhouettes (HEAVY/REGULAR/SCOUT) + bullet hues** → `v5-enemy-bullets.md` §V5.1–V5.2
+- **Enemy body silhouettes (HEAVY/REGULAR/SCOUT) + bullet hues** → `v5-enemy-bullets.md` §V5.1–V5.2 (**HEAVY pellet hue superseded:** `#8CF03C` lime → `#D230DC` purple in `v17-hp-feedback-bullet-clarity.md` §V17.3)
 - **Bomb pickup color/glyph, bomb-count HUD, full-screen flash** → `v6-bomb-flash.md`
 - **Mothership silhouette/hull color, boss health bar + label, yellow-fan + red-child bullet hues** → `v7-bosses.md`
 - **Pause overlay dim + text block + Q-hold arc, `pause_panel_y` resolution** → `v8-pause.md`

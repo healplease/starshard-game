@@ -22,42 +22,39 @@ asteroids/debris and blast enemy fighters to rack up a score before your ship is
 - Python 3.14 + `pygame-ce` from the `.venv`.
 
 ## Current state & where the detail lives
-v1–v15 shipped & passed QA — see `backlog.md` for the capability summary and the canonical specs in
-each role folder. Closed-increment framings (v2, v5, v7–v15) are archived in
+v1–v16 shipped & passed QA — see `backlog.md` for the capability summary and the canonical specs in
+each role folder. Closed-increment framings (v2, v5, v7–v16) are archived in
 `../archive/brief-increments-*.md`.
 
-## Current increment — v16: second boss + random boss pool (new content)
+## Current increment — v17: HP-feedback + bullet-clarity polish (UI/UX, render-only)
 
-**Human's words:** create a new boss and add it to the game. Whenever a boss spawns, pick **randomly**
-between the Mothership and this new boss — and all **future bosses join the pool** too. One condition:
-the new boss must **NOT spawn any new ships** (that's the Mothership's gimmick) and must have **deadlier
-attacks**.
+**Human's words:** three UI/UX improvements — (1) make the **HP bar change color from green to red
+gradually** as HP lowers (not the current stepped thresholds); (2) **slightly flash the screen with a
+red vignette when HP < 25%**, kept subtle / **not distracting**; (3) the **green enemy bullets are too
+easily confused with the HP bonus** — pick another (non-green) color for them (the **HEAVY** enemy
+shoots them).
 
-This is a **new-content / mechanic increment** — the **full creative pipeline** runs
-(BA → Designer → Artist → Writer → Level-designer → Programmer → QA).
+This is a **render-only polish increment** — no new mechanic, economy, or copy. The **creative
+pipeline is skipped**; it runs **Artist → Programmer → QA** (like v13).
 
 **Decisions locked at kickoff (2026-06-07):**
-- **Selection = uniform random from the boss pool** at each boss-spawn event (today: Mothership + the new
-  boss). The pool must be an **extensible registry** — adding a future boss = one entry, no rework.
-- **New boss hard constraints (from the human, non-negotiable):** (1) spawns **no ships/enemies** of any
-  kind; (2) its attacks are **deadlier** than the Mothership's (higher threat — more damage / denser /
-  harder to dodge, Designer+Level-designer decide the exact lever).
-- **Boss appearance cadence is UNCHANGED** (first ~75 s, then +90 s); only *which* boss appears is
-  randomized. Field-clear + spawn-freeze + reward-on-defeat boss framing stays.
+- **(1) HP bar = continuous gradient**, replacing the stepped `≥40 green / <40 amber / <20 red`
+  thresholds in art_spec `v1-base.md` §4.3. Artist owns the interpolation rule (endpoints + curve);
+  numbers/thresholds elsewhere are unchanged — this is purely how the bar's *fill color* is computed.
+- **(2) Low-HP red vignette** triggers at **HP < 25 %** (a render trigger, not a balance number).
+  Must be **subtle and non-distracting** — Artist defines the tint, max alpha, edge falloff, and any
+  gentle pulse so it reads as "danger" without obscuring play. Independent of the existing v6 bomb flash.
+- **(3) Recolor the HEAVY green pellet** (`EB_COLOR_GREEN #8CF03C`, art_spec `v5-enemy-bullets.md`
+  §V5.2). The human's playtest shows it still clashes with the **Repair/HP green `#3CD25A`** — the
+  Artist must pick a genuinely **non-green** hue and **re-verify** it stays clear of every other entity
+  (the RED split-children it becomes, magenta enemy body, player cyan, CYAN scout bullet, the bonus
+  palette, violet bomb). Shape/size/collision unchanged — color only.
 
-**Open decisions delegated downstream (creative freedom within the constraints):**
-- **BA:** formalize requirements — new boss as content, the random extensible-pool selection rule, and
-  the two hard constraints, as new R#/AC#.
-- **Designer:** invent the boss's **identity/theme + moveset/attack patterns** (deadlier, ship-free),
-  HP, reward, defeat behavior, and the pool-selection concept.
-- **Artist:** placeholder **shapes + palette** for the new boss (clearly distinct from the Mothership)
-  and any new attack/projectile visuals.
-- **Writer:** the boss **name** + any on-screen copy (boss banner / warning), matching the Mothership's
-  treatment.
-- **Level-designer:** the **random-pool selection rule** + extensibility, the new boss's **balance
-  numbers** (HP / damage / fire-rate) so "deadlier" is concrete, and confirm spawn timing is unchanged.
+**Out of scope / unchanged:** all gameplay numbers, HP thresholds for damage/death, the bomb flash,
+boss bars, every other entity color, and all on-screen copy. No new R#/AC# expected (render polish);
+QA verifies against the existing contract + the three new visual behaviors.
 
 **Smoke + test contract untouched:** `main.py --smoke-test` (120 frames, exit 0) stays the first gate;
-the pytest suite (now 75) stays green and **grows** with new checks for the boss + random pool.
+the pytest suite (91) stays green (grows only if a clean render-smoke assertion fits the new visuals).
 
-**Scoped roles:** full pipeline — **no roles skipped** (new content touches every lane).
+**Scoped roles:** **Artist → Programmer → QA**. Skipped (no impact): BA, Designer, Writer, Level-designer.

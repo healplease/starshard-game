@@ -4,6 +4,7 @@ Blits one frame per state / arc combination and reads alpha off rendered surface
 these are e2e (they exercise the view layer, not pure logic).
 """
 
+import math
 
 from game import config as C
 from game.entities.bonus import Bonus
@@ -139,6 +140,84 @@ def test_pulse_invuln_alpha(screen, fonts, fresh_world):
     assert tuple(screen.get_at((int(p.x), int(p.y)))[:3]) == C.PLAYER_EDGE, (
         "solid ship centre not drawn at full colour when not invulnerable"
     )
+
+
+def _rgb_dist(a, b):
+    return math.sqrt(sum((x - y) ** 2 for x, y in zip(a, b)))
+
+
+def test_v17_hp_bar_gradient_continuous():
+    """v17.1: HP bar fades green->amber->red as a smooth 2-segment gradient through the
+    v1 palette anchors — no stepped jumps at the old <40 / <20 thresholds."""
+    assert tuple(hud.hp_bar_color(100)) == C.HP_GREEN, "hp=100 not pure green"
+    assert tuple(hud.hp_bar_color(C.HP_GRAD_PIVOT)) == C.HP_AMBER, "pivot not pure amber"
+    assert tuple(hud.hp_bar_color(0)) == C.HP_RED, "hp=0 not pure red"
+    # clamp outside [0,100]
+    assert tuple(hud.hp_bar_color(150)) == C.HP_GREEN
+    assert tuple(hud.hp_bar_color(-10)) == C.HP_RED
+    # Continuity: every 1-HP step moves the colour only slightly (no discrete jump). The
+    # old stepped selector jumped ~150+ at hp 40 and 20; a smooth lerp stays small.
+    prev = hud.hp_bar_color(0)
+    for h in range(1, 101):
+        cur = hud.hp_bar_color(h)
+        assert _rgb_dist(cur, prev) < 10, f"stepped jump at hp={h}: {prev}->{cur}"
+        prev = cur
+    # Low HP reads red, not green (the danger end is unmistakable).
+    r, g, b = hud.hp_bar_color(5)
+    assert r > g and r > b, f"low-HP colour {(r, g, b)} not red-dominant"
+
+
+def test_v17_low_hp_vignette(screen):
+    """v17.2: red edge vignette drawn ONLY below hp<25, center clear, corners red, and
+    it breathes; distinct from the v6 near-white full-screen bomb flash."""
+
+    class _P:
+        hp = 0
+
+    class _W:
+        frame = 0
+        player = _P()
+
+    w = _W()
+    # Off at/above the trigger, on just below it.
+    w.player.hp = C.VIGNETTE_HP_TRIGGER
+    screen.fill((0, 0, 0))
+    render.draw_low_hp_vignette(screen, w)
+    assert tuple(screen.get_at((2, 2))[:3]) == (0, 0, 0), "vignette drawn at hp == trigger"
+    w.player.hp = C.VIGNETTE_HP_TRIGGER - 1
+    screen.fill((0, 0, 0))
+    render.draw_low_hp_vignette(screen, w)
+    assert screen.get_at((2, 2))[0] > 0, "vignette not drawn below the trigger"
+    # Baked surface: center fully clear, corner at peak, in the vignette's red tint.
+    vg = render._VIGNETTE
+    assert vg.get_at((C.W // 2, C.H // 2))[3] == 0, "vignette center not clear"
+    assert vg.get_at((0, 0))[3] == C.VIGNETTE_MAX_ALPHA, "corner not at peak alpha"
+    assert tuple(vg.get_at((0, 0))[:3]) == tuple(C.VIGNETTE_TINT), "vignette not the red tint"
+    # Breathing: corner intensity varies across one pulse period.
+    seen = set()
+    for f in range(C.VIGNETTE_PULSE_PERIOD):
+        w.frame = f
+        screen.fill((0, 0, 0))
+        render.draw_low_hp_vignette(screen, w)
+        seen.add(screen.get_at((0, 0))[0])
+    assert len(seen) > 3, f"vignette does not breathe (only {len(seen)} corner values)"
+    # Distinct from the v6 flash (red vs near-white).
+    assert _rgb_dist(C.VIGNETTE_TINT, C.FLASH_COLOR) > 150, "vignette tint not distinct from flash"
+
+
+def test_v17_heavy_pellet_purple(screen):
+    """v17.3: the HEAVY (GREEN-family) pellet now draws orchid-purple #D230DC — no longer
+    green, well clear of the HP/Repair green it used to clash with; shape/size unchanged."""
+    assert C.EB_COLOR_PURPLE == (210, 48, 220), "pellet not #D230DC"
+    assert C.EB_COLORS["GREEN"] == C.EB_COLOR_PURPLE, "GREEN family not mapped to purple"
+    assert not hasattr(C, "EB_COLOR_GREEN"), "stale EB_COLOR_GREEN symbol still present"
+    screen.fill((0, 0, 0))
+    b = EnemyBullet(300, 400, 0, 3, family="GREEN")
+    render._draw_enemy_bullet(screen, b)
+    body = tuple(screen.get_at((300 + C.PELLET_DRAW_R - 1, 400))[:3])  # body edge, off the core
+    assert body == C.EB_COLOR_PURPLE, f"drawn pellet body {body} not purple"
+    assert _rgb_dist(C.EB_COLOR_PURPLE, C.HP_GREEN) > 150, "pellet still near the HP green"
+    assert _rgb_dist(C.EB_COLOR_PURPLE, C.BONUS_REPAIR) > 150, "pellet still near the Repair green"
 
 
 def test_ac84_stats_render_smoke(screen, fonts, fresh_world):
