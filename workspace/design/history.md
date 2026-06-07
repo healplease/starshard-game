@@ -3,6 +3,31 @@
 > Per-domain history. The current spec is `gdd.md` (canonical). This file holds the dated decision
 > notes for this domain only. The cross-role story lives in `../shared/handoffs.md`.
 
+- 2026-06-07 (v20): GDD `v20.md` added (§V20.1–V20.8) — **LASER enemy + charged sweeping beam + projectile
+  ownership + death attribution (Designer slice: identity/feel + semantics; all magnitudes delegated to LD).**
+  **★ Identity:** the LASER is the roster's first **area-denial zoner** — it parks, commits to a position,
+  and threatens a whole line; vs the three v5 *mobile point-bullet* kinds it punishes *standing in the wrong
+  place / not reading a tell* rather than bad bullet-dodging. Immobile for the WHOLE attack (windup+damaging),
+  repositions only in the cooldown gap; not a boss (normal enemy stream). **★ The four delegated calls,
+  RESOLVED (the heart of this spec):** (1) **AIM at the player's FIRE-TIME position then sweep**, not fire
+  straight — so the windup telegraph is *meaningful* (it threatens where you stand, giving a reason to move);
+  a fixed/straight beam would make the tell arbitrary. (2) **Sweep a FROZEN target, not the live player** —
+  mirrors the v5 green-pellet frozen-`u`/`S` ruling; live tracking → homing/undodgeable, frozen → out-walkable
+  (the keystone of "alert player escapes"). (3) **ROTATE about the enemy (pivot at origin), not translate** —
+  R127 says enemy-anchored, so the line pivots (far end swings, near end pinned to the immobile ship); the
+  ship reads as the hinge; a translate would detach the beam from its origin. (4) **Per-frame damage tick
+  gated by i-frames, not once-per-contact** — routes the existing §V2.7 step-4 path so Shield/IFRAMES apply;
+  yields a fair *throbbing* DPS (hit → i-frames → re-check), and makes R126's persist-to-timeout matter (stay
+  in it → keep taking throttled ticks). **★ Collision** = segment-vs-circle at current width, draw==collision
+  (no invisible reach). **★ Ownership model:** ship IDs + projectile `source` purely additive (player shots
+  included for universality); owner-freeze is **source-driven** (enemy asks "is MY beam alive?") so multiple
+  LASERs each freeze on their own beam — not a global flag. **★ Attribution model:** record the lethal source
+  **at damage-time** (capture the NAME, don't chase a possibly-culled entity); body→entity, projectile→owner
+  via `source`; every source (incl. legacy) maps to a display name + an unknown fallback. **DELEGATED:** all
+  numbers (windup/damaging/cooldown frames, widths, sweep speed + pivot rate, damage, HP, score, spawn) → LD;
+  shapes/colours/glow/origin-edge px → Artist; names + "Killed by …" wording + every source name + fallback →
+  Writer; ID/`source` representation + beam in-code entity + smoke seed → Programmer. *(Also flipped the index
+  v19 row `in progress 🚧`→`shipped ✅`, matching the backlog — v1–v19 shipped & passed QA.)*
 - 2026-06-06 (v14): GDD `v14.md` added (§V14.1–V14.11) — **lifetime-stats screen placement + navigation
   (Designer slice of R97).** **★ Placement = a new first-class `STATS` GameState** (peer of START/PLAY/
   PAUSE/GAME_OVER, mirrors how v8 §V8.2 made PAUSE first-class). Rejected a **GAME_OVER panel** (that

@@ -11,6 +11,7 @@ from ..entities.bonus import Bonus
 from ..entities.hazards import make_asteroid, make_enemy
 from ..entities.projectiles import EnemyBullet
 from ..world import BonusKind, rng_drip
+from . import lasers
 
 
 def update(world):
@@ -36,7 +37,7 @@ def update(world):
     if world.enemy_timer <= 0:
         if not boss_active and len(world.enemies) < C.enemy_cap(t):
             kind = C.choose_enemy_kind(t, world.rng)
-            world.enemies.append(make_enemy(world.rng, t, kind))
+            world.enemies.append(make_enemy(world.rng, t, kind, ship_id=world.next_ship_id()))
         world.enemy_timer = C.enemy_interval(t)
     # Bonus timed drip — re-draw the cadence whether or not we spawn (no banking);
     # frozen while boss-active so the fight injects no new economy (§V7.3).
@@ -70,7 +71,7 @@ def seed_smoke(world):
     t = world.t
     for _ in range(3):
         world.asteroids.append(make_asteroid(world.rng, t))
-    world.enemies.append(make_enemy(world.rng, t))
+    world.enemies.append(make_enemy(world.rng, t, ship_id=world.next_ship_id()))
 
 
 def seed_smoke_bonus(world):
@@ -89,7 +90,7 @@ def seed_smoke_boss_target(world):
     t = world.t
     for _ in range(2):
         world.asteroids.append(make_asteroid(world.rng, t))
-    world.enemies.append(make_enemy(world.rng, t))
+    world.enemies.append(make_enemy(world.rng, t, ship_id=world.next_ship_id()))
 
 
 def seed_smoke_split(world):
@@ -105,3 +106,18 @@ def seed_smoke_split(world):
     world.ebullets.append(
         EnemyBullet(float(bx), float(by), ux * speed, uy * speed, family="GREEN", split_timer=timer)
     )
+
+
+def seed_smoke_laser(world):
+    """Force one LASER already in its firing position with a beam ARMED (level_spec
+    §V20L.8 / R132): place the enemy at SMOKE_LASER_POS in Phase B, then immediately
+    arm its beam aimed at the smoke player, so the full WINDUP(30 f)→DAMAGING(60 f)
+    cycle (widen 2→6, sweep, persist-through-contact) runs headlessly by ~frame 91 —
+    inside the 120-f budget. Bypasses the entry descent so the cycle starts at once."""
+    lx, ly = C.SMOKE_LASER_POS
+    e = make_enemy(world.rng, world.t, "LASER", ship_id=world.next_ship_id())
+    e.x, e.y = float(lx), float(ly)
+    e.phase = "B"  # already settled — begins firing immediately
+    e.repo_target_x = e.x
+    world.enemies.append(e)
+    lasers.arm_beam(world, e)  # arm the WINDUP beam aimed at the fire-time player

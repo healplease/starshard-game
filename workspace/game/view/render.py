@@ -11,6 +11,7 @@ import math
 import pygame
 
 from .. import config as C
+from ..systems import lasers
 
 
 def draw_starfield(screen, world):
@@ -24,6 +25,10 @@ def draw_world(screen, world):
     for a in sorted(world.asteroids, key=lambda a: -a.r):
         color = C.FLASH if a.flash > 0 else a.color
         pygame.draw.circle(screen, color, (int(a.x), int(a.y)), a.r)
+    # v20 LASER beams FIRST in the enemy-bullet layer (art_spec §V20a.5), so the small
+    # bullets below sit on top of the wide beam and stay visible.
+    for beam in world.beams:
+        _draw_beam(screen, beam)
     # Enemy bullets — RED dot / GREEN pellet / CYAN streak by family (art_spec §V5.3)
     for b in world.ebullets:
         _draw_enemy_bullet(screen, b)
@@ -74,9 +79,53 @@ _ENEMY_EDGE_W = {"HEAVY": 3, "REGULAR": 2, "SCOUT": 1}
 
 
 def _draw_enemy(screen, e):
+    if e.kind == "LASER":
+        _draw_laser(screen, e)
+        return
     pts = _enemy_pts(e.kind, e.x, e.y)
     pygame.draw.polygon(screen, C.FLASH if e.flash > 0 else C.ENEMY, pts)
     pygame.draw.polygon(screen, C.ENEMY_EDGE, pts, _ENEMY_EDGE_W[e.kind])
+
+
+def _draw_laser(screen, e):
+    """The LASER turret-eye (art_spec §V20a.2.1): a gunmetal octagon housing + a searing-
+    orange emitter eye with a white-hot pupil; a charge ring is drawn only during WINDUP."""
+    cx, cy = e.x, e.y
+    house = [
+        (cx - 17, cy - 5),
+        (cx - 10, cy - 12),
+        (cx + 10, cy - 12),
+        (cx + 17, cy - 5),
+        (cx + 17, cy + 12),
+        (cx - 17, cy + 12),
+    ]
+    pygame.draw.polygon(screen, C.FLASH if e.flash > 0 else C.LASER_BODY, house)
+    pygame.draw.polygon(screen, C.STAR_FAR, house, 2)  # cold grey-blue outline
+    ex, ey = int(cx), int(cy + C.LASER_EYE_DY)
+    pygame.draw.circle(screen, C.LASER_EYE, (ex, ey), C.LASER_EYE_R)
+    pygame.draw.circle(screen, C.BEAM_CORE, (ex, ey), C.LASER_PUPIL_R)
+    if e.beam_phase == "WINDUP":  # "powering up" ring — pairs with the windup line
+        pygame.draw.circle(screen, C.LASER_EYE, (ex, ey), C.LASER_CHARGE_RING_R, 2)
+
+
+def _draw_beam(screen, beam):
+    """The LASER beam (art_spec §V20a.3): WINDUP = a thin faint orange telegraph line
+    (no collision); DAMAGING = a white-hot core (width == collision width `w`) sheathed
+    in a render-only orange glow. The glow is paint, NOT reach (draw==collision invariant
+    holds on the CORE width). Far end = the endless-to-edge point (lasers.beam_endpoint)."""
+    tx, ty = lasers.beam_endpoint(beam)
+    o = (int(beam.ox), int(beam.oy))
+    far = (int(tx), int(ty))
+    if beam.phase == "WINDUP":
+        surf = pygame.Surface((C.W, C.H), pygame.SRCALPHA)
+        pygame.draw.line(surf, (*C.LASER_EYE, C.WINDUP_ALPHA), o, far, 2)
+        screen.blit(surf, (0, 0))
+        return
+    w = max(1, int(round(beam.width)))  # the SINGLE width — draw == collision (R124)
+    glow = pygame.Surface((C.W, C.H), pygame.SRCALPHA)  # render-only orange halo
+    pygame.draw.line(glow, (*C.LASER_EYE, C.BEAM_GLOW_ALPHA), o, far, w + 2 * C.BEAM_GLOW_W)
+    screen.blit(glow, (0, 0))
+    pygame.draw.line(screen, C.BEAM_CORE, o, far, w)  # white-hot lethal core
 
 
 def _draw_enemy_bullet(screen, b):

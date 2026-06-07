@@ -4,6 +4,16 @@
 > already keeps its own dated verdicts). This file holds the one-line routing decisions for this
 > domain. The cross-role story lives in `../shared/handoffs.md`.
 
+- 2026-06-07 (v20 RE-VERIFY): VERDICT **PASS**. The AC120/R132 fix (SMOKE_TIMELINE laser seed f1→f41, past
+  the f20 bomb + f40 boss-arrival flushes) lands clean: the witness `test_smoke_run_exercises_full_laser_cycle`
+  is green (real App loop reaches/persists in DAMAGING in-budget), full pytest 145 passed (the prior 1 fail
+  flipped), smoke exit 0; bomb-flush-clears-beams + boss-clear unchanged, no AC1–AC119 regression. → orchestrator.
+- 2026-06-07 (v20): VERDICT **FAIL** (1 defect). AC109–AC119 PASS by 7 QA-authored probes against the real
+  combat/lasers/physics. The defect is AC120/R132: the smoke `SMOKE_TIMELINE` seeds the LASER @f1 but the
+  scripted bomb @f20 (correctly) flushes `world.beams` mid-WINDUP, so the headless run never reaches the
+  DAMAGING phase — the unit `test_smoke_seed_runs_full_cycle` masked it by driving the seed in isolation
+  (no bomb). Smoke exit 0 holds; only the full-cycle-coverage clause fails. Fix is a 1-line config re-order
+  (laser vs bomb frames). Added 4 e2e tests (one is the failing regression witness). → programmer.
 - 2026-06-05 (v1): VERDICT **PASS**. Smoke gate green (exit 0 / 120 f / 3× stable, ~2.3 s, no hang). All
   MUST R1–R14 verified by driving the real game logic + render paths headlessly. AC1–AC12 PASS; SHOULD
   R15–R18 + COULD R19 work. AC13 PASS with a non-blocking tuning caveat (expert pure-dodging can exceed

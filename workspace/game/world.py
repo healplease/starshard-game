@@ -57,10 +57,20 @@ class World:
         self.stars = make_starfield(rng)  # cosmetic; persists across runs
         self.reset_run()
 
+    def next_ship_id(self):
+        """v20 (R128): hand out a unique within-run ship ID. Every ship (player, every
+        enemy of every kind, every boss) takes one; every projectile copies its firer's
+        ID into `source`. IDs need not persist across runs — `reset_run` re-seeds the
+        counter, so a restart simply re-issues from 1 (uniqueness is per-run only)."""
+        self._ship_id_seq += 1
+        return self._ship_id_seq
+
     def reset_run(self):
         """Wipe everything run-specific to the level_spec §2 starting state.
         Keeps rng, stars, and best (no leak between runs — R31 / AC19)."""
+        self._ship_id_seq = 0  # v20: per-run ship-ID counter (re-issued each run, R128)
         self.player = Player(x=float(C.P_START[0]), y=float(C.P_START[1]))
+        self.player.id = self.next_ship_id()  # the player is ship #1
         self.focus = (
             False  # v19: SHIFT-held Focus this frame (set by physics; drives the indicator)
         )
@@ -68,8 +78,12 @@ class World:
         self.enemies = []
         self.pbullets = []
         self.ebullets = []
+        self.beams = []  # v20: live LASER beams (own timed entity, not point bullets)
         self.bonuses = []
         self.particles = []
+        # v20 death attribution (R130/R131): the display-name handle of the lethal source,
+        # captured at the damage instant that drove HP<=0 (set in combat). None until a death.
+        self.killed_by = None
         self.score = 0
         self.frame = 0  # run frame counter (t = frame / 60)
         self.sec_score_at = 0  # last whole second credited (survival bonus)

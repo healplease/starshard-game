@@ -24,6 +24,7 @@ class PlayerBullet:
     y: float
     vx: float
     vy: float
+    source: int = 0  # v20 (R128): the firing ship's ID (the player); additive, no motion change
 
 
 @dataclass
@@ -40,16 +41,51 @@ class EnemyBullet:
     )
     ring_phase: Optional[int] = None  # v7 YELLOW only: this fan bullet's ring quarter (0/30/60°)
     dmg: int = C.EB_DMG  # per-hit player damage; default v1/v5/v7 EB_DMG, NOVA overrides (§V16.3)
+    source: int = 0  # v20 (R128): the firing ship's ID (enemy/boss); additive, no motion change
 
     @property
     def color(self):
         return C.EB_COLORS[self.family]
 
 
-def make_player_shots(px, py, speed, fan=False, sides=True):
+@dataclass
+class Beam:
+    """v20 (GDD §V20.3): the LASER's weapon — a persistent timed line SEGMENT (not a
+    point bullet). Anchored at the firing ship's emitter eye (`ox, oy` = origin = pivot),
+    it sweeps by ROTATING about that origin: `angle` (radians) is the live aim heading,
+    advancing toward `target_angle` (the frozen fire-time aim) at BEAM_SWEEP_DPS, capped
+    to BEAM_SWEEP_MAX_DEG total. Two phases: WINDUP (harmless, thin telegraph) then
+    DAMAGING (lethal, widening 2→6 px, removed ONLY on timeout — never on contact, R126).
+    `source` = the owning LASER's ship ID (drives the owner-freeze + death attribution)."""
+
+    ox: float  # origin / pivot = the emitter eye (cx, cy+LASER_EYE_DY)
+    oy: float
+    angle: float  # live aim heading (radians); rotates toward target_angle
+    target_angle: float  # frozen fire-time aim (radians) — the captured player direction
+    start_angle: float  # the angle at arm-time (to cap the total swept arc)
+    phase: str  # "WINDUP" | "DAMAGING"
+    timer: int  # frames left in the current phase
+    source: int  # owning LASER ship ID (R128/R129)
+
+    @property
+    def width(self):
+        """Live core width in px — the SINGLE number driving BOTH draw and collision
+        (art_spec §V20a.3.2 invariant). 0 in WINDUP (harmless); LINEAR 2→6 over DAMAGING."""
+        if self.phase != "DAMAGING":
+            return 0.0
+        td = 1.0 - self.timer / C.BEAM_DAMAGE_F  # progress 0→1 through the damaging phase
+        return C.BEAM_START_W + (C.BEAM_FINAL_W - C.BEAM_START_W) * td
+
+    @property
+    def lethal(self):
+        return self.phase == "DAMAGING"
+
+
+def make_player_shots(px, py, speed, fan=False, sides=True, source=0):
     """Shots fired this frame, every beam scaled to the resolved bullet `speed`
     (v18 — bullet speed is a buffable stat, GDD §V18.4). Nose origin = (px, py-15),
-    matching the ship triangle's tip (art_spec §2.1).
+    matching the ship triangle's tip (art_spec §2.1). v20: every shot carries
+    `source` = the player's ship ID (R128, player shots included for consistency).
       - No Fan: one forward (center) beam.
       - Fan, `sides=True`: the full 3-beam fan (center + both ±12° sides).
       - Fan, `sides=False`: center beam only — the skipped half of the 2:1
@@ -59,10 +95,10 @@ def make_player_shots(px, py, speed, fan=False, sides=True):
         dirs = C.FAN_DIRS  # center + both side beams
     else:
         dirs = (C.CENTER_DIR,)  # lone center beam (no Fan, or Fan's side-skip frame)
-    return [PlayerBullet(px, py - 15, dx * speed, dy * speed) for dx, dy in dirs]
+    return [PlayerBullet(px, py - 15, dx * speed, dy * speed, source=source) for dx, dy in dirs]
 
 
-def make_enemy_bullet(ex, ey, px, py, rng, kind="REGULAR"):
+def make_enemy_bullet(ex, ey, px, py, rng, kind="REGULAR", source=0):
     """One enemy bullet for `kind`, fired through the shared aim routine (§V5.3):
     a heading toward the player's CURRENT position, perturbed per-shot by a uniform
     angle in [-cone, +cone]. cone=0 reduces identically to v1 dead-on aim (AC29).
@@ -82,7 +118,7 @@ def make_enemy_bullet(ex, ey, px, py, rng, kind="REGULAR"):
         d = math.hypot(px - ex, py - ey)
         s = max(C.SPLIT_FRACTION * d, C.SPLIT_MIN_DIST)  # frozen split distance (§V5.4)
         split_timer = round(s / speed)  # distance ÷ speed → frozen timer
-    return EnemyBullet(ex, ey, vx, vy, family=family, split_timer=split_timer)
+    return EnemyBullet(ex, ey, vx, vy, family=family, split_timer=split_timer, source=source)
 
 
 def split_pellet(pellet):
@@ -94,7 +130,7 @@ def split_pellet(pellet):
     for off_deg in (-C.FAN_HALF_ANGLE, 0, C.FAN_HALF_ANGLE):
         theta = base + math.radians(off_deg)
         vx, vy = math.cos(theta) * C.CHILD_SPEED, math.sin(theta) * C.CHILD_SPEED
-        children.append(EnemyBullet(pellet.x, pellet.y, vx, vy, family="RED"))
+        children.append(EnemyBullet(pellet.x, pellet.y, vx, vy, family="RED", source=pellet.source))
     return children
 
 
@@ -108,5 +144,5 @@ def split_yellow(bullet):
     for k in range(4):
         theta = math.radians(bullet.ring_phase + k * 90)
         vx, vy = math.cos(theta) * C.RED_CHILD_SPEED, math.sin(theta) * C.RED_CHILD_SPEED
-        children.append(EnemyBullet(bullet.x, bullet.y, vx, vy, family="RED"))
+        children.append(EnemyBullet(bullet.x, bullet.y, vx, vy, family="RED", source=bullet.source))
     return children

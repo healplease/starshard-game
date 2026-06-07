@@ -19,6 +19,7 @@
 | `v16-second-boss.md` | v16 | Second boss copy: name/HUD label `NOVA` (`NOVA_NAME`/`NOVA_LABEL_TEXT`) · arrival `WARNING`/`NOVA INBOUND` · defeat `NOVA DOWN` + `+{points}` popup — mirrors the v7 Mothership set | spec ready |
 | `v18.md` | v18 | Two new bonus names `OVERDRIVE`/`RAILGUN` + pill letters `O`/`V` · **`RAPID` name + `R` letter removed** (R108/R109) · no popup (timed buffs) · config block | spec ready |
 | `v19.md` | v19 | **`CONTROLS_1` ⚠ REWRITE** — add `Hold Shift  Focus` (the held-SHIFT precise mode) next to MOVE (R114); 462 px, fits · no new HUD label/popup/screen (red hitbox circle is the on-screen indicator) · everything else unchanged | spec ready |
+| `v20.md` | v20 | LASER enemy display name `LASER` (kind key = name) · **NEW GAME_OVER line** `f"Killed by {name}"` (FONT_SMALL/TEXT_DIM, y450, R131) · display name for **every** lethal source (ASTEROID, REGULAR/HEAVY/SCOUT, MOTHERSHIP, NOVA, LASER) + fallback `SOMETHING` · **windup warning copy: NONE** (visual tell only) | spec ready |
 
 ## Where is …? (topic → file)
 - **Start-screen controls line (`CONTROLS_1`)** → `v1-base.md` → **rewritten in** `v6.md` (Z = fire · X = bomb) → **rewritten in** `v19.md` (add `Hold Shift  Focus`)
@@ -34,6 +35,8 @@
 - **Pause-screen heading + hints / CONTROLS_2 + GAMEOVER_KEYS rewrites** → `v8.md`
 - **START quit-hint line + GAME_OVER/CONTROLS_2 quit-hint rewrites (Q-hold-to-quit copy)** → `v10.md`
 - **STATS-screen strings (title / 5 row labels / back hint) + START `Tab  Stats` hint line** → `v14.md`
+- **LASER enemy name** → `v20.md` (= the kind key, blessed verbatim)
+- **GAME_OVER "Killed by <name>" line + every lethal source's display name + the `SOMETHING` fallback** → `v20.md`
 
 ## Copy-surface map (string → screen/state → render site)  *(added 2026-06-05 retro)*
 
@@ -48,6 +51,7 @@ invalidates and QA can confirm each is on screen. Keep this current when you add
 | boss label / `WARNING` / `MOTHERSHIP DOWN` / `NOVA DOWN` + reward popup | PLAY (boss) | `view/hud.py` |
 | `PAUSE_TITLE` + 3 pause hints (resume/quit/restart) | PAUSE | `view/hud.py` `draw_pause()` |
 | Game-Over heading / score / best, `GAMEOVER_KEYS` | GAME_OVER | `view/hud.py` |
+| `f"Killed by {name}"` death-attribution line (v20) | GAME_OVER | `view/hud.py` `draw_gameover()` (FONT_SMALL/TEXT_DIM, centred, top-y 450 — between BEST y420 and KEYS y480) |
 | collect popups (`+40`, `+1 BOMB`, `+{points}`) | PLAY (transient) | `view/hud.py` / fx |
 
 > **No in-game controls overlay exists** (PLAY HUD = score + HP + bomb readout only) — recorded so nobody

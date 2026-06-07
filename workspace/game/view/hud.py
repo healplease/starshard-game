@@ -253,6 +253,11 @@ def draw_gameover(screen, world):
     _center(screen, _FONTS["big"].render(C.GAMEOVER_TITLE, True, C.HP_RED), 300)
     _center(screen, _FONTS["mid"].render(f"SCORE {world.score:05d}", True, C.TEXT), 380)
     _center(screen, _FONTS["mid"].render(f"BEST {world.best:05d}", True, C.TEXT_DIM), 420)
+    # v20 (story §V20s.2): "Killed by <name>" — the lethal source's display name, captured
+    # at the damage instant (world.killed_by) and resolved to a blessed name + fallback.
+    name = C.KILLED_BY_NAMES.get(world.killed_by, C.KILLED_BY_FALLBACK)
+    killed_s = _FONTS["small"].render(f"{C.KILLED_BY_PREFIX}{name}", True, C.TEXT_DIM)
+    _center(screen, killed_s, C.KILLED_BY_Y)
     _center(screen, _FONTS["small"].render(C.GAMEOVER_KEYS, True, C.TEXT_DIM), 480)
 
 

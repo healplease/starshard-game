@@ -14,6 +14,7 @@ from .. import config as C
 class Player:
     x: float
     y: float
+    id: int = 0  # v20: unique within-run ship ID (R128); set by World after construction
     hp: int = C.P_MAX_HP
     iframes: int = 0  # post-hit invulnerability (R18)
     fire_cd: int = 0  # frames until the next shot is allowed

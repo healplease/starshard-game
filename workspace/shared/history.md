@@ -441,3 +441,59 @@ BLOCKER→upstream routing carry over. **Manual mode (print the HANDOFF block, h
 as the fallback** and writes the same blackboard, so the two modes interoperate. Docs: new *"Automated
 handoff chains"* section in `CLAUDE.md` + a mode-aware STEP 4; `roles/orchestrator.md` Mission/Route/Hand-off
 updated. No game spec/code changed.
+
+## 2026-06-07 — Programmer: v20 implemented (LASER enemy + sweeping beam + ownership + attribution)
+
+Built all three parts per the locked v20 specs.
+
+**(1) Projectile ownership (R128/R129).** Added a per-run ship-ID counter on `World`
+(`next_ship_id()`, re-seeded in `reset_run` → IDs unique within a run, re-issued on restart). Player
+(=#1), every `Enemy` (incl. minions/LASER), and every `Boss` carry `id`; every projectile —
+`PlayerBullet`, `EnemyBullet` (and split children, NOVA/yellow), and the new `Beam` — carries
+`source` = firer's id (default 0, purely additive: no motion/spawn/collision/cull change). The LASER
+owner-freeze is `source`-driven (`lasers._owns_live_beam`: frozen iff a live beam has `source`==its id),
+so multiple LASERs coexist and each unfreezes the frame its own beam times out.
+
+**(2) LASER enemy + beam (R120–R127).** New `ENEMY_KINDS["LASER"]` row (HP 3, r 14, score 100, no
+bullet family). New `systems/lasers.py` runs the 3-state cycle: after the shared entry descent the LASER
+runs COOLDOWN (90 f, mobile — drifts to a fresh uniform-x @2/desc 0.3, then arms) → WINDUP (30 f, frozen,
+harmless 0-width telegraph) → DAMAGING (60 f, frozen, lethal). The beam is its own `Beam` entity (origin =
+emitter eye = pivot); it ROTATES about the eye toward+past the FROZEN fire-time aim @0.45°/f, clamped to an
+18° total arc; width LINEAR 2→6 px via a single `width` property driving BOTH the draw and the
+segment/circle collision (`seg_circle_hit` at `P_HITBOX_R + w/2`, draw==collision). It persists the full
+60 f and is removed ONLY on timeout (never on contact). Beam dmg 15 routes through combat step-4 → IFRAMES
+(=60==DAMAGING) gate it to ≤1 tick/phase. Far end = ray→edge-crossing + 24 px overshoot (endless look).
+Spawn ladder: LASER folds into Squeeze(60s+)/Storm taking 12 weight from REGULAR (cap/interval unchanged).
+Render: gunmetal octagon + orange eye/white pupil (+WINDUP charge ring); beam draws first in the
+enemy-bullet layer (faint orange windup line / white-hot core + render-only orange glow on SRCALPHA).
+Bomb flush now clears `world.beams` too.
+
+**(3) Death attribution (R130/R131).** `combat` captures `world.killed_by` (a display-name handle) at the
+damage instant that drives HP≤0: body collision → entity kind→name (ASTEROID for both rocks); projectile/
+beam → owner via `source`→kind→name; unresolvable → `SOMETHING` fallback. `hud.draw_gameover` renders
+`f"Killed by {name}"` (FONT_SMALL/TEXT_DIM, centred, top-y 450) between BEST and KEYS.
+
+**Smoke (R132).** New `SMOKE_TIMELINE` row @f1 (`laser`) → `spawning.seed_smoke_laser` places a LASER in
+firing position with a WINDUP beam armed, so WINDUP→DAMAGING completes by ~f91, headless. Coexists with the
+existing seeds (timeline ordering invariant still passes).
+
+**Gates (all run, in order).** `ruff format` (reformatted lasers.py) + `ruff check --fix` — 2 residuals,
+both PRE-EXISTING (config `BONUS_WEIGHTS` comment line-length + `bonus.py` `BonusKind` forward-ref),
+non-blocking. `pyright` on changed files — clean on all new/touched files EXCEPT the pre-existing
+`ENEMY_KINDS` heterogeneous-dict `float|str` errors in projectiles.py/spawning.py (predate v20, same root
+cause as the committed baseline — verified via git stash; non-blocking). **`pytest workspace/tests`:
+141 passed** (104 unit incl. the new 24-test `test_v20_laser_beam.py`; 37 e2e). **Smoke exit 0.** Updated
+the v5 `test_ac22_enemy_roster` to subset-assert (LASER is an intentional roster addition, v5 trio intact).
+
+## v20 fix (2026-06-07, programmer) — AC120/R132 smoke laser-cycle ordering
+QA FAIL on AC120: the LASER smoke seed was at frame 1, but the f20 bomb flush (correctly) clears
+`world.beams`, wiping the beam mid-WINDUP so the headless run never reached DAMAGING. First moved the
+seed to f21 (after the bomb) — still failed: the f40 boss-arrival FREE clear is a second flush that
+also wipes beams, and it landed mid-windup of an f21 seed. Final fix: moved the laser seed to **frame
+41** in `SMOKE_TIMELINE` (after BOTH the f20 bomb and the f40 boss-arrival flushes). Windup f41→f70,
+DAMAGING arms ~f71 and is observed widening/sweeping/persisting through f120 — the 60 f damaging window
+need not complete inside the 120 f budget; reaching+persisting in DAMAGING is what R132/AC120 require.
+Bomb-flush-clears-beams and boss-arrival-clear behaviours are UNCHANGED (both correct/QA-verified) — only
+the timeline ordering changed; no laser mechanics/ownership/attribution touched. Gates: 145 pytest green
+(incl. the previously-failing e2e witness `test_smoke_run_exercises_full_laser_cycle`); smoke exit 0;
+pyright clean on config.py; ruff residual = the pre-existing config.py:465 E501 only.

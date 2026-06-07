@@ -12,7 +12,7 @@ app loop (buffs.tick + the return value).
 
 from .. import config as C
 from ..entities.fx import make_burst
-from . import buffs, encounter, scoring, spawning
+from . import buffs, encounter, lasers, scoring, spawning
 
 
 def _hit(x1, y1, r1, x2, y2, r2):
@@ -20,6 +20,24 @@ def _hit(x1, y1, r1, x2, y2, r2):
     approximated as a circle of half its height — cheap and fine at this scale."""
     rr = r1 + r2
     return (x1 - x2) ** 2 + (y1 - y2) ** 2 <= rr * rr
+
+
+def _name_for_kind(kind):
+    """v20 (R131): map a lethal-source handle (enemy/boss kind) to a display name,
+    falling back to KILLED_BY_FALLBACK for any unknown/unresolvable source — never blank."""
+    return C.KILLED_BY_NAMES.get(kind, C.KILLED_BY_FALLBACK)
+
+
+def _name_for_source(world, source_id):
+    """v20 (R130): resolve a projectile/beam `source` (a firing ship's ID) to that ship's
+    display name AT THE DAMAGE INSTANT (the ship may be culled before GAME_OVER reads it).
+    Search the live ships for the ID → its kind/boss name; miss → the SOMETHING fallback."""
+    for e in world.enemies:
+        if e.id == source_id:
+            return _name_for_kind(e.kind)
+    if world.boss is not None and world.boss.id == source_id:
+        return _name_for_kind(world.boss.type)
+    return C.KILLED_BY_FALLBACK
 
 
 def resolve(world):
@@ -102,31 +120,52 @@ def resolve(world):
     #    and ebullet all shrink together; pickup collection (step 3) stays generous at P_R.
     if not p.invulnerable:
         dmg = 0
+        src_name = None  # v20 (R130): the lethal source's display-name handle, captured here
         # Boss body ram (R61/§V7.13) — the scariest thing to touch (60 > HEAVY 50);
         # the boss is NOT consumed (it persists), unlike a hazard hit.
         if world.boss is not None and _hit(
             p.x, p.y, C.P_HITBOX_R, world.boss.x, world.boss.y, world.boss.r
         ):
             dmg = world.boss.ram_dmg
+            src_name = _name_for_kind(world.boss.type)  # body → that boss's name
         for a in world.asteroids:
             if dmg:
                 break
             if id(a) not in dead_ast and _hit(p.x, p.y, C.P_HITBOX_R, a.x, a.y, a.r):
                 dmg, _ = a.dmg, dead_ast.add(id(a))
+                src_name = "ASTEROID"  # body → ASTEROID (covers asteroid + debris)
                 break
         if dmg == 0:
             for e in world.enemies:
                 if id(e) not in dead_en and _hit(p.x, p.y, C.P_HITBOX_R, e.x, e.y, e.r):
                     dmg, _ = e.ram_dmg, dead_en.add(id(e))
+                    src_name = _name_for_kind(e.kind)  # body → that enemy's kind name
                     break
         if dmg == 0:
             for b in world.ebullets:
                 if id(b) not in dead_eb and _hit(p.x, p.y, C.P_HITBOX_R, b.x, b.y, C.EB_R):
                     dmg, _ = b.dmg, dead_eb.add(id(b))  # per-bullet dmg (NOVA 25 > EB_DMG 15)
+                    src_name = _name_for_source(world, b.source)  # projectile → owner's name
+                    break
+        # v20 beam × player (R123/R126): a DAMAGING beam is lethal on contact via the
+        # segment/circle test at the live core HALF-width + P_HITBOX_R (draw==collision),
+        # but is NEVER consumed (it persists to timeout — not added to any dead-set).
+        if dmg == 0:
+            for beam in world.beams:
+                if not beam.lethal:
+                    continue  # WINDUP is harmless (R123/AC111)
+                tx, ty = lasers.beam_endpoint(beam)
+                if lasers.seg_circle_hit(
+                    beam.ox, beam.oy, tx, ty, p.x, p.y, C.P_HITBOX_R + beam.width / 2
+                ):
+                    dmg = C.BEAM_DMG
+                    src_name = _name_for_source(world, beam.source)  # beam → owner (→ LASER)
                     break
         if dmg:
             p.hp -= dmg
             p.iframes = C.IFRAMES
+            if p.hp <= 0:  # v20: the hit that drove HP<=0 → record its source name (R130)
+                world.killed_by = src_name or C.KILLED_BY_FALLBACK
 
     # Sweep out everything destroyed this frame
     world.pbullets = [b for b in world.pbullets if id(b) not in dead_pb]

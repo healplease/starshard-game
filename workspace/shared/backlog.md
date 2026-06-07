@@ -8,7 +8,7 @@ row when finishing. Status: `todo` | `in-progress` | `done` | `blocked`.
 > tables) is archived → `../archive/backlog-v1-v12.md` (v1–v12) + `../archive/backlog-v13-v19.md`
 > (v16–v19 tables; v13–v15 folded into the summary). See `../README.md` for the map.
 
-## Current game state — "Starshard" (v1–v19 shipped & passed QA, as of 2026-06-07)
+## Current game state — "Starshard" (v1–v20 shipped & passed QA, as of 2026-06-07)
 
 Top-down auto-scrolling space shooter, modular `pygame-ce` package under `game/`. Shipped capabilities:
 
@@ -54,18 +54,46 @@ Top-down auto-scrolling space shooter, modular `pygame-ce` package under `game/`
   bullets **~1.5× larger**, draw==collision every family (`EB_R 5→8`; player bullet `6×18`, coll `r=9`;
   `CYAN_TAIL_LEN 18`). While Shift held in PLAY, a **red 50%-opacity disc** (`#FF2840` @ alpha 128) draws the
   true hitbox (render-only). Enemy/boss body radii unchanged. AC102–AC108.
+- **Laser enemy + ownership + death attribution (v20):** new **LASER** enemy kind (gunmetal octagon turret +
+  orange emitter eye, HP 3, score 100) fires a charged **sweeping beam** (`systems/lasers.py` + `Beam`):
+  **WINDUP 30 f** (thin harmless telegraph line, no collision) → **DAMAGING 60 f** (lethal; one `width`
+  grows 2→6 px driving **draw==collision**; rotates about the eye toward the **frozen** fire-time target at
+  0.45°/f, arc-cap 18°; **persists to timeout, never consumed on contact**; dmg 15 i-frame-gated) →
+  **COOLDOWN 90 f** (the only phase it moves/repositions). Firer **immobile while firing**; owner-freeze is
+  `source`-driven so multiple lasers coexist. New cross-cutting **projectile ownership**: every ship has a
+  unique **id**, every projectile (player/enemy/boss/NOVA/split + beam) carries **`source`** = firer id
+  (additive). New **death attribution**: `world.killed_by` recorded at the lethal hit → GAME_OVER shows
+  **"Killed by {name}"** (`ASTEROID`/`REGULAR`/`HEAVY`/`SCOUT`/`MOTHERSHIP`/`NOVA`/`LASER`, fallback
+  `SOMETHING`). Spawn: gate 60 s, weight 12 re-sliced from REGULAR (cap/interval unchanged). Bomb flush
+  clears beams. AC109–AC120.
 
-Contract totals: **R1–R119**, **AC1–AC108**; **pytest suite 117/117** (80 unit / 37 e2e, `workspace/tests/`,
+Contract totals: **R1–R132**, **AC1–AC120**; **pytest suite 145/145** (104 unit / 41 e2e, `workspace/tests/`,
 root `pyproject.toml` w/ ruff+pyright). Standing QA docs: `qa/feature_inventory.md`, `qa/test_plan.md`.
 (v3 = KB reorg, v4 = QA docs, v9 = process hardening, v15 = test-infra — no game-feature change.)
 
 **Play:** `.\.venv\Scripts\python.exe workspace\game\main.py` — Z fire · X bomb · hold Shift Focus ·
 Esc pause · hold Q quit · hold R restart (on PAUSE/GAME_OVER) · Tab stats (on START).
 
-## Current increment — v20: (awaiting kickoff)
+## Current increment — v20: laser enemy + projectile ownership + death attribution — ✅ SHIPPED (QA PASS 2026-06-07)
 
-No increment open. The Orchestrator opens v20 here when the human gives the next theme/task — write
-the framing into `brief.md`, scope the queue, and drop the per-role table here.
+New mechanic + content + infrastructure. (1) **New laser enemy:** fires a charged sweeping beam — **WINDUP
+~0.5 s** (thin harmless telegraph line to just past the screen edge) → **DAMAGING ~1 s** (lethal, widens to
+~5–7 px, sweeps toward the player at ~0.1× player speed, persists to timeout, does NOT vanish on touch); the
+enemy is **immobile while firing** and **repositions only between attacks**. (2) **Projectile ownership:**
+every ship gets a unique **ID**; every projectile carries a **`source`** (firing ship's ID); the laser owner
+uses it to freeze while its beam is live. (3) **Death attribution:** GAME_OVER shows **"Killed by &lt;enemy
+name&gt;"** for enemy-body or projectile kills (every lethal source needs a name). Framing + locked
+decisions: `brief.md`. **Auto mode** (Orchestrator dispatches each role as a subagent).
+
+| # | Role | Task | Owner | Status |
+|---|---|---|---|---|
+| 1 | business-analyst | Formalize as new R#/AC#: the laser enemy + 3-state beam (windup harmless / damaging lethal+widening+sweeping / persists-to-timeout / firer immobile / repositions between attacks); the projectile-ownership contract (unique ship ID + projectile `source`, owner-freeze rule); the death-attribution contract (which sources, projectile→owner-name, fallback) + "Killed by &lt;name&gt;" on GAME_OVER | business-analyst | done ✅ R120–R132 / AC109–AC120 |
+| 2 | lead-game-designer | Design the laser enemy identity/feel + the beam's 3-state semantics (windup telegraph, sweep-toward-player behavior, damage cadence while touching, aim-at-fire vs straight), reposition/cadence rhythm, and the ownership/attribution model conceptually (GDD vN) | lead-game-designer | done ✅ GDD v20.md |
+| 3 | artist | Placeholder shape + palette for the laser enemy (distinct from REGULAR/HEAVY/SCOUT & bosses); the beam visuals — windup thin line vs damaging widening beam (color/width/glow/render slot), endless-to-edge look (art_spec vN) | artist | done ✅ art_spec v20.md |
+| 4 | writer | The laser enemy's name; the "Killed by &lt;name&gt;" GAME_OVER line wording + the display name for **every** lethal source (asteroid/debris, REGULAR/HEAVY/SCOUT, both bosses, laser enemy); any laser warning/telegraph copy if warranted (story vN) | writer | done ✅ story v20.md (`LASER`; `Killed by <name>`; all sources + `SOMETHING` fallback; windup copy = none) |
+| 5 | level-designer | Lock numbers: windup (~0.5 s→frames), damaging (~1 s→frames), final width (5–7 px), sweep speed (~0.1× P_SPEED), per-hit damage + damage cadence, laser-enemy HP, fire cadence, reposition/cooldown duration, spawn weight + earliest spawn; confirm fairness/no unavoidable beams (level_spec vN) | level-designer | done ✅ level_spec v20.md |
+| 6 | programmer | Implement: ship unique IDs + projectile `source`; the laser enemy + the 3-state timed sweeping beam entity (windup→damaging, widen, sweep ~0.1×, persist-to-timeout, owner-freeze); death-attribution tracking + "Killed by &lt;name&gt;" on GAME_OVER; smoke path covers a full laser cycle; ruff+pyright+unit pytest+smoke green | programmer | done ✅ (141 pytest green / smoke exit 0; new `systems/lasers.py` + `Beam`; ruff/pyright residuals pre-existing) |
+| 7 | qa-tester | Full rigor: windup harmless / damaging lethal+widening+sweeping@~0.1×, beam persists to timeout (survives contact), firer immobile while firing + repositions between, `source`/ID attribution correct, "Killed by &lt;name&gt;" shows the right name for each lethal source, no AC1–AC108 regression, suite+smoke green | qa-tester | done ✅ **PASS** (re-verify) — AC120/R132 fix confirmed: witness `test_smoke_run_exercises_full_laser_cycle` green (real App reaches/persists in DAMAGING); full pytest **145 passed**, smoke exit 0; bomb-flush + boss-clear unchanged; no AC1–AC119 regression |
 
 > **Closed-increment detail archived.** The v16–v19 task tables are frozen in
 > `../archive/backlog-v13-v19.md` (v13–v15 were condensed into the capability summary above at ship

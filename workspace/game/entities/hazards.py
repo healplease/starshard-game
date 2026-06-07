@@ -37,11 +37,18 @@ class Enemy:
     x: float
     y: float
     dir: int  # strafe direction (-1 / +1)
-    kind: str = "REGULAR"  # v5 roster key (REGULAR / HEAVY / SCOUT) — branched on for
+    id: int = 0  # v20: unique within-run ship ID (R128); set in make_enemy via world
+    kind: str = "REGULAR"  # v5 roster key (REGULAR/HEAVY/SCOUT/LASER) — branched on for
     hp: int = C.EN_HP  #   stats/move/fire/render (R36/AC29); hp set per kind in factory
-    phase: str = "A"  # "A" = entry descent, "B" = strafe + fire
+    phase: str = "A"  # "A" = entry descent, "B" = strafe + fire (LASER: B = beam cycle)
     fire_timer: float = 0.0
     flash: int = 0  # 1-frame white flash on taking a bullet (R17)
+    # v20 LASER beam cycle (kind=="LASER" only; level_spec §V20L.1): the 3-state attack
+    # loop. cooldown after entry, then WINDUP→DAMAGING→COOLDOWN repeating. Driven in
+    # systems/lasers; the enemy is frozen (no reposition) while it owns a live beam.
+    beam_phase: str = "COOLDOWN"  # "COOLDOWN" | "WINDUP" | "DAMAGING" (LASER only)
+    beam_timer: int = 0  # frames left in the current beam phase
+    repo_target_x: float = 0.0  # COOLDOWN reposition goal x (uniform in band, re-rolled per cd)
 
     @property
     def spec(self):
@@ -78,17 +85,27 @@ def make_asteroid(rng, t):
     )
 
 
-def make_enemy(rng, t, kind="REGULAR"):
+def make_enemy(rng, t, kind="REGULAR", ship_id=0):
     """Spawn one enemy of `kind` at the top, ready to descend then strafe (GDD §6.4,
     §V5.2). Position/mechanism are kind-independent (level_spec §V5.1); only the
     stats differ. The first fire cooldown is the ramp base scaled by this kind's
-    fire_mult (HEAVY fires least often, SCOUT throttled, REGULAR == v1)."""
+    fire_mult (HEAVY fires least often, SCOUT throttled, REGULAR == v1).
+    v20: `ship_id` (from world.next_ship_id) is this enemy's unique within-run ID (R128);
+    a LASER additionally starts in COOLDOWN so it WINDS UP only after its entry descent."""
     spec = C.ENEMY_KINDS[kind]
-    return Enemy(
+    e = Enemy(
         x=rng.uniform(40, 560),
         y=-24.0,
         dir=rng.choice((-1, 1)),
+        id=ship_id,
         kind=kind,
         hp=spec["hp"],
         fire_timer=round(C.enemy_fire_interval(t) * spec["fire_mult"]),
     )
+    if kind == "LASER":
+        # Enters in COOLDOWN with a short pre-fire timer so it begins WINDUP shortly after
+        # it settles into Phase B (it does not fire mid-entry). repo_target_x = its spawn x.
+        e.beam_phase = "COOLDOWN"
+        e.beam_timer = C.BEAM_COOLDOWN_F
+        e.repo_target_x = e.x
+    return e

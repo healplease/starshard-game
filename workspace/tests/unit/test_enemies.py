@@ -10,8 +10,9 @@ from game.systems import physics
 
 
 def test_ac22_enemy_roster():
-    """AC22: three distinct enemy kinds with ordered HP / entry speed."""
-    assert set(C.ENEMY_KINDS) == {"REGULAR", "HEAVY", "SCOUT"}, "enemy roster changed"
+    """AC22 (+v20): the three v5 kinds keep their distinct, ordered HP / entry speed.
+    v20 appends LASER to the roster (the v5 trio is unchanged — no regression)."""
+    assert {"REGULAR", "HEAVY", "SCOUT"} <= set(C.ENEMY_KINDS), "a v5 enemy kind went missing"
     hp = C.ENEMY_KINDS
     assert hp["HEAVY"]["hp"] > hp["REGULAR"]["hp"] > hp["SCOUT"]["hp"], "hp ordering wrong"
     assert hp["SCOUT"]["entry"] > hp["REGULAR"]["entry"] > hp["HEAVY"]["entry"], (

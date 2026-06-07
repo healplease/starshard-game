@@ -128,6 +128,25 @@
   R inherits the Q arc's proven text clearance (no new anti-collision proof). Bonus: the two PAUSE
   always-on tracks now coincide into one ring (resolves v12's clutter note). Added a `fill_color` param
   to `draw_hold_arc` (defaults amber → Q unchanged; R passes violet). Hold timing/semantics untouched.
+- 2026-06-07 (v20): art_spec `v20.md` — the LASER enemy + its 3-state beam visuals. **3 new colours:**
+  `LASER_BODY #424656` (cold gunmetal — deliberately NOT magenta, so the LASER reads as a turret/
+  installation, not one of the chevron fighter swarm), `LASER_EYE #FF7A1A` (searing-orange emitter eye =
+  the danger tell + beam origin), `BEAM_CORE #FFF4E0` (warm white-hot, ≠ pure-white `FLASH`). Every
+  faction hue was taken, so the LASER carries its danger read via the orange eye + white-hot beam while
+  the gunmetal body + unique line/beam SHAPE divorce it from the magenta enemy faction; anti-clash proven
+  vs all live actors (closest neighbour Fan orange Δ≈48, split further by shape: dot/diamond vs beam).
+  **Body** = squat gunmetal octagon 34×24 (`STAR_FAR` outline) + orange eye r=7 + white pupil + a WINDUP
+  charge ring; body ⊇ r≤15 collision. **WINDUP** = thin 2-px faint orange line (alpha 110), no collision
+  (harmless). **DAMAGING** = opaque white-hot core that WIDENS 2→~6 px (LD locks final ~5–7 + curve) +
+  orange glow (alpha 90). **★ draw==collision (GDD CRITICAL INVARIANT):** the lethal hit uses the opaque
+  CORE width `w` and the core is drawn at that same `w` — one number drives both; the orange glow is
+  render-only halo and NOT collision (what you see is what hits you; no invisible reach). **Endless-to-
+  edge:** origin = the emitter eye `(cx, cy+6)` (also the rotation pivot), aim toward the fire-time player,
+  extend to the ray's screen-edge crossing + 24-px overshoot (off-screen far end → endless look; collision
+  spans only the visible segment). Render order: beam FIRST in the enemy-bullet layer (small bullets sit on
+  top), LASER body in the enemy layer; alpha surfaces follow the v11 §V11.5 SRCALPHA rule. DELEGATED to LD:
+  windup/damaging frames, final width within ~5–7, widen curve, sweep/pivot rate, HP/score/damage/spawn;
+  Writer: the `LASER` name.
 - 2026-06-07 (v18): art_spec `v18.md` — two new bonus styles replace Rapid's visual. **Overdrive (fire-rate)
   = NEW electric-lime `#A6F03C`, letter "O"; Railgun (velocity) = REUSE player cyan `#50DCFF`, letter "V".**
   Followed the GDD's "velocity keeps cyan, fire-rate takes a fresh hue" rec. **★ Why lime is the only option:**

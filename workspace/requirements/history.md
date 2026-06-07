@@ -141,6 +141,29 @@
   hue/alpha/slot → Artist; optional SHIFT hint → Writer; smoke-path SHIFT+shrunk-hitbox proof →
   Programmer. (Also flipped v18 index status to shipped ✅ — v1–v18 are shipped per the backlog.)
 
+- 2026-06-07 (v20): `requirements/v20.md` added. **R120–R132 MUST**, **AC109–AC120**. Laser enemy +
+  3-state charged sweeping beam + projectile-ownership + death-attribution. **Key BA stances:**
+  (1) **Lock the behaviour contract, delegate every number/identity/visual/string** — froze the beam's
+  3-state semantics (harmless windup line / lethal widening+sweeping persists-to-timeout damaging beam,
+  removed ONLY on timeout / firer immobile across windup+damaging, repositions only in the cooldown
+  gap) and pushed all magnitudes + the enemy identity + beam visuals + copy to §V20.4. (2) **The three
+  hardest mis-implementations are written as standalone MUSTs with their own ACs:** beam **not consumed
+  on contact** (R126/AC114 — the crux that separates it from every existing projectile), windup
+  **deals 0 damage** (R123/AC111), and **collision width == drawn width** as the beam widens
+  (R124/AC112). (3) **The freeze is `source`-driven, not a global flag** (R129) so multiple laser
+  enemies coexist correctly — tied to R128's contract that **every ship has a unique ID** and **every
+  projectile (player shots included) carries `source` = firing ship's ID**, additive-only with no
+  existing-motion regression. (4) **Attribution captures the source at the lethal-damage instant, not
+  by chasing a possibly-culled entity** (R130) — and R131 mandates a **display name for EVERY** lethal
+  source incl. all legacy ones (asteroid/debris, REGULAR/HEAVY/SCOUT, both bosses, laser enemy) **plus
+  a defined fallback** for unknown, so the "Killed by &lt;name&gt;" line never blanks/crashes; exact
+  wording + each name = Writer's. (5) **Sweep capped at ~0.1× P_SPEED** with fairness/no-unavoidable-beam
+  as an explicit Level-designer gate (out-walkability, AC113). Everything delegated via §V20.4:
+  identity/feel/sweep-model/pickup-cadence → Designer; HP/score/spawn/durations/width/sweep-speed/damage
+  → Level-designer; shapes/palette/beam visuals → Artist; the "Killed by" wording + every source name +
+  fallback → Writer; ship-ID/`source` representation + laser-beam entity shape + smoke seeding →
+  Programmer. (Also flipped v19 index status to shipped ✅ — v1–v19 are shipped per the backlog.)
+
 - 2026-06-06 (v14): `requirements/v14.md` added. **R92–R98 MUST/SHOULD**, **AC78–AC85**. One-file JSON
   save (versioned schema, per-user folder) + 5 lifetime counts + flush-only-on-GAME_OVER/quit + corrupt
   fallback + lifetime-stats screen. **Key BA stance — one governing principle anchors all five counts:**

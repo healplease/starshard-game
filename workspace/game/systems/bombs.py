@@ -26,6 +26,7 @@ def _flush(world):
     world.enemies.clear()
     world.asteroids.clear()
     world.ebullets.clear()
+    world.beams.clear()  # v20: the LASER's beam is its projectile → flushed like ebullets
 
 
 def trigger_flush(world, arm_flash=True):

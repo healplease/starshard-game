@@ -21,6 +21,19 @@
   collide range → collects ~f3 regardless of sweep; duration forced 60 f → expires ~f63; full
   spawn→collect→apply→expire+revert well inside 120 f; normal drip (720 f) can't fire in 120 f so the seed is
   the sole clean lifecycle.
+- 2026-06-07 (v20): `v20.md` added — LASER enemy + sweeping-beam magnitudes. Locked: `LASER_HP=3`
+  (REGULAR 2 < LASER 3 < HEAVY 4) / `LASER_SCORE=100` / `LASER_R=14`; beam `WINDUP_F=30` / `DAMAGE_F=60`
+  / `COOLDOWN_F=90` (180 f = 3 s cycle, "beam-breathe-beam"); width **2→6 px linear** (one `w` drives
+  draw==collision); **`BEAM_SWEEP_DPS=0.45`** calibrated to ≈0.1× P_SPEED lateral, arc cap 18° (rotate
+  about emitter, frozen target); `BEAM_DMG=15`==EB_DMG, per-frame-eligible but IFRAMES-gated → exactly
+  ≤1 tick (15 dmg) per 60 f damaging phase (can't out-damage a ram). Reposition = COOLDOWN-only drift to
+  a new uniform-x @ 2 px/f + descent 0.3. **Earliest spawn `LASER_GATE=60 s`** (after SCOUT@50), **weight
+  12 taken from REGULAR** in Squeeze(60→48)+Storm(55→43) — a **volume-neutral re-slice** (cap/interval
+  bit-for-bit v1). **Fairness proof (§V20L.4):** with 0.5 s harmless windup + frozen fire-time target +
+  ≤0.5 px/f lateral sweep, a player opens the needed ~9 px clearance in ≤4.5 f even focused (escape net
+  ≥2.0 px/f ≫ beam 0.5) — **no unavoidable hit at P_SPEED 5 or focused 2.5**. **AC13:** net high-tail-
+  trimming (a LASER is lower bullet-volume than the REGULAR it replaces and fully out-walkable) → runs
+  stay 1–3 min; v1 ramp + prior economy UNCHANGED. Levers in §V20L.7.
 - 2026-06-07 (v18): `v18.md` added — bonus rebalance economy. **Magnitudes LOCK** (§V18.1): base bullet
   speed = the existing `PB_SPEED = 10` px/f (now the buffable base, R110); **Overdrive** cd 12→6 f (halved,
   = `RAPID_CD`, confirm) + speed +2 → 12 px/f ("a bit"); **Railgun** speed +6 → 16 px/f ("a lot", 3× OD's

@@ -36,7 +36,7 @@ def _spawn_boss(world, boss_type, pos, **overrides):
     per-boss stats come from `boss_type`'s spec; `overrides` (first_step_delay /
     step_interval / split_dist) let the smoke seed compress the fight (§V7.15)."""
     bombs.trigger_flush(world, arm_flash=True)  # free arrival flush + flash (§V7.5)
-    world.boss = make_boss(boss_type, pos, **overrides)
+    world.boss = make_boss(boss_type, pos, ship_id=world.next_ship_id(), **overrides)
 
 
 def update(world):
@@ -116,7 +116,7 @@ def _nova_bullet(boss, theta, speed, advance=0.0):
     vx, vy = math.cos(theta) * speed, math.sin(theta) * speed
     x = boss.x + math.cos(theta) * advance
     y = boss.y + math.sin(theta) * advance
-    return EnemyBullet(x, y, vx, vy, family="NOVA", dmg=C.NOVA_BULLET_DMG)
+    return EnemyBullet(x, y, vx, vy, family="NOVA", dmg=C.NOVA_BULLET_DMG, source=boss.id)
 
 
 def _fire_nova_step(world, boss):
@@ -150,7 +150,7 @@ def _spawn_wave(world, kind, count):
     despite the frozen spawner because they come from the boss, not the spawner."""
     room = C.MINION_CAP - len(world.enemies)
     for _ in range(max(0, min(count, room))):
-        world.enemies.append(make_enemy(world.rng, world.t, kind))
+        world.enemies.append(make_enemy(world.rng, world.t, kind, ship_id=world.next_ship_id()))
 
 
 def _fire_yellow_fan(world, boss):
@@ -175,6 +175,7 @@ def _fire_yellow_fan(world, boss):
                 family="YELLOW",
                 split_timer=timer,
                 ring_phase=phase,
+                source=boss.id,
             )
         )
 

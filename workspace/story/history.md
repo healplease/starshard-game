@@ -62,3 +62,19 @@
   small font, budget W=600): PAUSE_HINT_RESTART 108 px, GAMEOVER_KEYS 221 px — both safe; no new
   `string_widths` row needed (both already listed). No "Esc" reintroduced (AC59 / v8 R73). UI-only (C2);
   all other v1–v11 strings untouched, Q gesture wording not touched.
+- 2026-06-07 (v20): story/v20.md added (LASER name + death attribution, R120/R130/R131). **Blessed `LASER`
+  as the display name = the new ENEMY_KINDS kind key verbatim** (kind-key↔name unity, like REGULAR/HEAVY/
+  SCOUT + MOTHERSHIP/NOVA — no synonym); reads true against the art turret-eye that fires a laser. **NEW
+  GAME_OVER line `f"Killed by {name}"`** — bare name, **no article** (one format string serves every
+  source, no per-source grammar branch); FONT_SMALL/TEXT_DIM (a secondary caption, one tier below the
+  SCORE/BEST FONT_MID datums), centred, top-y **450** = the clear gap between BEST (y420) and KEYS (y480),
+  so the existing GAME_OVER stack needs **no reflow** and the v10/v12 Q/R arcs (y523–567) clear by 73 px.
+  **Every lethal source named** (R131): `ASTEROID` covers asteroid **and** debris (one rock family), the
+  v5 kinds + both bosses + LASER reuse their blessed names verbatim, and the unresolvable-source
+  **fallback = `SOMETHING`** (all-caps, grammatical, never blank/raw-ID/crash). **Windup/telegraph warning
+  copy = explicitly NONE** — the tell is wholly visual (the art charge-ring on the eye + the faint aim
+  line); there's no per-enemy text surface (cf. v5), and a printed per-shot "WARNING" on a normal-stream
+  enemy would clutter the cabinet and nag against the quiet-periodic-threat design. Widths **measured**
+  (live small font, W=600): longest `Killed by MOTHERSHIP` 172 px ≪ 600 → no name overflows, none
+  shortened; flagged that line as the `string_widths` witness. UI-only (C2); all v1–v19 strings + the
+  GAME_OVER TITLE/SCORE/BEST/KEYS literals untouched.

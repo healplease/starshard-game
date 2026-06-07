@@ -110,6 +110,24 @@ NOVA_SPIKE_HALF_DEG = 7  # spike half-width at the disc edge
 HITBOX_RED = (255, 40, 64)  # #FF2840 — the SHIFT hitbox-indicator circle (only use)
 HITBOX_ALPHA = 128  # ≈50% (the locked "~50% = 128/255" convention, cf. INVULN_ALPHA_FLOOR)
 
+# ── v20 LASER enemy palette (art_spec §V20a.1) — 3 new colours; windup/glow are tints ──
+LASER_BODY = (66, 70, 86)  # #424656 cold gunmetal hull — NOT enemy magenta (turret, not fighter)
+LASER_EYE = (255, 122, 26)  # #FF7A1A searing orange charging eye / emitter lens (danger tell)
+BEAM_CORE = (255, 244, 224)  # #FFF4E0 white-hot beam core (warm white, ≠ pure-white FLASH)
+BEAM_GLOW_ALPHA = 90  # soft outer-glow halo of the DAMAGING beam (~35%; render-only)
+WINDUP_ALPHA = 110  # the harmless telegraph line (~43% — deliberately faint, "not armed yet")
+
+# ── v20 LASER body draw math (art_spec §V20a.2.1) — center (cx, cy), +y down ──
+LASER_HOUSE_W, LASER_HOUSE_H = 34, 24  # housing block (half: 17 × 12)
+LASER_EYE_R = 7  # orange emitter lens radius
+LASER_PUPIL_R = 3  # white-hot pupil
+LASER_EYE_DY = 6  # eye sits forward (toward +y, the muzzle side) — also the beam origin/pivot
+LASER_CHARGE_RING_R = 9  # WINDUP "powering up" ring radius
+
+# ── v20 beam render-only glow (art_spec §V20a.3.2) ──
+BEAM_GLOW_W = 4  # px the orange glow extends BEYOND the core on EACH side (render-only halo)
+BEAM_OVERSHOOT = 24  # px past the screen-edge crossing → endless look (art_spec §V20a.4)
+
 # ── Player (GDD §6.1) ────────────────────────────────────────────────────────
 P_SPEED, P_R = 5, 13  # move step / drawn-ship envelope (+ pickup radius; unchanged)
 # v19 (level_spec §V19.1/§V19.2): Focus = hold-SHIFT ×0.5 move step; the player's
@@ -202,7 +220,51 @@ ENEMY_KINDS = {
         fire_mult=1.4,
         cone_deg=3,
     ),
+    # v20 LASER (level_spec §V20L.1) — a stationary area-denial zoner. It does not fire
+    # point bullets (no bullet family / cadence): its weapon is the 3-state beam, driven
+    # by encounter/physics. The bullet/fire/cone fields are present for a uniform shape
+    # but unused (bullet="" → no make_enemy_bullet path; fire_mult 0 → never bullet-fires).
+    "LASER": dict(
+        r=14,  # LASER_R collision radius (housing 34×24 ⊇ r=14 circle)
+        entry=2.0,  # shared enemy entry descent until y >= 120 (then it begins its first WINDUP)
+        strafe=0.0,  # unused — the LASER moves only during COOLDOWN (its own reposition logic)
+        descent=0.0,  # unused — same
+        hp=3,  # LASER_HP (REGULAR 2 < LASER 3 < HEAVY 4)
+        score=100,  # LASER_SCORE (> HEAVY 80; removes a whole-lane threat)
+        ram=40,  # body-contact damage (= REGULAR; a turret you shouldn't touch)
+        bullet="",  # no point-bullet family — its weapon is the beam
+        bspeed=0.0,
+        fire_mult=0.0,  # never fires point bullets
+        cone_deg=0,
+    ),
 }
+
+# ── v20 LASER enemy stats + the 3-state beam (level_spec §V20L.1) ─────────────
+LASER_HP = 3  # player-bullet hits to kill (mirrors ENEMY_KINDS["LASER"]["hp"])
+LASER_SCORE = 100  # death reward
+LASER_R = 14  # collision radius
+
+BEAM_WINDUP_F = 30  # WINDUP   0.50 s — harmless telegraph line (0 dmg)
+BEAM_DAMAGE_F = 60  # DAMAGING 1.00 s — lethal, widening, sweeping; removed ONLY on timeout
+BEAM_COOLDOWN_F = 90  # COOLDOWN 1.50 s — no beam live; enemy repositions then re-fires
+#   one full cycle = 30 + 60 + 90 = 180 f = 3.0 s
+
+BEAM_START_W = 2  # core width at the instant DAMAGING arms (just-armed, thin)
+BEAM_FINAL_W = 6  # core width at timeout
+#   live core width at damaging-progress td ∈ [0,1]:  w = START + (FINAL-START)*td  (LINEAR)
+#   this single w drives BOTH the core draw.line width AND the segment/circle hit test.
+
+BEAM_SWEEP_DPS = 0.45  # degrees the beam pivots PER FRAME, toward+past the frozen fire-time aim
+BEAM_SWEEP_MAX_DEG = 18  # total arc the pivot may turn over the whole DAMAGING phase
+
+BEAM_DMG = 15  # per-hit damage == EB_DMG; per-frame eligible but IFRAMES-gated → ≤1 tick/phase
+
+LASER_REPO_SPEED = 2.0  # px/f horizontal drift toward a fresh firing x during COOLDOWN
+LASER_REPO_DESCENT = 0.3  # px/f slow downward drift during COOLDOWN
+LASER_REPO_X_LO, LASER_REPO_X_HI = 40, 560  # new firing-x is uniform in this band
+
+LASER_GATE = 60  # seconds before a LASER can spawn (earliest spawn = Squeeze band)
+LASER_WEIGHT = 12  # spawn weight in the Squeeze/Storm bands (volume-neutral re-slice)
 
 # Splitting green pellet (GDD §V5.4): frozen midway distance → 3-red fan.
 SPLIT_FRACTION = 0.5  # "midway": fraction of fire-time pellet→player distance
@@ -443,6 +505,13 @@ SMOKE_TIMELINE = (
         "boss",
         "force boss: free arrival flush + compressed entrance + yellow→12-red (AC41/49/50/51)",
     ),
+    (
+        41,
+        "laser",
+        "force-seed a LASER + its beam AFTER the f20 bomb AND the f40 boss-arrival flush so "
+        "neither wipes it mid-windup; windup(30)→damaging arms ~f71 and is observed through "
+        "f120 (DAMAGING reached/persists in-budget, cycle need not complete) (R132/AC120)",
+    ),
 )
 
 
@@ -502,6 +571,15 @@ SMOKE_BOSS_STEP_INTERVAL = 6  # compressed: steps every 6 f → step 4 ~f84, spl
 # coverage is deterministic (R105/§V16.7). Drives NOVA's projectile-only moveset headlessly.
 SMOKE_BOSS_TYPE = "NOVA"  # the forced boss type for the headless seed (must be in BOSS_POOL)
 
+# v20 LASER seed (level_spec §V20L.8): force one LASER already in its firing position
+# (no entry descent) with a beam armed. Seeded @f41 — AFTER both flush events (the f20 bomb
+# AND the f40 boss-arrival free clear) — so neither wipes the beam mid-windup; windup(30 f)
+# runs f41→f70, then DAMAGING arms ~f71 and is observed widening/sweeping/persisting through
+# f120 (the 60 f damaging window need not fully complete inside the 120-f budget; reaching
+# and persisting in DAMAGING is what R132/AC120 require). Aimed at the smoke player.
+SMOKE_LASER_FRAME = _smoke_frame("laser")  # from SMOKE_TIMELINE (single source)
+SMOKE_LASER_POS = (300, 150)  # firing position above the player (past the y>=120 entry line)
+
 # ── AC13 balance probe (v9, retro T2/A10) ────────────────────────────────────
 # A headless instrument (NOT a pass/fail gate): run K deterministic scripted runs
 # of the REAL play pipeline under the live difficulty ramp until the auto-pilot
@@ -550,6 +628,22 @@ GAMEOVER_TITLE = "GAME OVER"
 # v12 ⚠ REWRITE (story §V12.3): Restart is now a 0.5 s HOLD gesture (RESTART_HOLD_FRAMES=30),
 # so the restart clause teaches the hold; the v10 "Hold Q  Quit" clause is unchanged.
 GAMEOVER_KEYS = "Hold R  Restart      Hold Q  Quit"
+
+# v20 death attribution (story §V20s.2/§V20s.3/§V20s.5): the GAME_OVER "Killed by <name>"
+# line + the display name for every lethal source + the unknown fallback. The line is
+# FONT_SMALL / TEXT_DIM, centred x=W//2, top-y 450 (between BEST y420 and KEYS y480).
+KILLED_BY_PREFIX = "Killed by "  # f"Killed by {name}" — bare name, no article (§V20s.3)
+KILLED_BY_Y = 450  # top-y of the new line (story §V20s.2)
+KILLED_BY_NAMES = {
+    "ASTEROID": "ASTEROID",  # asteroid OR debris body (one name covers both rock hazards)
+    "REGULAR": "REGULAR",  # v5 kind (body or RED bullet)
+    "HEAVY": "HEAVY",  # v5 kind (body or GREEN/RED pellet)
+    "SCOUT": "SCOUT",  # v5 kind (body or CYAN bullet)
+    "MOTHERSHIP": "MOTHERSHIP",  # v7 boss (body or bullets)
+    "NOVA": "NOVA",  # v16 boss (body or bullets)
+    "LASER": "LASER",  # v20 enemy (body or its beam, resolved via source→owner)
+}
+KILLED_BY_FALLBACK = "SOMETHING"  # unresolvable/un-named source; always defined (never blank)
 
 # v7 boss copy (story §V7.5). Name blessed verbatim; label == name (AC47-safe, ≤12 ch).
 BOSS_NAME = "MOTHERSHIP"  # canonical boss name
@@ -725,17 +819,30 @@ def choose_enemy_kind(t, rng):
     r = rng.randint(0, 99)
     if t < SCOUT_GATE:  # Heat-up (20–50) — R85 / H15
         return "HEAVY" if r < 15 else "REGULAR"
-    if t < 90:  # Squeeze (50–90) — R60 / H15 / Sc25
-        if r < 60:
+    # v20 (level_spec §V20L.5): LASER folds into the Squeeze/Storm bands at LASER_GATE,
+    # taking its weight entirely from REGULAR (volume-neutral; HEAVY/SCOUT unchanged).
+    if t < 90:  # Squeeze — pre-60 s: R60/H15/Sc25 ; 60 s+: R48/H15/Sc25/L12
+        if t < LASER_GATE:  # 50–60 s — v5 split, no LASER yet
+            if r < 60:
+                return "REGULAR"
+            if r < 75:
+                return "HEAVY"
+            return "SCOUT"
+        if r < 48:  # 60 s+
             return "REGULAR"
-        if r < 75:
+        if r < 63:
             return "HEAVY"
-        return "SCOUT"
-    if r < 55:  # Storm (t>=90) — R55 / H15 / Sc30
+        if r < 88:
+            return "SCOUT"
+        return "LASER"
+    # Storm (t>=90) — R43/H15/Sc30/L12
+    if r < 43:
         return "REGULAR"
-    if r < 70:
+    if r < 58:
         return "HEAVY"
-    return "SCOUT"
+    if r < 88:
+        return "SCOUT"
+    return "LASER"
 
 
 # Fan beam UNIT directions from FAN_ANGLES_DEG (dx, dy), straight-up = 0°. v18:

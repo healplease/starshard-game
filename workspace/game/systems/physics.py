@@ -8,6 +8,7 @@ produces honor the v2 Fan/Rapid buffs via the player's accessors.
 
 from .. import config as C
 from ..entities.projectiles import make_enemy_bullet, make_player_shots, split_pellet, split_yellow
+from . import lasers
 
 
 def update_starfield(world):
@@ -49,10 +50,10 @@ def update_play(world, inp):
             )  # sides fire every other shot → 2:1 center:side (R106)
             p.fan_fire_count += 1
             world.pbullets.extend(
-                make_player_shots(p.x, p.y, p.bullet_speed, fan=True, sides=sides)
+                make_player_shots(p.x, p.y, p.bullet_speed, fan=True, sides=sides, source=p.id)
             )
         else:
-            world.pbullets.extend(make_player_shots(p.x, p.y, p.bullet_speed))
+            world.pbullets.extend(make_player_shots(p.x, p.y, p.bullet_speed, source=p.id))
         p.fire_cd = p.fire_cooldown
 
     # --- Player bullets travel along their velocity; despawn off any edge ---
@@ -70,6 +71,8 @@ def update_play(world, inp):
     world.asteroids = [a for a in world.asteroids if a.y - a.r <= C.H]
 
     # --- Enemies: entry → strafe, fire aimed bullets in Phase B (per-kind, §V5.2) ---
+    # v20: the LASER is a stationary zoner — after entry it runs the 3-state beam cycle
+    # (systems/lasers), not the strafe+point-bullet path, and never fires EnemyBullets.
     for e in world.enemies:
         spec = e.spec
         if e.flash > 0:
@@ -78,6 +81,8 @@ def update_play(world, inp):
             e.y += spec["entry"]
             if e.y >= 120:
                 e.phase = "B"
+        elif e.kind == "LASER":
+            lasers.update_laser(world, e)  # WINDUP→DAMAGING→COOLDOWN; reposition in cooldown only
         else:
             e.x += spec["strafe"] * e.dir
             if e.x <= 20:
@@ -88,8 +93,12 @@ def update_play(world, inp):
             e.fire_timer -= 1
             if e.fire_timer <= 0:
                 e.fire_timer = round(C.enemy_fire_interval(t) * spec["fire_mult"])
-                world.ebullets.append(make_enemy_bullet(e.x, e.y, p.x, p.y, world.rng, e.kind))
+                world.ebullets.append(
+                    make_enemy_bullet(e.x, e.y, p.x, p.y, world.rng, e.kind, source=e.id)
+                )
     world.enemies = [e for e in world.enemies if e.y <= 820]
+    # --- LASER beams: advance windup/damaging timers + rotate the sweep (lasers system) ---
+    lasers.update_beams(world)
 
     # --- Enemy bullets: travel along their frozen aim; GREEN pellets count down to
     #     their midway split (GDD §V5.4) → burst into 3 RED children. A pellet that

@@ -197,7 +197,9 @@ class App:
         for frame, event, _note in C.SMOKE_TIMELINE:
             if self.frame != frame:
                 continue
-            if event == "bonus":
+            if event == "laser":
+                spawning.seed_smoke_laser(self.world)  # v20: full LASER cycle headless (R132)
+            elif event == "bonus":
                 spawning.seed_smoke_bonus(self.world)
             elif event == "split":
                 spawning.seed_smoke_split(self.world)

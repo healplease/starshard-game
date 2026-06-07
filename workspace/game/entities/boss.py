@@ -25,6 +25,7 @@ from .. import config as C
 class Boss:
     x: float
     y: float
+    id: int = 0  # v20: unique within-run ship ID (R128); set in make_boss via world
     type: str = "MOTHERSHIP"  # which BOSS_SPECS entry this boss is (v16 §V16.2)
     hp: int = C.BOSS_HP
     hp_max: int = C.BOSS_HP  # bar fills hp / hp_max (per-boss, art_spec §V16.4)
@@ -43,15 +44,19 @@ class Boss:
     step_interval: int = C.BOSS_STEP_INTERVAL  # f between subsequent steps
 
 
-def make_boss(boss_type, pos, *, first_step_delay=None, step_interval=None, split_dist=None):
+def make_boss(
+    boss_type, pos, *, ship_id=0, first_step_delay=None, step_interval=None, split_dist=None
+):
     """Build a Boss of `boss_type` from its `config.BOSS_SPECS` entry (v16 §V16.2): the
     per-boss stats come from the spec; the entrance/rest/oscillation framing is shared
     (the v7 globals, read by encounter). The three keyword overrides let the smoke seed
-    compress the fight in-budget without touching the play-time constants (§V7.15)."""
+    compress the fight in-budget without touching the play-time constants (§V7.15).
+    v20: `ship_id` (from world.next_ship_id) is the boss's unique within-run ID (R128)."""
     spec = C.BOSS_SPECS[boss_type]
     return Boss(
         x=float(pos[0]),
         y=float(pos[1]),
+        id=ship_id,
         type=boss_type,
         hp=spec["hp"],
         hp_max=spec["hp"],
