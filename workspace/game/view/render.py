@@ -80,21 +80,23 @@ def _draw_enemy(screen, e):
 
 
 def _draw_enemy_bullet(screen, b):
-    """Three families, one collision radius (EB_R=5); draws are render-only (§V5.3)."""
+    """v19 (art_spec §V19a.3): draw == collision for EVERY family — each draws its body
+    at the single shared EB_R (no more render-only inflation). Identity is carried by hue
+    (+ a hot core / motion tail), not by a fatter radius."""
     x, y = int(b.x), int(b.y)
-    if b.family == "GREEN":  # heavy pellet — drawn larger with a hot core (purple hue, v17)
-        pygame.draw.circle(screen, C.EB_COLOR_PURPLE, (x, y), C.PELLET_DRAW_R)
+    if b.family == "GREEN":  # heavy pellet — purple hue (v17) + a hot core (identity, not size)
+        pygame.draw.circle(screen, C.EB_COLOR_PURPLE, (x, y), C.EB_R)
         pygame.draw.circle(screen, C.FLASH, (x, y), 2)
-    elif b.family == "CYAN":  # scout — a fast streak along its heading
+    elif b.family == "CYAN":  # scout — head dot at EB_R + a render-only motion streak
         inv = 1.0 / max(1e-6, math.hypot(b.vx, b.vy))
         tail = (int(b.x - b.vx * inv * C.CYAN_TAIL_LEN), int(b.y - b.vy * inv * C.CYAN_TAIL_LEN))
         pygame.draw.line(screen, C.EB_COLOR_CYAN, (x, y), tail, 3)
-        pygame.draw.circle(screen, C.EB_COLOR_CYAN, (x, y), C.CYAN_HEAD_R)
-    elif b.family == "YELLOW":  # boss fan telegraph — emphasized "charged" round
-        pygame.draw.circle(screen, C.EB_COLOR_YELLOW, (x, y), 6)  # collision still EB_R=5
+        pygame.draw.circle(screen, C.EB_COLOR_CYAN, (x, y), C.EB_R)
+    elif b.family == "YELLOW":  # boss fan telegraph — "charged" round + white core
+        pygame.draw.circle(screen, C.EB_COLOR_YELLOW, (x, y), C.EB_R)
         pygame.draw.circle(screen, C.FLASH, (x, y), 2)  # white core = "about to burst"
-    elif b.family == "NOVA":  # v16 NOVA — azure plasma round (collision still EB_R=5)
-        pygame.draw.circle(screen, C.NOVA_BULLET, (x, y), C.NOVA_BULLET_DRAW_R)
+    elif b.family == "NOVA":  # v16 NOVA — azure plasma round + hot white core
+        pygame.draw.circle(screen, C.NOVA_BULLET, (x, y), C.EB_R)
         pygame.draw.circle(screen, C.FLASH, (x, y), 2)  # hot white core
     else:  # RED — regular + every split child (plain dot)
         pygame.draw.circle(screen, C.EB_COLOR_RED, (x, y), C.EB_R)
@@ -231,6 +233,35 @@ def _draw_player(screen, p):
     # screen OUTSIDE the alpha surface, so it never pulses or strobes (§V11.4).
     if p.shield_active:
         pygame.draw.circle(screen, C.BONUS_SHIELD, (int(cx), int(cy)), 18, 2)
+
+
+# ── v19 §V19a.2: SHIFT red hitbox indicator (PLAY + SHIFT-held, after particles) ──
+# A red readout of the player's TRUE damage hitbox (R115): a filled disc at P_HITBOX_R
+# (HITBOX_RED @ HITBOX_ALPHA) plus a 1-px fully-opaque rim so the exact collision edge
+# stays crisp over the cyan ship. Render-only — it reads the same radius/center the
+# collision uses, changes no state. Straight alpha baked INTO the draw color on a small
+# SRCALPHA surface (NOT set_alpha — the v11 §V11.5 gotcha); the surface is built once.
+_HITBOX_SURF = None
+
+
+def draw_hitbox_indicator(screen, world):
+    """Draw the red hitbox circle iff Focus (SHIFT) is held; the app gates this to PLAY.
+    Centered on the ship origin, radius = the live collision constant P_HITBOX_R (so a
+    retune follows automatically). No-op when SHIFT is up (world.focus False)."""
+    if not world.focus:
+        return
+    global _HITBOX_SURF
+    r = C.P_HITBOX_R
+    d = 2 * r + 2  # +2 px margin so the 1-px rim is never clipped
+    if _HITBOX_SURF is None:
+        _HITBOX_SURF = pygame.Surface((d, d), pygame.SRCALPHA)
+    surf = _HITBOX_SURF
+    surf.fill((0, 0, 0, 0))  # clear the prior frame
+    c = (d // 2, d // 2)
+    pygame.draw.circle(surf, (*C.HITBOX_RED, C.HITBOX_ALPHA), c, r)  # 50% fill
+    pygame.draw.circle(surf, (*C.HITBOX_RED, 255), c, r, 1)  # opaque 1-px rim on the radius
+    p = world.player
+    screen.blit(surf, (int(p.x) - c[0], int(p.y) - c[1]))
 
 
 # ── v17 §V17.2: low-HP red edge vignette (PLAY only, below the HUD, hp < 25) ───

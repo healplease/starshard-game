@@ -89,10 +89,10 @@ def test_ac14_bonus_collect_and_miss(fresh_world):
     """AC14: bonus collected on overlap; a missed bonus despawns penalty-free."""
     w = fresh_world()
     p = w.player
-    bon = Bonus(BonusKind.RAPID, p.x, p.y)
+    bon = Bonus(BonusKind.OVERDRIVE, p.x, p.y)
     w.bonuses = [bon]
     combat.resolve(w)
-    assert bon not in w.bonuses and p.buff(BonusKind.RAPID) > 0, "bonus not collected"
+    assert bon not in w.bonuses and p.buff(BonusKind.OVERDRIVE) > 0, "bonus not collected"
     w2 = fresh_world()
     p2 = w2.player
     miss = Bonus(BonusKind.REPAIR, 50, C.H + C.BONUS_PICKUP_R + 1)

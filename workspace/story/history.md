@@ -39,6 +39,16 @@
   **measured** (live small font, budget W=600): START_QUIT_HINT 89 px, CONTROLS_2 77 px, GAMEOVER_KEYS
   184 px — all safe. Flagged for QA/Programmer: add `START_QUIT_HINT` to the `string_widths` budget list.
   UI-only (C2); all other v1–v8 strings untouched.
+- 2026-06-07 (v18): story/v18.md added (two new bonus kinds, RAPID retired — R108/R109). **Blessed the GDD
+  design handles `OVERDRIVE` / `RAILGUN` as final display names** (verbatim, like MOTHERSHIP/NOVA — no synonym).
+  **Confirmed the artist's pill letters `O` (Overdrive) / `V` (Railgun), none overridden.** `O` = first letter
+  (name↔letter sync, cf. FAN→F). **Kept `V` over the freed `R` for Railgun** because Railgun **reuses Rapid's
+  cyan** (`BONUS_RAILGUN = PLAYER`): cyan **+** `R` would render identically to the retired Rapid pill while
+  behaving differently — the same stale-read trap v12 fixed for the hold-R copy. `V` = velocity (its axis) also
+  stays distinct from neighbour Shield's `S`. **No popup/pickup text** — both are timed buffs (pill only, drain
+  over 480 f), exactly like old Rapid/Fan/Shield/Score; only Repair (+40) and Bomb (+1 BOMB) get collect text.
+  Config: removed the `RAPID` row from `BONUS_NAMES` **and** `BONUS_LETTERS`, added the two kinds. Display names
+  aren't drawn on the HUD (letters only), so no width budget concern. UI-only (C2); all v1–v17 strings untouched.
 - 2026-06-05 (v12): story/v12.md added (hold-R-to-restart hint copy, R85). **`PAUSE_HINT_RESTART`
   rewritten** `"R  Restart"` → `"Hold R  Restart"` and the **R clause of `GAMEOVER_KEYS`** rewritten
   → `"Hold R  Restart      Hold Q  Quit"` (only the restart clause changed; the v10 `"Hold Q  Quit"`

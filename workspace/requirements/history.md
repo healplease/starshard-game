@@ -92,6 +92,55 @@
   deadlier-lever numbers + cadence-unchanged confirm → Level-designer; registry shape + seed hook →
   Programmer. (Also flipped v14 index status to shipped ✅ — v1–v15 are shipped per the backlog.)
 
+- 2026-06-07 (v18): `requirements/v18.md` added. **R106–R113 MUST**, **AC94–AC101**. Bonus rebalance:
+  Fan side-beam nerf + Rapid → two fire/speed kinds. **Key BA stances:** (1) **Amend, don't reinvent** —
+  R106 amends R25 (Fan side beams now fire at HALF the center cadence; wrote the contract as a **2:1
+  center:side firing-rate ratio**, mechanism delegated to Programmer, geometry/angles/colors untouched);
+  R26 (Rapid) **RETIRED** by R108, replaced by R109's two kinds — both reuse the v2 timed-buff shape
+  (R29 HUD, R30 refresh, R31 expiry/restart) verbatim, so this adds two BonusKinds + a Fan rule, not a
+  new system. (2) **The weight-sharing contract is the spine** — R111: the two new kinds' **combined**
+  weight **= old Rapid weight (20)**, split delegated (default even 10/10); combined with R107 (Fan
+  rarer, freed weight redistributed), the **full roll-0–99 ladder MUST stay non-overlapping and sum to
+  100** across the post-v18 **7 kinds** (Repair·Fan·fire-rate·velocity·Shield·Score·Bomb). Made
+  sums-to-100 a hard, AC-checked gate (AC99) — the #1 footgun of touching three ladder slots at once.
+  (3) **Locked the two effects' semantics, delegated magnitudes** — (a) fire-rate kind = cooldown halved
+  *exactly as old Rapid* (FIRE_CD//2) **+** bullet speed up a bit; (b) velocity kind = bullet speed up a
+  lot **+** fire rate up a bit (< the (a) halving). Introduced **R110: bullet speed becomes a buffable
+  stat** off a single base constant (today fixed) — the levers the two kinds move; reverts on expiry. All
+  "a bit"/"a lot" numbers + base speed → Level-designer. (4) **Stacking ruling (R112)** — the new kinds
+  both touch fire-cooldown AND bullet-speed, and per R30 different types coexist, so they can be active at
+  once on the **same** stats; required the per-stat resolution to be **deterministic, bounded, clean-
+  reverting** (no ≤0 cooldown, no stuck stat) — recommended strongest-wins, but the choice is the
+  Designer's as long as it's specified + testable. (5) **Testability** — R113: smoke seed
+  `SMOKE_BONUS_KIND="RAPID"` MUST be repointed to a valid post-v18 kind (ideally a new one); suite grows
+  with 2:1 cadence / Fan-weight / Rapid-gone / each new effect / sums-to-100 / clean-stacking checks. All
+  creative delegated via §V18.3: identity/feel/durations/stacking → Designer; pill letter+color → Artist;
+  name → Writer; every magnitude + all ladder weights + split → Level-designer; Fan mechanism + smoke
+  seed → Programmer. (Also flipped v16 index status to shipped ✅ — v1–v17 are shipped per the backlog.)
+
+- 2026-06-07 (v19): `requirements/v19.md` added. **R114–R119 MUST**, **AC102–AC108**. Precise controls
+  = focus mode + circular player hitbox + larger bullets. **Key BA stances:** (1) **Amend, don't
+  reinvent** — R114 amends R3 (hold SHIFT → ×0.5 move, PLAY-only, **held modifier not toggle**,
+  firing/hitbox untouched); R115 amends the R16–R18 collision *radius* only. No new system/screen — an
+  input modifier + a radius change + a size scale + one overlay. (2) **Hitbox-is-always-small is the
+  spine, and it's confirmed with the human** — I asked the load-bearing question at kickoff (always-on
+  vs precise-only) and the human said **always-on**; SHIFT only *reveals* (R117) and *slows* (R114), it
+  does **not** resize the hitbox. Wrote R115 to force the Programmer to **decouple the draw constant from
+  the collision radius** (today `P_R=13` is both) so the visible ship stays full-size while the hitbox
+  becomes a circle ≈50% of it. (3) **"All bullets larger" made exhaustive + two-sided** — R116 requires
+  **every** projectile family (player, `EB_R`, pellet, child, NOVA, boss) enlarged in **BOTH draw and
+  collision** so visuals stay matched; flagged tunneling/cull as the risk. Bullet **speed** explicitly
+  unchanged (v18 R110 untouched) — size only. (4) **Indicator is render-only** — R117 forbids the red
+  circle from touching any collision/movement (pure readout of R115), SHIFT-and-PLAY-only. (5) **Enemy
+  hitboxes fenced off** — R118 keeps asteroid/enemy/boss *body* radii unchanged (only their bullets grow
+  via R116). (6) **One nuance surfaced, not silently decided** — bonus-pickup collection *also* uses `P_R`
+  today; whether it shrinks with the damage hitbox or stays generous is delegated to the Designer
+  (default: pickup stays generous, only the *damage* hitbox shrinks) so bonuses don't quietly get harder
+  to grab. **Everything numeric delegated** via §V19.3: ×0.5 multiplier + hitbox px + per-family bullet
+  sizes → Level-designer; precise-mode/indicator feel + the pickup-radius call → Designer; red
+  hue/alpha/slot → Artist; optional SHIFT hint → Writer; smoke-path SHIFT+shrunk-hitbox proof →
+  Programmer. (Also flipped v18 index status to shipped ✅ — v1–v18 are shipped per the backlog.)
+
 - 2026-06-06 (v14): `requirements/v14.md` added. **R92–R98 MUST/SHOULD**, **AC78–AC85**. One-file JSON
   save (versioned schema, per-user folder) + 5 lifetime counts + flush-only-on-GAME_OVER/quit + corrupt
   fallback + lifetime-stats screen. **Key BA stance — one governing principle anchors all five counts:**

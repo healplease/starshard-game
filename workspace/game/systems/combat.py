@@ -96,29 +96,32 @@ def resolve(world):
             buffs.apply(world, bonus)
             world.particles += make_burst(world.rng, bonus.x, bonus.y, bonus.color)
 
-    # 4) Player damage — only while vulnerable (Shield/​i-frames skip this), first hit wins
+    # 4) Player damage — only while vulnerable (Shield/​i-frames skip this), first hit wins.
+    #    v19 R115: every player-DAMAGE test uses the always-on small circle P_HITBOX_R
+    #    (≈50% of the drawn P_R), NOT the draw/pickup radius — boss-ram, asteroid, enemy,
+    #    and ebullet all shrink together; pickup collection (step 3) stays generous at P_R.
     if not p.invulnerable:
         dmg = 0
         # Boss body ram (R61/§V7.13) — the scariest thing to touch (60 > HEAVY 50);
         # the boss is NOT consumed (it persists), unlike a hazard hit.
         if world.boss is not None and _hit(
-            p.x, p.y, C.P_R, world.boss.x, world.boss.y, world.boss.r
+            p.x, p.y, C.P_HITBOX_R, world.boss.x, world.boss.y, world.boss.r
         ):
             dmg = world.boss.ram_dmg
         for a in world.asteroids:
             if dmg:
                 break
-            if id(a) not in dead_ast and _hit(p.x, p.y, C.P_R, a.x, a.y, a.r):
+            if id(a) not in dead_ast and _hit(p.x, p.y, C.P_HITBOX_R, a.x, a.y, a.r):
                 dmg, _ = a.dmg, dead_ast.add(id(a))
                 break
         if dmg == 0:
             for e in world.enemies:
-                if id(e) not in dead_en and _hit(p.x, p.y, C.P_R, e.x, e.y, e.r):
+                if id(e) not in dead_en and _hit(p.x, p.y, C.P_HITBOX_R, e.x, e.y, e.r):
                     dmg, _ = e.ram_dmg, dead_en.add(id(e))
                     break
         if dmg == 0:
             for b in world.ebullets:
-                if id(b) not in dead_eb and _hit(p.x, p.y, C.P_R, b.x, b.y, C.EB_R):
+                if id(b) not in dead_eb and _hit(p.x, p.y, C.P_HITBOX_R, b.x, b.y, C.EB_R):
                     dmg, _ = b.dmg, dead_eb.add(id(b))  # per-bullet dmg (NOVA 25 > EB_DMG 15)
                     break
         if dmg:

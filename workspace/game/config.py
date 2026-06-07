@@ -61,11 +61,15 @@ VIGNETTE_PULSE_PERIOD = 60  # frames per breathe cycle (~1.0 s @60fps) — a slo
 # ── Palette — v2 bonuses (art_spec §V2.1; 4 new + reuses) ────────────────────
 BONUS_REPAIR = HP_GREEN  # reuse — ties repair to the health color
 BONUS_FAN = (255, 140, 40)  # #FF8C28 new orange
-BONUS_RAPID = PLAYER  # reuse — "your gun" cyan
 BONUS_SHIELD = (180, 220, 255)  # #B4DCFF new pale blue
 BONUS_SCORE = (255, 210, 70)  # #FFD246 new gold
 BONUS_INK = BG  # dark glyph on bright fills
 PILL_TRACK = HP_BACK  # empty timer-bar track
+
+# ── Palette — v18 bonus rebalance: Overdrive + Railgun replace Rapid (art_spec §V18.1) ──
+BONUS_OVERDRIVE = (166, 240, 60)  # #A6F03C electric LIME — NEW (fire-rate kind)
+BONUS_RAILGUN = PLAYER  # #50DCFF cyan — REUSE of the freed Rapid hue (velocity kind)
+# REMOVED: BONUS_RAPID (was = PLAYER) and its "R" pill — Rapid is retired (R108).
 
 # ── Palette — v6 bomb (art_spec §V6.1; 1 new + the flash tint) ───────────────
 BONUS_BOMB = (180, 100, 245)  # #B464F5 vivid electric violet — the 6th pickup kind
@@ -93,7 +97,7 @@ NOVA_BULLET = (74, 124, 255)  # #4A7CFF bright plasma azure — NOVA's bullets +
 NOVA_BAR_FILL = NOVA_BULLET  # draining HP, blue (= NOVA's shot color) — NOT the Mothership magenta
 NOVA_BAR_BACK = HP_BACK  # reuse the dark empty track (same as both HP bars)
 NOVA_BAR_EDGE = NOVA_RAY  # light-blue frame — second NOVA signal (vs pink ENEMY_EDGE)
-NOVA_BULLET_DRAW_R = 6  # plasma body (collision still EB_R = 5) — render-only (art_spec §V16.3)
+# (v19: NOVA_BULLET_DRAW_R retired — NOVA plasma now draws at the shared EB_R, draw==collision)
 # NOVA silhouette draw radii (art_spec §V16.2.1) — painted body ⊇ the r=60 collision circle.
 NOVA_DISC_R = 62  # solid disc (>= NOVA_R collision)
 NOVA_SPIKE_R = 90  # radiant spike tip radius (overall ~180 px)
@@ -102,8 +106,16 @@ NOVA_HOT_R = 16  # white-hot core
 NOVA_SPIKES = 12
 NOVA_SPIKE_HALF_DEG = 7  # spike half-width at the disc edge
 
+# ── v19 precise controls — Focus red hitbox-indicator color (art_spec §V19a.1) ──
+HITBOX_RED = (255, 40, 64)  # #FF2840 — the SHIFT hitbox-indicator circle (only use)
+HITBOX_ALPHA = 128  # ≈50% (the locked "~50% = 128/255" convention, cf. INVULN_ALPHA_FLOOR)
+
 # ── Player (GDD §6.1) ────────────────────────────────────────────────────────
-P_SPEED, P_R = 5, 13
+P_SPEED, P_R = 5, 13  # move step / drawn-ship envelope (+ pickup radius; unchanged)
+# v19 (level_spec §V19.1/§V19.2): Focus = hold-SHIFT ×0.5 move step; the player's
+# always-on circular DAMAGE hitbox is P_HITBOX_R (≈50% of P_R), decoupled from the draw.
+FOCUS_SPEED_MULT = 0.5  # held-SHIFT halves the per-frame move step (R114)
+P_HITBOX_R = 6  # always-on damage-collision radius (R115); pickup collection stays at P_R
 P_START = (300, 720)
 P_MAX_HP = 100
 IFRAMES = 60  # i-frames after a hit (R18)
@@ -118,9 +130,9 @@ INVULN_PULSE_PERIOD = 30  # frames per ONE full pulse (bright→floor→bright).
 #   a clear gentle "breathing" pulse, ~2.5× slower than the old 12-f strobe,
 #   well below any flicker-fusion read. Replaces today's 6-f hard half-cycle.
 
-FIRE_CD = 12  # baseline fire cooldown (R7, ~5/s)
-PB_SPEED = 10  # player bullet speed
-PB_W, PB_H = 4, 12
+FIRE_CD = 12  # baseline fire cooldown (R7, ~5/s); buffable down by Overdrive/Railgun (v18)
+PB_SPEED = 10  # baseline player bullet speed (R110 LOCK) — the buffable base for v18
+PB_W, PB_H = 6, 18  # v19 ~1.5× (R116): rect 6×18; collision circle r=PB_H/2=9 (draw==collision)
 
 # ── Asteroids (GDD §6.3) ─────────────────────────────────────────────────────
 AST_S_R, AST_L_R = 12, 26
@@ -140,7 +152,8 @@ EN_ENTRY_SPD = 2  # phase A descent until y >= 120
 EN_STRAFE = 2  # phase B horizontal
 EN_DESCENT = 0.3  # phase B slow descent
 EB_SPEED = 4.5  # enemy bullet aimed speed
-EB_R = 5
+# v19 ~1.5× (R116): EB_R is the single shared draw==collision radius for every enemy/boss bullet.
+EB_R = 8  # (was 5)
 EB_DMG = 15
 EB_CAP = 40  # level_spec §6
 
@@ -210,10 +223,11 @@ EB_COLORS = {
     "NOVA": NOVA_BULLET,  # v16 NOVA plasma azure (art_spec §V16.3)
 }
 
-# Render-only bullet sizes (collision stays a flat EB_R=5 for every family).
-PELLET_DRAW_R = 8  # GREEN pellet drawn r=8 (collision still 5) — "fat & charged"
-CYAN_TAIL_LEN = 12  # px length of the scout streak's tail, behind its heading
-CYAN_HEAD_R = 4  # px radius of the scout streak's head dot
+# v19 (art_spec §V19a.3 / level_spec §V19.3): draw == collision for EVERY family —
+# every enemy/boss bullet draws at the single shared EB_R. The old render-only draw≠
+# collision flourishes (PELLET_DRAW_R / NOVA_BULLET_DRAW_R / the hardcoded YELLOW 6 /
+# CYAN_HEAD_R) are RETIRED. The CYAN scout keeps only a render-only motion tail.
+CYAN_TAIL_LEN = 18  # px length of the scout streak's tail (×1.5 to track the bigger EB_R head)
 
 # Enemy-kind spawn gating (level_spec §V5.1): seconds before HEAVY / SCOUT appear.
 HEAVY_GATE = 20
@@ -335,45 +349,64 @@ REPAIR_HP = 40  # instant heal, clamp to P_MAX_HP, no overheal
 REPAIR_POPUP_LIFE = 30  # transient "+40" popup lifetime (frames)
 REPAIR_POPUP_TEXT = f"+{REPAIR_HP}"  # auto-tracks REPAIR_HP (story §V2.2)
 
-RAPID_CD = FIRE_CD // 2  # rapid: 12 f → 6 f cooldown (GDD §V2.2)
 FAN_ANGLES_DEG = (-12, 0, 12)  # 3-beam spread (GDD §V2.2)
 SCORE_MULT = 2  # Score×2 multiplier (R34)
 
+# ── v18 buffable fire/speed stats (level_spec §V18.1, GDD §V18.4) ─────────────
+# Each kind's TARGET value for the stat it touches; resolution is strongest-wins
+# per stat (min cd / max speed) over baseline ∪ active buffs — see Player.
+OVERDRIVE_CD = 6  # Overdrive fire cooldown (halved = old Rapid amount)
+OVERDRIVE_SPEED = 12  # Overdrive bullet speed "up a bit" (+2 on PB_SPEED)
+RAILGUN_CD = 9  # Railgun fire cooldown "up a bit" (cut 3; 6 < 9 < 12, smaller cut than Overdrive)
+RAILGUN_SPEED = 16  # Railgun bullet speed "up a lot" (+6 on PB_SPEED)
+
 # Timed-buff durations (frames @60 FPS), keyed by BonusKind name. Repair is
-# instant and intentionally absent.
-BUFF_DURATION = {"FAN": 480, "RAPID": 480, "SHIELD": 300, "SCORE": 600}
+# instant and intentionally absent. v18: Overdrive/Railgun 480 f each (= old Rapid).
+BUFF_DURATION = {"FAN": 480, "OVERDRIVE": 480, "RAILGUN": 480, "SHIELD": 300, "SCORE": 600}
 # HUD pill stack order — stable BonusKind enum order, Repair excluded (GDD §V2.6).
-TIMED_ORDER = ("FAN", "RAPID", "SHIELD", "SCORE")
+TIMED_ORDER = ("FAN", "OVERDRIVE", "RAILGUN", "SHIELD", "SCORE")
 
 # Per-kind letter (story §V2.3) and color (art_spec §V2.1) — keyed by name.
 # Per-kind letter + color + name. v6 appends a 6th BOMB entry (story §V6.1 glyph
 # "B", art_spec §V6.1 violet) — instant pickup, exempt from the timed-pill HUD.
-BONUS_LETTERS = {"REPAIR": "+", "FAN": "F", "RAPID": "R", "SHIELD": "S", "SCORE": "2", "BOMB": "B"}
+BONUS_LETTERS = {
+    "REPAIR": "+",
+    "FAN": "F",
+    "OVERDRIVE": "O",
+    "RAILGUN": "V",
+    "SHIELD": "S",
+    "SCORE": "2",
+    "BOMB": "B",
+}  # "RAPID":"R" removed (R108); O/V per story/art_spec §V18
 BONUS_COLORS = {
     "REPAIR": BONUS_REPAIR,
     "FAN": BONUS_FAN,
-    "RAPID": BONUS_RAPID,
+    "OVERDRIVE": BONUS_OVERDRIVE,
+    "RAILGUN": BONUS_RAILGUN,
     "SHIELD": BONUS_SHIELD,
     "SCORE": BONUS_SCORE,
     "BOMB": BONUS_BOMB,
-}
+}  # "RAPID" removed (R108)
 BONUS_NAMES = {  # canonical labels (not drawn on the HUD)
     "REPAIR": "REPAIR",
     "FAN": "FAN",
-    "RAPID": "RAPID",
+    "OVERDRIVE": "OVERDRIVE",
+    "RAILGUN": "RAILGUN",
     "SHIELD": "SHIELD",
     "SCORE": "SCORE ×2",
     "BOMB": "BOMB",
-}
-# Kind-weight ladder: roll r=randint(0,99); first (threshold >= r) wins. v6 re-slices
-# the v2 table (Shield 15→12, Score 15→12) and appends BOMB=6 — the rarest kind, both
-# spawn paths sharing this one ladder (level_spec §V6.1). Sums to 100.
-#   0–29 Repair · 30–49 Fan · 50–69 Rapid · 70–81 Shield · 82–93 Score · 94–99 BOMB
+}  # "RAPID" removed (R108)
+# Kind-weight ladder: roll r=randint(0,99); first (threshold >= r) wins. v18 re-slices
+# the v6 table (level_spec §V18.2): Fan 20→12 (rarer, R107), Rapid (20) retired and its
+# weight handed 1:1 to Overdrive 10 / Railgun 10 (R111), Fan's freed 8 → Score×2 12→20.
+# Volume-neutral, both spawn paths share this one ladder, sums to 100 (AC99).
+#   0–29 Repair · 30–41 Fan · 42–51 Overdrive · 52–61 Railgun · 62–73 Shield · 74–93 Score · 94–99 BOMB
 BONUS_WEIGHTS = (
     (29, "REPAIR"),
-    (49, "FAN"),
-    (69, "RAPID"),
-    (81, "SHIELD"),
+    (41, "FAN"),
+    (51, "OVERDRIVE"),
+    (61, "RAILGUN"),
+    (73, "SHIELD"),
     (93, "SCORE"),
     (99, "BOMB"),
 )
@@ -392,7 +425,7 @@ SMOKE_TIMELINE = (
     (
         2,
         "bonus",
-        "short Rapid pickup in the player's path → full spawn→collect→apply→expire (AC20)",
+        "short Overdrive pickup in the player's path → full spawn→collect→apply→expire (AC20)",
     ),
     (3, "split", "GREEN pellet already in flight → bursts ~f16 into 3 RED children (AC27)"),
     (
@@ -431,7 +464,9 @@ def smoke_timeline_ok():
     )
 
 
-SMOKE_BONUS_KIND = "RAPID"  # force-seed a Rapid in the player's path
+SMOKE_BONUS_KIND = (
+    "OVERDRIVE"  # force-seed an Overdrive (R113): cd 12→6 + speed 10→12, assertable headlessly
+)
 SMOKE_BONUS_POS = (300, 700)  # player x, 20 px above (inside 26 px collide)
 SMOKE_BONUS_DUR = 60  # shortened so it expires by ~frame 63
 SMOKE_SEED_FRAME = _smoke_frame("bonus")  # from SMOKE_TIMELINE (single source)
@@ -499,7 +534,9 @@ FONT_PICKUP, FONT_PILL = 22, 18
 TITLE = "STARSHARD"
 PITCH = "Dodge the rocks. Gun the rest. Beat your best."
 # v6: rewritten to teach Z=fire / X=bomb; old "FIRE  Space" is a defect (story §V6.4, AC35).
-CONTROLS_1 = "MOVE  Arrows / WASD      Z = fire · X = bomb"
+# v19 ⚠ REWRITE (story §V19.2): add the hold-SHIFT Focus control next to MOVE (it's a
+# movement modifier). Held-gesture idiom matches "Hold Q  Quit" / "Hold R  Restart".
+CONTROLS_1 = "MOVE  Arrows / WASD  ·  Hold Shift  Focus      Z = fire · X = bomb"
 # v10 ⚠ REWRITE (story §V10.3): drop the now-duplicate quit clause — the gesture is
 # taught once on START via its own arc-anchored START_QUIT_HINT line. Esc still never quits.
 CONTROLS_2 = "Esc  Pause"
@@ -701,9 +738,9 @@ def choose_enemy_kind(t, rng):
     return "SCOUT"
 
 
-# Fan beam velocities precomputed from FAN_ANGLES_DEG (vx, vy), straight-up = 0°.
-FAN_VELOCITIES = tuple(
-    (PB_SPEED * math.sin(math.radians(a)), -PB_SPEED * math.cos(math.radians(a)))
-    for a in FAN_ANGLES_DEG
-)
-SINGLE_VELOCITY = ((0.0, float(-PB_SPEED)),)  # baseline single forward shot
+# Fan beam UNIT directions from FAN_ANGLES_DEG (dx, dy), straight-up = 0°. v18:
+# bullet speed is now a buffable stat, so beams are speed-scaled at fire time
+# (projectiles.make_player_shots) rather than from a precomputed velocity.
+# Index 1 (0°) is the CENTER beam = (0, -1); indices 0/2 are the ±12° side beams.
+FAN_DIRS = tuple((math.sin(math.radians(a)), -math.cos(math.radians(a))) for a in FAN_ANGLES_DEG)
+CENTER_DIR = FAN_DIRS[1]  # (0.0, -1.0) — the lone forward beam (no Fan) / Fan's center

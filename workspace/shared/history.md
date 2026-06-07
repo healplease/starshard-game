@@ -388,3 +388,33 @@
 - **Gates:** `pytest workspace/tests` **91 passed** (75 → +16 new NOVA/pool unit tests in `test_nova.py`),
   `--smoke-test` exit 0 (forces NOVA, ≥1 attack step, 0 ships). ruff/pyright residuals unchanged from v15
   (the same pre-existing F821 forward-ref + `ENEMY_KINDS` `float|str` inferences — none in v16 code).
+
+## v19 — Precise controls: Focus (×0.5) + small circular hitbox + larger bullets (programmer, 2026-06-07)
+- **Focus = an `InputState.focus` flag, not new state.** `read_input` sets it from either SHIFT
+  (`K_LSHIFT|K_RSHIFT`); `physics.update_play` scales the move step by `FOCUS_SPEED_MULT` only when
+  `inp.focus` (recomputed every frame → held-not-toggle, instant revert on release). It lives in
+  `update_play` so it's PLAY-only by construction (no other state calls it); firing/i-frames/clamp
+  untouched. The frame's focus is echoed to `world.focus` purely so the render layer can gate the
+  indicator (no accumulated counter, unlike the v8/v10/v12 hold gestures).
+- **Damage hitbox split from the draw/pickup radius.** New `P_HITBOX_R=6`; combat step 4's FOUR damage
+  tests (boss-ram, asteroid, enemy, ebullet) swapped `P_R`→`P_HITBOX_R`. Step 3 pickup collection and
+  the drawn ship stay at `P_R=13` (generous pickups, unchanged sprite — §V19.7). Collision never reads
+  `focus` — the hitbox is the same circle SHIFT up or down; the indicator only *reveals* it.
+- **draw==collision for every bullet family.** `EB_R 5→8` now drives both draw and collision for all
+  enemy/boss families; the render-only inflation constants `PELLET_DRAW_R`/`NOVA_BULLET_DRAW_R`/the
+  hardcoded YELLOW `6`/`CYAN_HEAD_R` are **retired** (each family draws at `EB_R`; CYAN keeps only its
+  motion tail `CYAN_TAIL_LEN 12→18`). Player bullet `PB_W,PB_H 4,12→6,18` — the height-derived collision
+  `r=PB_H/2` scales 6→9 in lockstep, so no combat edit. (`test_render_smoke` pellet probe repointed to
+  `EB_R`.)
+- **Indicator** = `render.draw_hitbox_indicator` (cached SRCALPHA surface, alpha baked into the color —
+  the v11 §V11.5 set_alpha gotcha): filled disc @ `HITBOX_ALPHA=128` + 1-px opaque `HITBOX_RED` rim at
+  `P_HITBOX_R`, blit centered on the player. Called from `app._draw`'s PLAY branch after `draw_world`
+  (i.e. after particles) and before the HUD; self-gates on `world.focus` (→ PLAY + SHIFT-held only).
+- **Smoke-path exercise (the delegated §V19.3 Programmer call).** `smoke_input` now holds Focus across
+  frames **60–89** (still sweeping → the step is provably halved) which also drives the SHIFT-held red
+  indicator through the headless `_draw`. The "would-hit-at-old-`P_R`-now-misses" proof and the always-on
+  small circle live as unit assertions (`test_v19_precise_controls.py`, R114–R118) rather than in the
+  smoke binary; the indicator render-smoke (R117) is in `test_render_smoke.py`.
+- **Gates:** `pytest workspace/tests` **117 passed** (+11 v19: 10 unit R114–R118 + 1 e2e R117),
+  `--smoke-test` exit 0 (exercises Focus + the shrunk hitbox), pyright clean on changed files; the only
+  ruff residual is the pre-existing `BONUS_WEIGHTS` ladder comment + `bonus.py` forward-ref (non-v19).

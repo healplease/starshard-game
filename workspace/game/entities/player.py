@@ -17,6 +17,7 @@ class Player:
     hp: int = C.P_MAX_HP
     iframes: int = 0  # post-hit invulnerability (R18)
     fire_cd: int = 0  # frames until the next shot is allowed
+    fan_fire_count: int = 0  # v18: counts Fan-active shots → sides fire every other (2:1, §V18.3)
     # BonusKind -> frames remaining (timed buffs only). Default-empty per player.
     buff_timers: dict = field(default_factory=dict)
 
@@ -51,10 +52,16 @@ class Player:
         return self.buff(BonusKind.FAN) > 0
 
     @property
-    def rapid_active(self):
+    def overdrive_active(self):
         from ..world import BonusKind
 
-        return self.buff(BonusKind.RAPID) > 0
+        return self.buff(BonusKind.OVERDRIVE) > 0
+
+    @property
+    def railgun_active(self):
+        from ..world import BonusKind
+
+        return self.buff(BonusKind.RAILGUN) > 0
 
     @property
     def score_mult_active(self):
@@ -64,5 +71,26 @@ class Player:
 
     @property
     def fire_cooldown(self):
-        """Current cooldown to apply after firing — halved while Rapid is up."""
-        return C.RAPID_CD if self.rapid_active else C.FIRE_CD
+        """Resolved cooldown after firing — strongest-wins per stat (GDD §V18.4):
+        the MIN of baseline and each active buff's target cd (lower = better).
+        Overdrive→6, Railgun→9, baseline→12. Bounded ≥ 6 > 0; recomputed each
+        shot so an expiring buff just drops a contributor (clean revert)."""
+        cds = [C.FIRE_CD]
+        if self.overdrive_active:
+            cds.append(C.OVERDRIVE_CD)
+        if self.railgun_active:
+            cds.append(C.RAILGUN_CD)
+        return min(cds)
+
+    @property
+    def bullet_speed(self):
+        """Resolved bullet speed — strongest-wins per stat (GDD §V18.4): the MAX
+        of baseline and each active buff's target speed (higher = better).
+        Railgun→16, Overdrive→12, baseline→10. Bounded ≤ 16; recomputed each shot
+        so an expiring buff falls back cleanly toward PB_SPEED (R110/R31)."""
+        speeds = [C.PB_SPEED]
+        if self.overdrive_active:
+            speeds.append(C.OVERDRIVE_SPEED)
+        if self.railgun_active:
+            speeds.append(C.RAILGUN_SPEED)
+        return max(speeds)

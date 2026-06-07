@@ -26,6 +26,10 @@ def apply(world, bonus):
         world.charges = min(C.BOMB_CAP, world.charges + C.BOMB_PICKUP_CHARGES)
         world.bomb_popup_timer = C.REPAIR_POPUP_LIFE  # transient "+1 BOMB" (art_spec §V6.4)
     else:
+        # Fresh Fan (inactive→active) starts its 2:1 side cadence on shot 1 (§V18.3);
+        # a refresh-while-active leaves the running parity alone (no effect change, R30).
+        if bonus.kind is BonusKind.FAN and p.buff(BonusKind.FAN) <= 0:
+            p.fan_fire_count = 0
         # Hard refresh to one full duration — never accumulate (R30).
         p.buff_timers[bonus.kind] = buff_duration(bonus.kind, bonus.duration_override)
 

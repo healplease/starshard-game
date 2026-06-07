@@ -24,18 +24,35 @@ def update_play(world, inp):
     p = world.player
     t = world.t
 
-    # --- Player movement (R3) + clamp the bounding box fully on-screen ---------
-    p.x += inp.dx * C.P_SPEED
-    p.y += inp.dy * C.P_SPEED
+    # --- Player movement (R3, v19 R114 Focus) + clamp the box fully on-screen --
+    # Hold-SHIFT Focus halves the per-frame step on BOTH axes (×0.5); released →
+    # full speed the same frame (held-not-toggle, recomputed each frame). Firing,
+    # i-frames, and the hitbox are untouched. world.focus echoes it for the render
+    # of the SHIFT-only red hitbox indicator (R117); never accumulated state.
+    world.focus = inp.focus
+    step = C.P_SPEED * (C.FOCUS_SPEED_MULT if inp.focus else 1.0)
+    p.x += inp.dx * step
+    p.y += inp.dy * step
     p.x = max(14, min(C.W - 14, p.x))
     p.y = max(15, min(C.H - 15, p.y))
     if p.iframes > 0:
         p.iframes -= 1
     if p.fire_cd > 0:
         p.fire_cd -= 1
-    # --- Player firing (R7) — Fan/Rapid aware (GDD §V2.2) ---
+    # --- Player firing (R7) — Fan + buffable cooldown/speed aware (GDD §V18.4) ---
+    # Resolve cooldown + bullet speed first (strongest-wins per stat), THEN Fan
+    # applies geometry + the 2:1 side cadence on top (GDD §V18.4 order).
     if inp.fire and p.fire_cd == 0:
-        world.pbullets.extend(make_player_shots(p.x, p.y, p.fan_active))
+        if p.fan_active:
+            sides = (
+                p.fan_fire_count % 2 == 0
+            )  # sides fire every other shot → 2:1 center:side (R106)
+            p.fan_fire_count += 1
+            world.pbullets.extend(
+                make_player_shots(p.x, p.y, p.bullet_speed, fan=True, sides=sides)
+            )
+        else:
+            world.pbullets.extend(make_player_shots(p.x, p.y, p.bullet_speed))
         p.fire_cd = p.fire_cooldown
 
     # --- Player bullets travel along their velocity; despawn off any edge ---

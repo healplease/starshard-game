@@ -167,6 +167,9 @@ class App:
             hud.draw_start_quit_arc(self.screen, self.q_hold_frames)  # v10: only while Q held
         elif self.state is GameState.PLAY:
             render.draw_world(self.screen, self.world)
+            render.draw_hitbox_indicator(
+                self.screen, self.world
+            )  # v19: after particles, SHIFT-only
             render.draw_low_hp_vignette(self.screen, self.world)  # v17 slot 8.5: below HUD, hp<25
             hud.draw_hud(self.screen, self.world)
             hud.draw_flash(self.screen, self.world)  # v6 flash: above HUD, PLAY-only (§V6.6)

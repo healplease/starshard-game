@@ -23,6 +23,29 @@ def test_ac1_smoke_run():
     assert app.state is not GameState.PAUSE, "smoke run entered PAUSE (should be impossible)"
 
 
+def test_ac101_smoke_overdrive_lifecycle():
+    """AC100/AC101 (v18): the repointed smoke seed (Overdrive, was Rapid) runs a full
+    lifecycle through the REAL App smoke loop — applied (cd 12->6 + speed 10->12) then
+    expired back to baseline, both observed before frame 120. Instruments the live
+    pipeline by spying on `_draw` so it asserts behaviour, not code shape."""
+    assert C.SMOKE_BONUS_KIND == "OVERDRIVE", "smoke seed must be repointed off RAPID (R113)"
+    app = App(smoke=True)
+    trace = []
+    orig_draw = app._draw
+
+    def spy():
+        p = app.world.player
+        trace.append((p.overdrive_active, p.fire_cooldown, p.bullet_speed))
+        orig_draw()
+
+    app._draw = spy
+    app.run()
+    applied = [t for t in trace if t[0] and t[1] == C.OVERDRIVE_CD and t[2] == C.OVERDRIVE_SPEED]
+    reverted = [t for t in trace if not t[0] and t[1] == C.FIRE_CD and t[2] == C.PB_SPEED]
+    assert applied, "Overdrive never applied (cd 6 + speed 12) during the smoke run"
+    assert reverted, "Overdrive never reverted to baseline (cd 12 + speed 10) before frame 120"
+
+
 def test_ac10_hp_zero_game_over(fresh_world):
     """AC10: HP<=0 -> GAME_OVER and BEST records the score."""
     app = App()

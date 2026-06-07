@@ -22,39 +22,58 @@ asteroids/debris and blast enemy fighters to rack up a score before your ship is
 - Python 3.14 + `pygame-ce` from the `.venv`.
 
 ## Current state & where the detail lives
-v1–v16 shipped & passed QA — see `backlog.md` for the capability summary and the canonical specs in
-each role folder. Closed-increment framings (v2, v5, v7–v16) are archived in
+v1–v18 shipped & passed QA — see `backlog.md` for the capability summary and the canonical specs in
+each role folder. Closed-increment framings (v2, v5, v7–v18) are archived in
 `../archive/brief-increments-*.md`.
 
-## Current increment — v17: HP-feedback + bullet-clarity polish (UI/UX, render-only)
+## Current increment — v19: precise controls (focus mode + circular player hitbox + larger bullets)
 
-**Human's words:** three UI/UX improvements — (1) make the **HP bar change color from green to red
-gradually** as HP lowers (not the current stepped thresholds); (2) **slightly flash the screen with a
-red vignette when HP < 25%**, kept subtle / **not distracting**; (3) the **green enemy bullets are too
-easily confused with the HP bonus** — pick another (non-green) color for them (the **HEAVY** enemy
-shoots them).
+**Human's words:** introduce **precise controls** — when the player **holds SHIFT, ship movement becomes
+twice as slow**, allowing precise avoiding. To accompany this, make the **ship's hitbox smaller** (not the
+display — only the hitbox): **~50% smaller than the ship's actual size, and circular**. To balance for
+this, make **all bullets ~50% larger**. Also, **while holding SHIFT (precise mode), display the actual
+hitbox as a red circle at 50% opacity** on the ship. **Enemy hitboxes don't change.**
 
-This is a **render-only polish increment** — no new mechanic, economy, or copy. The **creative
-pipeline is skipped**; it runs **Artist → Programmer → QA** (like v13).
+This is a **mechanic + balance** change (new input modifier, player collision-shape change, projectile
+size/collision rebalance, plus a render indicator) → **full pipeline**: BA → Designer → Artist → Writer →
+Level-designer → Programmer → QA.
+
+**Baseline being changed (current code, `game/config.py`, for reference):**
+- **Player:** `P_SPEED = 5` (move speed), `P_R = 13` (the ship's size constant — used today for both draw
+  and collision). The smaller hitbox is a new circular collision radius ~50% of `P_R`; the **drawn ship is
+  unchanged** at `P_R`.
+- **Player bullets:** rectangular `PB_W, PB_H = 4, 12`.
+- **Enemy/other bullets:** collision is a flat `EB_R = 5` across families (NOVA/pellet/boss have render-only
+  draw radii: `NOVA_BULLET_DRAW_R = 6`, `PELLET_DRAW_R = 8`, etc.).
 
 **Decisions locked at kickoff (2026-06-07):**
-- **(1) HP bar = continuous gradient**, replacing the stepped `≥40 green / <40 amber / <20 red`
-  thresholds in art_spec `v1-base.md` §4.3. Artist owns the interpolation rule (endpoints + curve);
-  numbers/thresholds elsewhere are unchanged — this is purely how the bar's *fill color* is computed.
-- **(2) Low-HP red vignette** triggers at **HP < 25 %** (a render trigger, not a balance number).
-  Must be **subtle and non-distracting** — Artist defines the tint, max alpha, edge falloff, and any
-  gentle pulse so it reads as "danger" without obscuring play. Independent of the existing v6 bomb flash.
-- **(3) Recolor the HEAVY green pellet** (`EB_COLOR_GREEN #8CF03C`, art_spec `v5-enemy-bullets.md`
-  §V5.2). The human's playtest shows it still clashes with the **Repair/HP green `#3CD25A`** — the
-  Artist must pick a genuinely **non-green** hue and **re-verify** it stays clear of every other entity
-  (the RED split-children it becomes, magenta enemy body, player cyan, CYAN scout bullet, the bonus
-  palette, violet bomb). Shape/size/collision unchanged — color only.
+- **Precise mode = hold SHIFT (PLAY only).** While held, player move speed is **halved** (×0.5, "twice as
+  slow"); release → normal. Does **not** change firing, and is a held modifier (not a toggle). Either
+  Shift key. Exact key handling is the Programmer's; the rate contract is ×0.5 move speed.
+- **Player hitbox is ALWAYS the smaller circle (confirmed with human 2026-06-07).** The shrink is a
+  **permanent** change to the player's collision shape — **circular, radius ≈50% of the ship's drawn
+  size** — active at all times, *not* only during precise mode. SHIFT does not change the hitbox; it only
+  slows movement and **reveals** the hitbox (red circle). The **drawn ship sprite/size is unchanged.**
+- **All bullets ~50% larger (balance).** Every projectile family grows ~50% in size — **both its drawn
+  size and its collision size** so the visual matches the hitbox. This is the balancing lever for the
+  shrunk player hitbox. ("All bullets" = player **and** enemy/boss projectiles.) Exact per-family numbers
+  are the Level-designer's to lock.
+- **Precise-mode hitbox indicator:** while SHIFT is held, draw the player's actual (always-on) hitbox as a
+  **red circle at 50% opacity**, centered on the ship, radius = the real hitbox radius. PLAY only; not
+  shown when SHIFT is released. Exact red hue/alpha/blend is the Artist's.
+- **Enemy hitboxes are unchanged.** Only the **player** collision shape shrinks; enemy/asteroid/boss
+  collision radii stay as-is (bullet sizes grow for *all* families, but that's the projectile change, not
+  the enemy-body change).
 
-**Out of scope / unchanged:** all gameplay numbers, HP thresholds for damage/death, the bomb flash,
-boss bars, every other entity color, and all on-screen copy. No new R#/AC# expected (render polish);
-QA verifies against the existing contract + the three new visual behaviors.
+**Open questions left to downstream roles (not pre-decided here):** exact precise-mode multiplier (default
+×0.5); exact player hitbox radius (≈50% of `P_R` → a concrete px); exact per-family bullet size deltas
+(≈1.5×); the red indicator's hue/alpha/render slot; whether any control hint copy is added for SHIFT.
 
-**Smoke + test contract untouched:** `main.py --smoke-test` (120 frames, exit 0) stays the first gate;
-the pytest suite (91) stays green (grows only if a clean render-smoke assertion fits the new visuals).
+**Out of scope / unchanged:** the drawn ship and all entity sprites; enemy/asteroid/boss collision radii;
+the bonus ladder + economy; HP/score; screen flow; all existing copy except an optional SHIFT control hint.
 
-**Scoped roles:** **Artist → Programmer → QA**. Skipped (no impact): BA, Designer, Writer, Level-designer.
+**Smoke + test contract:** `main.py --smoke-test` (120 frames, exit 0) stays the first gate; the pytest
+suite (106) stays green and grows with precise-mode + hitbox + bullet-size behavior. The smoke path may
+need to exercise SHIFT-held movement and the shrunk hitbox.
+
+**Scoped roles:** full pipeline — **BA → Designer → Artist → Writer → Level-designer → Programmer → QA.**

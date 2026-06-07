@@ -24,13 +24,15 @@ class GameState(Enum):
 
 
 class BonusKind(Enum):
-    """All six bonus kinds. The four *timed* kinds appear in HUD pill order
-    (Fan, Rapid, Shield, Score, GDD §V2.6); Repair and BOMB are instant (no pill).
-    BOMB (v6, GDD §V6.6) grants +1 bomb charge instead of a buff."""
+    """All seven bonus kinds (v18: Rapid retired → Overdrive + Railgun). The five
+    *timed* kinds appear in HUD pill order (Fan, Overdrive, Railgun, Shield, Score,
+    GDD §V2.6/§V18); Repair and BOMB are instant (no pill). BOMB (v6, GDD §V6.6)
+    grants +1 bomb charge instead of a buff."""
 
     REPAIR = "REPAIR"
     FAN = "FAN"
-    RAPID = "RAPID"
+    OVERDRIVE = "OVERDRIVE"  # v18: fire-rate kind (cd→6, speed→12)
+    RAILGUN = "RAILGUN"  # v18: velocity kind (speed→16, cd→9)
     SHIELD = "SHIELD"
     SCORE = "SCORE"
     BOMB = "BOMB"
@@ -59,6 +61,9 @@ class World:
         """Wipe everything run-specific to the level_spec §2 starting state.
         Keeps rng, stars, and best (no leak between runs — R31 / AC19)."""
         self.player = Player(x=float(C.P_START[0]), y=float(C.P_START[1]))
+        self.focus = (
+            False  # v19: SHIFT-held Focus this frame (set by physics; drives the indicator)
+        )
         self.asteroids = []
         self.enemies = []
         self.pbullets = []

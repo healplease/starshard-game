@@ -150,3 +150,19 @@
   the two arc centres (Artist) + two quit-hint strings (Writer) are new. **Economy no-op** (Level-designer
   confirm/skip). DELEGATED: Artist = the two arc centres; Writer = START "hold Q Quit" + extend `GAMEOVER_KEYS`
   (no stale "Esc Quit", v8 R73).
+- 2026-06-07 (v18): GDD `v18.md` added (§V18.1–V18.6) — bonus rebalance design. **Fan 2:1 feel CONFIRMED**:
+  center beam unchanged (full forward DPS), sides half-cadence = Fan becomes a *width/lane-coverage* tool,
+  not a flat ×3 upgrade → no longer a no-brainer (pairs with R107 rarity). **Two new kinds named + identified**
+  (handles; Writer owns labels): **(a) Overdrive** = cadence-leaning (cd 12→6 + speed *a bit*; the Rapid
+  successor, DPS/volume feel) · **(b) Railgun** = velocity-leaning (speed *a lot* + rate *a bit*; reach/precision,
+  "aiming easier" per the brief). **Both durations = 480 f** — kept at old Rapid's value for HUD/timed-family
+  parity (chose parity over differentiating; no reason to diverge). **★ R112 cross-stat stacking = strongest-wins
+  (max-benefit) per stat**, NOT compose: fire_cd = min(baseline, active targets) (Overdrive's 6 f wins when both
+  active), bullet_speed = max(baseline, active targets) (Railgun's "a lot" wins). Chosen over compose because
+  composing risks ≤0/runaway cooldown + unbounded speed (the named v18 risk); max-benefit is deterministic,
+  bounded (cd always ≥6 f >0), and clean-reverting (recompute from active set each frame → expiry just drops a
+  contributor). Net feel: holding both = best of each axis, no degenerate spike. **Fan is orthogonal** — its
+  center reads the *resolved* cadence, then the 2:1 side rule applies on top (resolve stats → then Fan geometry).
+  DELEGATED: Artist = 2 distinct letters/colors (drop Rapid's, may reuse cyan for the velocity kind); Writer =
+  the 2 on-screen labels; Level-designer = all magnitudes (bit/lot deltas, base speed, Railgun cd >6 & <12),
+  Fan weight + reweight, 2a/2b split, ladder=100; Programmer smoke-seed rec = the Overdrive (fire-rate) kind.

@@ -46,11 +46,20 @@ class EnemyBullet:
         return C.EB_COLORS[self.family]
 
 
-def make_player_shots(px, py, fan_active):
-    """Shots fired this frame: 3-beam fan if Fan is active, else 1 forward beam.
-    Nose origin = (px, py-15), matching the ship triangle's tip (art_spec §2.1)."""
-    velocities = C.FAN_VELOCITIES if fan_active else C.SINGLE_VELOCITY
-    return [PlayerBullet(px, py - 15, vx, vy) for vx, vy in velocities]
+def make_player_shots(px, py, speed, fan=False, sides=True):
+    """Shots fired this frame, every beam scaled to the resolved bullet `speed`
+    (v18 — bullet speed is a buffable stat, GDD §V18.4). Nose origin = (px, py-15),
+    matching the ship triangle's tip (art_spec §2.1).
+      - No Fan: one forward (center) beam.
+      - Fan, `sides=True`: the full 3-beam fan (center + both ±12° sides).
+      - Fan, `sides=False`: center beam only — the skipped half of the 2:1
+        center:side cadence (R106/§V18.3); the side beams fire every other shot.
+    """
+    if fan and sides:
+        dirs = C.FAN_DIRS  # center + both side beams
+    else:
+        dirs = (C.CENTER_DIR,)  # lone center beam (no Fan, or Fan's side-skip frame)
+    return [PlayerBullet(px, py - 15, dx * speed, dy * speed) for dx, dy in dirs]
 
 
 def make_enemy_bullet(ex, ey, px, py, rng, kind="REGULAR"):

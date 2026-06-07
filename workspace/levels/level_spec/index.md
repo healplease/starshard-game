@@ -17,12 +17,16 @@
 | `v10.md` | v10 | **§V10.1 verdict** (confirmed no-op — Q-hold-to-quit on START+GAME_OVER, UI-only, no spawn/pickup/ramp/timing change) · §V10.2 edge case (UI counter, not a game clock) · §V10.3 traceability | confirmed no-op ✅ |
 | `v12.md` | v12 | **§V12.1 verdict** (confirmed no-op — hold-R-to-restart on PAUSE+GAME_OVER, UI-only, no spawn/pickup/ramp/timing change) · §V12.2 edge case (second UI hold counter, not a game clock; `reset_run()` unchanged) · §V12.3 traceability | confirmed no-op ✅ |
 | `v16-second-boss.md` | v16 | **§V16.1 pool-selection rule** (uniform i.i.d. 1/N per spawn, N-from-length extensibility, seedable) · **§V16.2 cadence UNCHANGED** (75 s / +90 s CONFIRM) · **§V16.3 NOVA balance LOCK** (HP 120 · bullet 25>15 · ram 80>60 · step 90<150 f · densities · kill 1500) · §V16.4 AC13/fight-length · §V16.5 levers · §V16.6 smoke · §V16.7 traceability | spec ✅ |
+| `v18.md` | v18 | **§V18.1 magnitudes LOCK** (base bullet speed `PB_SPEED=10`; Overdrive cd 6 f + speed +2→12; Railgun speed +6→16 + cd 12→9; stacking min-cd 6/max-speed 16) · **§V18.2 RNG ladder re-slice** (Fan 20→12, Rapid→Overdrive 10/Railgun 10, freed 8→Score×2 12→20; sums 100) · **§V18.3 Fan 2:1 feel contract** (not tunable) · §V18.4 smoke/AC13 · §V18.5 levers · §V18.6 traceability | spec ✅ |
+| `v19.md` | v19 | **§V19.1 Focus multiplier LOCK** (`FOCUS_SPEED_MULT=0.5`, P_SPEED 5→2.5 focused) · **§V19.2 player hitbox LOCK** (`P_HITBOX_R=6`, ≈50% of P_R=13; damage tests swap to it, pickup + draw stay at `P_R=13`) · **§V19.3 bullet sizes LOCK** (`EB_R 5→8` all enemy/boss families draw=collision; player `PB_W,PB_H 4,12→6,18`→coll r=9; `CYAN_TAIL_LEN 12→18`; pellet = shared EB_R, no special) · **§V19.4 no-tunneling/no-cull CONFIRM** (gap 14, threshold 28 ≫ fastest 7.5) · §V19.5 net=fairer/AC13 safe · §V19.6 levers · §V19.7 traceability. **v1 ramp + economy UNCHANGED.** | spec ✅ |
 
 ## Where is …? (topic → file)
 - **Difficulty ramp formulas (the curve)** → `v1-base.md` §3 (untouched by v2/v5/v6)
 - **AC13 (1–3 min run length) levers** → `v1-base.md` §8 (+ per-increment AC13 sections §V2.3, §V5.3, §V6.3)
 - **Run-reset / starting values** → `v1-base.md` §2
-- **Bonus pickup spawn rates / kind weights** → `v2-economy.md` §V2.1 → **re-sliced** in `v6-bomb-economy.md` §V6.1 (adds BOMB=6)
+- **Bonus pickup spawn rates / kind weights** → `v2-economy.md` §V2.1 → **re-sliced** in `v6-bomb-economy.md` §V6.1 (adds BOMB=6) → **re-sliced again** in `v18.md` §V18.2 (Fan 20→12, Rapid retired → Overdrive 10/Railgun 10, Score×2 12→20; sums 100)
+- **New fire/speed buff magnitudes (Overdrive/Railgun cd + bullet speed) + base bullet speed** → `v18.md` §V18.1
+- **Fan side-beam 2:1 center:side cadence (feel contract, not tunable)** → `v18.md` §V18.3
 - **Enemy-kind spawn mix + gates (HEAVY@20s/SCOUT@50s)** → `v5-spawn-mix.md` §V5.1
 - **Bomb-pickup scarcity + post-bomb lull** → `v6-bomb-economy.md` §V6.1, §V6.4
 - **Boss breakpoint cadence (when a boss fires)** → `v7-bosses.md` §V7.1 (TIME: 75 s, then +90 s) — **unchanged by v16** (`v16-second-boss.md` §V16.2)
@@ -33,6 +37,7 @@
 - **v8 Pause economy impact** → `v8-pause.md` §V8.1 (confirmed no-op — no new spawns/pickups/ramp/timing)
 - **v10 START/GAME_OVER Q-hold-to-quit economy impact** → `v10.md` §V10.1 (confirmed no-op — UI-only gesture, no spawn/pickup/ramp/timing)
 - **v12 PAUSE/GAME_OVER hold-R-to-restart economy impact** → `v12.md` §V12.1 (confirmed no-op — UI-only gesture, second hold counter, `reset_run()` unchanged)
+- **v19 precise-controls magnitudes — Focus ×0.5 multiplier / player damage hitbox `P_HITBOX_R=6` (pickup + draw stay `P_R=13`) / ~1.5× bullet sizes (`EB_R 5→8`, player bullet `6,18`, `CYAN_TAIL_LEN 18`, pellet=shared) / no-tunneling+no-cull confirmation / net=fairer** → `v19.md` (v1 ramp + economy untouched; bullet speeds unchanged R110)
 
 ## Updating this spec
 - **New increment:** add `vN-<topic>.md` (`# vN increment — …`) + a row + topic-map entry; **state

@@ -21,7 +21,8 @@ def _rich_world(fresh_world):
     w = fresh_world()
     p = w.player
     p.buff_timers[BonusKind.FAN] = 400
-    p.buff_timers[BonusKind.RAPID] = 200
+    p.buff_timers[BonusKind.OVERDRIVE] = 200  # v18 (replaces RAPID)
+    p.buff_timers[BonusKind.RAILGUN] = 220  # v18 — full 5-pill stack
     p.buff_timers[BonusKind.SHIELD] = 150
     p.buff_timers[BonusKind.SCORE] = 300
     w.enemies = [make_enemy(w.rng, 30, k) for k in ("REGULAR", "HEAVY", "SCOUT")]
@@ -214,10 +215,40 @@ def test_v17_heavy_pellet_purple(screen):
     screen.fill((0, 0, 0))
     b = EnemyBullet(300, 400, 0, 3, family="GREEN")
     render._draw_enemy_bullet(screen, b)
-    body = tuple(screen.get_at((300 + C.PELLET_DRAW_R - 1, 400))[:3])  # body edge, off the core
+    body = tuple(
+        screen.get_at((300 + C.EB_R - 1, 400))[:3]
+    )  # v19: pellet draws at EB_R, off the core
     assert body == C.EB_COLOR_PURPLE, f"drawn pellet body {body} not purple"
     assert _rgb_dist(C.EB_COLOR_PURPLE, C.HP_GREEN) > 150, "pellet still near the HP green"
     assert _rgb_dist(C.EB_COLOR_PURPLE, C.BONUS_REPAIR) > 150, "pellet still near the Repair green"
+
+
+def test_v19_hitbox_indicator(screen, fresh_world):
+    """R117: the SHIFT red hitbox indicator draws ONLY while Focus is held, centered on
+    the ship at the TRUE hitbox radius (P_HITBOX_R), in HITBOX_RED; absent with SHIFT up."""
+    w = fresh_world()
+    p = w.player
+    p.x, p.y = 300.0, 400.0
+
+    # SHIFT up → nothing drawn (render-only readout, gated on focus).
+    w.focus = False
+    screen.fill((0, 0, 0))
+    render.draw_hitbox_indicator(screen, w)
+    assert tuple(screen.get_at((300, 400))[:3]) == (0, 0, 0), "indicator drawn with SHIFT up"
+
+    # SHIFT held → a red disc centered on the ship core.
+    w.focus = True
+    screen.fill((0, 0, 0))
+    render.draw_hitbox_indicator(screen, w)
+    center = screen.get_at((300, 400))
+    assert center[0] > center[1] and center[0] > center[2], (
+        f"indicator center not red-dominant: {tuple(center)}"
+    )
+    # Drawn at the real hitbox radius — a pixel beyond P_HITBOX_R is untouched.
+    assert tuple(screen.get_at((300 + C.P_HITBOX_R + 2, 400))[:3]) == (0, 0, 0), (
+        "indicator drew beyond the true hitbox radius"
+    )
+    assert C.HITBOX_RED == (255, 40, 64) and C.HITBOX_ALPHA == 128, "indicator hue/alpha not locked"
 
 
 def test_ac84_stats_render_smoke(screen, fonts, fresh_world):

@@ -128,3 +128,16 @@
   R inherits the Q arc's proven text clearance (no new anti-collision proof). Bonus: the two PAUSE
   always-on tracks now coincide into one ring (resolves v12's clutter note). Added a `fill_color` param
   to `draw_hold_arc` (defaults amber → Q unchanged; R passes violet). Hold timing/semantics untouched.
+- 2026-06-07 (v18): art_spec `v18.md` — two new bonus styles replace Rapid's visual. **Overdrive (fire-rate)
+  = NEW electric-lime `#A6F03C`, letter "O"; Railgun (velocity) = REUSE player cyan `#50DCFF`, letter "V".**
+  Followed the GDD's "velocity keeps cyan, fire-rate takes a fresh hue" rec. **★ Why lime is the only option:**
+  the palette is crowded — green/orange/pale-blue/gold/violet are claimed bonuses, and the whole pink/magenta/
+  orchid band is ENEMY-faction (`ENEMY #FF46C8` boss bars + heavy pellet `#D230DC`), so a hot-pink bonus would
+  read as hostile. The one free niche is the lime/chartreuse the v17 heavy-pellet recolor (`#8CF03C`→orchid)
+  vacated. `#A6F03C` proven distinct from every LIVE color (Δ≈94 from gold its nearest neighbor, ≈114 from
+  Repair green — and Repair has no pill anyway); lum≈197 so the dark ink glyph pops. Only ONE new color added;
+  Railgun reuses cyan. Reused the v2 diamond + buff-pill geometry/font/render-order VERBATIM (like the v6 bomb)
+  — only fill+letter change, no new draw path. Registry deltas flagged for the Programmer: drop all RAPID
+  visuals; `TIMED_ORDER` = Fan→Overdrive→Railgun→Shield→Score; HUD stack can now be 5 pills tall (ends y≈122,
+  still clear). DELEGATED: Writer = the two on-screen labels (O/V are render targets); Level-designer =
+  magnitudes/weights; Programmer = the config edit + duration map (480 f each per Designer).

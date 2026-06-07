@@ -17,15 +17,17 @@
 | `v12.md` | v12 | **`PAUSE_HINT_RESTART` rewrite** "Hold R  Restart" · **`GAMEOVER_KEYS` rewrite** (R clause → "Hold R  Restart", Q clause kept) — teach the hold-R-to-restart gesture (R85) | spec ready |
 | `v14.md` | v14 | STATS screen: `STATS_TITLE` "LIFETIME STATS" · 5 row labels `STATS_LBL_HIGHSCORE/RUNS/ENEMIES/ASTEROIDS/BOSSES` (single-noun, ≤260 px) · `STATS_HINT` "Tab / Esc  Back" · NEW START `START_STATS_HINT` "Tab  Stats" hint line | spec ready |
 | `v16-second-boss.md` | v16 | Second boss copy: name/HUD label `NOVA` (`NOVA_NAME`/`NOVA_LABEL_TEXT`) · arrival `WARNING`/`NOVA INBOUND` · defeat `NOVA DOWN` + `+{points}` popup — mirrors the v7 Mothership set | spec ready |
+| `v18.md` | v18 | Two new bonus names `OVERDRIVE`/`RAILGUN` + pill letters `O`/`V` · **`RAPID` name + `R` letter removed** (R108/R109) · no popup (timed buffs) · config block | spec ready |
+| `v19.md` | v19 | **`CONTROLS_1` ⚠ REWRITE** — add `Hold Shift  Focus` (the held-SHIFT precise mode) next to MOVE (R114); 462 px, fits · no new HUD label/popup/screen (red hitbox circle is the on-screen indicator) · everything else unchanged | spec ready |
 
 ## Where is …? (topic → file)
-- **Start-screen controls line (`CONTROLS_1`)** → `v1-base.md` → **rewritten in** `v6.md` (Z = fire · X = bomb)
+- **Start-screen controls line (`CONTROLS_1`)** → `v1-base.md` → **rewritten in** `v6.md` (Z = fire · X = bomb) → **rewritten in** `v19.md` (add `Hold Shift  Focus`)
 - **Start-screen controls line (`CONTROLS_2`)** → `v1-base.md` → **rewritten in** `v8.md` (Esc pauses · hold Q quits) → **rewritten in** `v10.md` (→ "Esc  Pause"; quit clause moved to the dedicated line)
 - **Start-screen quit-hint line (`START_QUIT_HINT`)** → `v10.md` (NEW; "Hold Q  Quit", arc-anchored at top-y 600)
 - **Game-Over key list (`GAMEOVER_KEYS`)** → `v1-base.md` → **rewritten in** `v8.md` (Esc clause removed) → **rewritten in** `v10.md` (append "Hold Q  Quit", R77) → **rewritten in** `v12.md` (R clause → "Hold R  Restart", R85)
 - **PAUSE restart hint (`PAUSE_HINT_RESTART`)** → `v8.md` ("R  Restart") → **rewritten in** `v12.md` ("Hold R  Restart", R85)
 - **Score / HP / Game-Over text** → `v1-base.md`
-- **Bonus names + buff-pill letters** → `v2.md`
+- **Bonus names + buff-pill letters** → `v2.md` → **OVERDRIVE/RAILGUN added, RAPID removed in** `v18.md`
 - **Enemy kind names** → `v5.md`
 - **Bomb name / glyph / bomb-count label / "+1 BOMB" popup** → `v6.md`
 - **Boss name / HUD label / WARNING intro / defeat line + reward popup** → `v7.md` (Mothership); `v16-second-boss.md` (NOVA, second boss)

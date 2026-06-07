@@ -33,8 +33,8 @@ def test_ac16_timed_buff_reverts(fresh_world):
 
 
 def test_ac17_pill_order():
-    """AC17: HUD pill order is the stable FAN/RAPID/SHIELD/SCORE; instant kinds excluded."""
-    assert C.TIMED_ORDER == ("FAN", "RAPID", "SHIELD", "SCORE"), "pill order changed"
+    """AC17: pill order is stable FAN/OVERDRIVE/RAILGUN/SHIELD/SCORE (v18); instant kinds out."""
+    assert C.TIMED_ORDER == ("FAN", "OVERDRIVE", "RAILGUN", "SHIELD", "SCORE"), "pill order changed"
     names = tuple(k.name for k in TIMED_KINDS)
     assert names == C.TIMED_ORDER, "TIMED_KINDS out of sync with TIMED_ORDER"
     assert "REPAIR" not in names and "BOMB" not in names, "instant kind leaked into pills"
@@ -48,9 +48,11 @@ def test_ac18_recollect_refreshes(fresh_world):
     p.buff_timers[BonusKind.FAN] = 5
     buffs.apply(w, Bonus(BonusKind.FAN, p.x, p.y))
     assert p.buff_timers[BonusKind.FAN] == C.BUFF_DURATION["FAN"], "fan did not refresh to full"
-    buffs.apply(w, Bonus(BonusKind.RAPID, p.x, p.y))
-    assert p.fan_active and p.rapid_active, "buffs did not coexist"
-    assert len(make_player_shots(p.x, p.y, p.fan_active)) == 3, "fan effect doubled"
+    buffs.apply(w, Bonus(BonusKind.OVERDRIVE, p.x, p.y))
+    assert p.fan_active and p.overdrive_active, "buffs did not coexist"
+    assert len(make_player_shots(p.x, p.y, p.bullet_speed, fan=True, sides=True)) == 3, (
+        "fan effect doubled"
+    )
 
 
 def test_ac19_restart_no_leak(fresh_world):

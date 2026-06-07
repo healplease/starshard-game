@@ -21,6 +21,17 @@
   collide range → collects ~f3 regardless of sweep; duration forced 60 f → expires ~f63; full
   spawn→collect→apply→expire+revert well inside 120 f; normal drip (720 f) can't fire in 120 f so the seed is
   the sole clean lifecycle.
+- 2026-06-07 (v18): `v18.md` added — bonus rebalance economy. **Magnitudes LOCK** (§V18.1): base bullet
+  speed = the existing `PB_SPEED = 10` px/f (now the buffable base, R110); **Overdrive** cd 12→6 f (halved,
+  = `RAPID_CD`, confirm) + speed +2 → 12 px/f ("a bit"); **Railgun** speed +6 → 16 px/f ("a lot", 3× OD's
+  bit) + cd 12→9 f ("a bit", cut 3 < OD's 6, and 6<9<12 per GDD §V18.4). Strongest-wins both-active derive:
+  cd `min(12,6,9)=6`, speed `max(10,12,16)=16` (bounded/positive/clean-revert). Tunneling safe: step 16 <
+  smallest target diam 24 (small asteroid). **RNG ladder re-slice** (§V18.2, volume-neutral, sums 100):
+  **Fan 20→12** (rarer, R107), **Rapid retired** (R108) → **Overdrive 10 / Railgun 10** (=20 = old Rapid,
+  R111 even split), Fan's freed **8 → Score×2 12→20** (survival-neutral sink per §V2.3 — AC13-conservative;
+  net offense weight 40→32). Repair 30 / Shield 12 / BOMB 6 untouched. Cumulative tuple `((29,REPAIR),
+  (41,FAN),(51,OVERDRIVE),(61,RAILGUN),(73,SHIELD),(93,SCORE),(99,BOMB))`. **Fan 2:1 center:side = CONFIRMED
+  feel contract, NOT a tunable** (§V18.3). v1 ramp + v2/v5/v6 economy volume UNCHANGED.
 - 2026-06-05 (v5): level_spec.md v5 section added — enemy-**kind** spawn mix folded into the UNCHANGED v1
   spawner (kind chosen at the instant `enemy_cap(t)`/`enemy_spawn_interval(t)` fire; **replaces** a REGULAR
   slot, never adds count). Band weights **Warmup R100 · Heat-up R85/H15 · Squeeze R60/H15/Sc25 · Storm

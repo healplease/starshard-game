@@ -7,7 +7,7 @@ row when finishing. Status: `todo` | `in-progress` | `done` | `blocked`.
 > `history.md`; the cross-role story is in `handoffs.md`. Full v1–v12 detail (per-version task tables
 > + status prose) is archived → `../archive/backlog-v1-v12.md`. See `../README.md` for the map.
 
-## Current game state — "Starshard" (v1–v17 shipped & passed QA, as of 2026-06-07)
+## Current game state — "Starshard" (v1–v19 shipped & passed QA, as of 2026-06-07)
 
 Top-down auto-scrolling space shooter, modular `pygame-ce` package under `game/`. Shipped capabilities:
 
@@ -41,15 +41,64 @@ Top-down auto-scrolling space shooter, modular `pygame-ce` package under `game/`
   edge-only falloff + slow breathing pulse) at **HP < 25 %** (render slot 8.5, PLAY only); the **HEAVY green
   pellet** recolored `#8CF03C`→**orchid `#D230DC`** (`EB_COLOR_GREEN`→`EB_COLOR_PURPLE`) to clear the
   Repair/HP green. Render/color only — shapes, sizes, collisions, economy unchanged. No new R#/AC#.
+- **Bonus rebalance (v18):** **Fan** nerfed — side beams (±12°) fire at **half** the center cadence (2:1,
+  parity resets on collect) and Fan rarer (ladder weight 20→**12**); center beam unchanged. **Rapid retired**
+  everywhere; two new timed kinds split its weight 20 → **Overdrive** (`O`, electric-lime `#A6F03C`; cd 12→6 +
+  bullet speed 10→12) and **Railgun** (`V`, cyan `#50DCFF`; bullet speed 10→**16** + cd 12→9). **Bullet speed**
+  is now a buffable stat; cross-stat stacking = **strongest-wins per stat** (min cd / max speed), bounded +
+  clean-reverting; restart resets. Ladder re-sliced to sum 100 over 7 kinds. AC94–AC101.
+- **Precise controls (v19):** hold **Shift** = **FOCUS** — ship move speed halved (×0.5, PLAY-only, held-not-
+  toggle; firing/bombs/i-frames untouched). Player **damage** hitbox is now an always-on circle `P_HITBOX_R=6`
+  (≈50% of `P_R=13`), decoupled from the unchanged ship drawing; **pickup** reach stays generous at `P_R`. All
+  bullets **~1.5× larger**, draw==collision every family (`EB_R 5→8`; player bullet `6×18`, coll `r=9`;
+  `CYAN_TAIL_LEN 18`). While Shift held in PLAY, a **red 50%-opacity disc** (`#FF2840` @ alpha 128) draws the
+  true hitbox (render-only). Enemy/boss body radii unchanged. AC102–AC108.
 
-Contract totals: **R1–R105**, **AC1–AC93**; **pytest suite 94/94** (59 unit / 35 e2e, `workspace/tests/`,
+Contract totals: **R1–R119**, **AC1–AC108**; **pytest suite 117/117** (80 unit / 37 e2e, `workspace/tests/`,
 root `pyproject.toml` w/ ruff+pyright). Standing QA docs: `qa/feature_inventory.md`, `qa/test_plan.md`.
 (v3 = KB reorg, v4 = QA docs, v9 = process hardening, v15 = test-infra — no game-feature change.)
 
-**Play:** `.\.venv\Scripts\python.exe workspace\game\main.py` — Z fire · X bomb · Esc pause ·
-hold Q quit · hold R restart (on PAUSE/GAME_OVER) · Tab stats (on START).
+**Play:** `.\.venv\Scripts\python.exe workspace\game\main.py` — Z fire · X bomb · hold Shift Focus ·
+Esc pause · hold Q quit · hold R restart (on PAUSE/GAME_OVER) · Tab stats (on START).
 
-## Last increment — v17: HP-feedback + bullet-clarity polish (UI/UX, render-only) — ✅ SHIPPED (QA PASS 2026-06-07)
+## Current increment — v19: precise controls (focus mode + circular player hitbox + larger bullets) — ✅ SHIPPED (QA PASS 2026-06-07)
+
+New mechanic + balance change. (1) **Precise mode:** hold **SHIFT** (PLAY only) → ship move speed **halved**
+(×0.5) for precise dodging; release → normal. (2) **Player hitbox** becomes a **circle ≈50% of the ship's
+drawn size**, **always active** (not just in precise mode); the **drawn ship is unchanged**. (3) **Balance:**
+**all bullets ~50% larger** (drawn + collision, every projectile family — player & enemy/boss). (4) **Indicator:**
+while SHIFT held, draw the actual hitbox as a **red circle @ 50% opacity** on the ship (PLAY only). **Enemy
+hitboxes unchanged.** Magnitudes/colors/copy are downstream-role calls. Framing + locked decisions: `brief.md`.
+
+| # | Role | Task | Owner | Status |
+|---|---|---|---|---|
+| 1 | business-analyst | Formalize: SHIFT precise mode (×0.5 move, PLAY-only, held), always-on circular player hitbox (~50% of ship), all-bullets-~50%-larger balance, precise-mode red hitbox indicator, enemy hitboxes unchanged — as new R#/AC# (requirements vN) | business-analyst | done |
+| 2 | lead-game-designer | Design precise-mode feel (held SHIFT, ×0.5, state/interaction rules), the circular-hitbox identity, the red-indicator semantics, and confirm the bullet-size balance intent (GDD vN) | lead-game-designer | done |
+| 3 | artist | Define the red hitbox-indicator circle (hue/alpha 50%/blend/render slot) + the ~50%-larger bullet sizes per family (drawn) so visuals match collision; ship draw unchanged (art_spec vN) | artist | done |
+| 4 | writer | On-screen control hint for precise mode (SHIFT) if warranted, matching existing hint copy; else confirm no copy change (story vN) | writer | done |
+| 5 | level-designer | Lock numbers: precise-mode multiplier (×0.5), player circular-hitbox radius (≈50% of P_R=13 → concrete px), per-family bullet size deltas (≈1.5×, drawn+collision), confirm no tunneling/balance regressions (level_spec vN) | level-designer | done |
+| 6 | programmer | Implement: SHIFT precise mode, circular player hitbox + collision swap, ~50% larger bullets (all families), red 50%-opacity indicator on SHIFT, smoke path coverage; ruff+pyright+unit pytest+smoke green | programmer | done |
+| 7 | qa-tester | Full rigor: SHIFT halves move & only then shows red circle, hitbox always small/circular/clear of display, all bullets ~50% larger, no tunneling, enemy hitboxes unchanged, no AC1–AC101 regression, suite+smoke green | qa-tester | done (PASS) |
+
+## Last increment — v18: bonus rebalance (Fan nerf + Rapid → two fire/speed bonuses) — ✅ SHIPPED (QA PASS 2026-06-07)
+
+Mechanic + content + economy change. (1) **Fan too strong:** side beams (±12°) fire at **half the center
+cadence** (2:1 center:side) and Fan's RNG weight drops (rarer). (2) **Remove Rapid**, add **two** bonus
+kinds sharing Rapid's old weight (20): (2a) fire-rate up by the current Rapid amount **+ bullet speed up
+a bit**; (2b) **bullet speed up a lot + fire rate up a bit** (easier aiming). Magnitudes/weights/names/
+colors are downstream-role calls. Framing + locked decisions: `brief.md`.
+
+| # | Role | Task | Owner | Status |
+|---|---|---|---|---|
+| 1 | business-analyst | Formalize: Fan side-beam 2:1 cadence + rarer, Rapid removed → two new fire/speed bonus kinds sharing Rapid's weight (effects (2a)/(2b)), as new R#/AC# (requirements vN) | business-analyst | done |
+| 2 | lead-game-designer | Design the two new bonuses (identity/feel/duration/stacking) + the Fan side-beam nerf feel; name the bonus kinds conceptually (GDD vN) | lead-game-designer | done |
+| 3 | artist | Palette color + HUD pill letter for each of the two new bonus kinds (distinct from each other & the bonus palette); drop Rapid's visual (art_spec vN) | artist | done |
+| 4 | writer | On-screen name/label for each new bonus kind (HUD pill + any pickup text), matching the existing bonus copy treatment (story vN) | writer | done |
+| 5 | level-designer | Lock numbers: new Fan weight + reweight target (ladder sums 100), 2a/2b weight split, all magnitudes (fire-rate & bullet-speed deltas + base speed), Fan 2:1 ratio confirmation (level_spec vN) | level-designer | done |
+| 6 | programmer | Implement: Fan side-beam half-cadence, remove RAPID + add the two kinds (effects/weights/buffs/visuals/copy), reweight ladder, fix SMOKE_BONUS_KIND; ruff+pyright+unit pytest+smoke green | programmer | done |
+| 7 | qa-tester | Full rigor: Fan sides fire 2:1 & rarer, Rapid gone, both new bonuses apply correct fire-rate/speed effects, ladder still sums 100, no AC1–AC93 regression, suite+smoke green | qa-tester | done (PASS) |
+
+## Previous increment — v17: HP-feedback + bullet-clarity polish (UI/UX, render-only) — ✅ SHIPPED (QA PASS 2026-06-07)
 
 Three render-only UI/UX improvements (no mechanic/economy/copy change): (1) HP bar fades **green→red
 gradually** (replaces the stepped `≥40/<40/<20` thresholds in art_spec v1-base §4.3); (2) a **subtle,
@@ -65,7 +114,7 @@ collisions, and all gameplay numbers unchanged. Framing + locked decisions: `bri
 
 Skipped (no impact): business-analyst, lead-game-designer, writer, level-designer.
 
-## Previous increment — v16: second boss + random boss pool (new content) — ✅ SHIPPED (QA PASS 2026-06-07)
+## Earlier increment — v16: second boss + random boss pool (new content) — ✅ SHIPPED (QA PASS 2026-06-07)
 
 Add a **second boss** and make every boss-spawn pick **uniformly at random** from an **extensible boss
 pool** (today: Mothership + new boss; future bosses = one registry entry). Human's hard constraints: the
