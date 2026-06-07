@@ -418,3 +418,26 @@
 - **Gates:** `pytest workspace/tests` **117 passed** (+11 v19: 10 unit R114–R118 + 1 e2e R117),
   `--smoke-test` exit 0 (exercises Focus + the shrunk hitbox), pyright clean on changed files; the only
   ruff residual is the pre-existing `BONUS_WEIGHTS` ladder comment + `bonus.py` forward-ref (non-v19).
+
+## 2026-06-07 — Manager: v20 page-turn + automated handoff chains
+
+**Page-turn (v20).** Mirrored the v12→v13 ritual: archived the v13–v19 handoffs (entries 95–152 →
+`archive/handoffs-v13-v19.md`), the v16–v19 backlog tables (`archive/backlog-v13-v19.md`), and the v19
+brief framing (`archive/brief-increments-v13-v19.md`); reset `shared/handoffs.md` to a fresh page
+(numbering from 153) and the brief/backlog "current increment" to *awaiting v20*. The live board keeps
+only the capability summary + parked items. **Specs were NOT archived** — the per-increment `vN.md` files
+in each role folder are canonical, code-matching contract and stay live by design (README rule); only the
+narrative hot path (handoffs/backlog/brief) is slimmed. QA reports + per-domain `history.md` also stay put
+(loaded only by their own role, not in the shared hot path).
+
+**Automated handoff chains (auto mode).** Reason: the human no longer wants to copy-paste each HANDOFF into
+a fresh chat, and wants each worker to start with a clean context (no cross-role clutter). Implemented as
+**Orchestrator subagent dispatch**, not a new tool: the Orchestrator spawns each next role via the `Agent`
+tool, so every role runs in its own fresh context window (the "clear before next role" requirement is
+satisfied for free), does its normal blackboard work, and **returns** its handoff text instead of printing
+a copy-paste block; the Orchestrator reads it and dispatches the next role. Only the Orchestrator
+dispatches (pipeline stays linear; subagents don't chain further). QA-FAIL→programmer (≤3 loops) and
+BLOCKER→upstream routing carry over. **Manual mode (print the HANDOFF block, human is the bus) is retained
+as the fallback** and writes the same blackboard, so the two modes interoperate. Docs: new *"Automated
+handoff chains"* section in `CLAUDE.md` + a mode-aware STEP 4; `roles/orchestrator.md` Mission/Route/Hand-off
+updated. No game spec/code changed.
