@@ -7,16 +7,15 @@ mutates the World only via systems; it never draws directly (view does that).
 
 import math
 import random
-import sys
 
 import pygame
 
 from . import config as C
 from . import save
-from .world import World, GameState
-from .input import read_input, smoke_input, InputState
-from .systems import spawning, physics, combat, buffs, scoring, bombs, encounter
-from .view import render, hud
+from .input import InputState, read_input, smoke_input
+from .systems import bombs, buffs, combat, encounter, physics, scoring, spawning
+from .view import hud, render
+from .world import GameState, World
 
 
 class App:
@@ -34,10 +33,12 @@ class App:
         #        "held": {frame: [pygame key, …]}, "probes": {frame: fn(app)}}.
         self.event_script = event_script
         self.state = GameState.START
-        self.frame = 0          # global loop counter (smoke cap + start-screen blink)
+        self.frame = 0  # global loop counter (smoke cap + start-screen blink)
         self.bomb_fired = False  # X key-down edge this frame (v6, GDD §V6.4)
-        self.q_hold_frames = 0   # v8: Q-hold timer for quit-from-PAUSE (GDD §V8.3)
-        self.r_hold_frames = 0   # v12: R-hold timer for restart on PAUSE+GAME_OVER (GDD §V12.3) — INDEPENDENT of q
+        self.q_hold_frames = 0  # v8: Q-hold timer for quit-from-PAUSE (GDD §V8.3)
+        self.r_hold_frames = (
+            0  # v12: R-hold timer for restart on PAUSE+GAME_OVER (GDD §V12.3) — INDEPENDENT of q
+        )
         self.quit_via_qhold = False  # v9: set when a Q-hold completes (testable quit seam)
 
     # ── setup ────────────────────────────────────────────────────────────────
@@ -76,20 +77,24 @@ class App:
     # ── the systems pipeline for one PLAY frame (§V2.7 order) ──────────────────
     def _step_play(self, inp):
         w = self.world
-        physics.update_play(w, inp)     # move + fire + despawn
-        encounter.update(w)             # v7: boss trigger + entrance/oscillation/moveset (§V7.3)
+        physics.update_play(w, inp)  # move + fire + despawn
+        encounter.update(w)  # v7: boss trigger + entrance/oscillation/moveset (§V7.3)
         bombs.update(w, self.bomb_fired)  # v6: flush+flash BEFORE the damage step (§V6.3)
-        combat.resolve(w)               # collisions, collect, damage + boss hits/defeat (steps 1–4)
-        spawning.update(w)              # ramped asteroid/enemy spawns + bonus drip (frozen while boss)
-        buffs.tick(w)                   # tick timers, expiry→revert (step 5)
+        combat.resolve(w)  # collisions, collect, damage + boss hits/defeat (steps 1–4)
+        spawning.update(w)  # ramped asteroid/enemy spawns + bonus drip (frozen while boss)
+        buffs.tick(w)  # tick timers, expiry→revert (step 5)
         w.frame += 1
-        scoring.survival_tick(w)        # +1/s survival bonus (×mult)
-        if w.player.hp <= 0:            # step 6 → GAME_OVER
+        scoring.survival_tick(w)  # +1/s survival bonus (×mult)
+        if w.player.hp <= 0:  # step 6 → GAME_OVER
             w.best = max(w.best, w.score)
-            self.q_hold_frames = 0      # v10 transition #4 (§V10.4) — dying with Q held must NOT instant-quit
-            self.r_hold_frames = 0      # v12 transition #4 (§V12.4) — dying with R held must NOT instant-restart
+            self.q_hold_frames = (
+                0  # v10 transition #4 (§V10.4) — dying with Q held must NOT instant-quit
+            )
+            self.r_hold_frames = (
+                0  # v12 transition #4 (§V12.4) — dying with R held must NOT instant-restart
+            )
             self.state = GameState.GAME_OVER
-            self._flush_store()         # v14 R95 flush #1: write on the PLAY→GAME_OVER frame
+            self._flush_store()  # v14 R95 flush #1: write on the PLAY→GAME_OVER frame
 
     def _flush_store(self):
         """v14 flush (R95): refresh the lifetime highscore from the live run score, then
@@ -103,7 +108,7 @@ class App:
 
     # ── event handling (discrete transitions: quit / start / restart) ──────────
     def _handle_events(self):
-        self.bomb_fired = False                      # reset the per-frame X edge (v6)
+        self.bomb_fired = False  # reset the per-frame X edge (v6)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
@@ -112,15 +117,17 @@ class App:
                 if event.key == pygame.K_ESCAPE:
                     if self.state is GameState.PLAY:
                         self.state = GameState.PAUSE
-                        self.q_hold_frames = 0       # v8 transition #2 (§V10.4)
-                        self.r_hold_frames = 0       # v12 transition #2 (§V12.4)
+                        self.q_hold_frames = 0  # v8 transition #2 (§V10.4)
+                        self.r_hold_frames = 0  # v12 transition #2 (§V12.4)
                     elif self.state is GameState.PAUSE:
                         self.state = GameState.PLAY
-                        self.q_hold_frames = 0       # v10 transition #3 (§V10.4)
-                        self.r_hold_frames = 0       # v12 transition #3 (§V12.4)
+                        self.q_hold_frames = 0  # v10 transition #3 (§V10.4)
+                        self.r_hold_frames = 0  # v12 transition #3 (§V12.4)
                     elif self.state is GameState.STATS:
-                        self.state = GameState.START  # v14 §V14.3: Esc backs STATS→START (transition #8)
-                        self.q_hold_frames = 0        # v14 §V14.5: zero both counters
+                        self.state = (
+                            GameState.START
+                        )  # v14 §V14.3: Esc backs STATS→START (transition #8)
+                        self.q_hold_frames = 0  # v14 §V14.5: zero both counters
                         self.r_hold_frames = 0
                     # else: START or GAME_OVER — silent no-op
                     continue
@@ -130,25 +137,25 @@ class App:
                 # any other key is inert (Esc-back is handled in the Esc branch above).
                 if self.state is GameState.START:
                     if event.key == pygame.K_q:
-                        pass                          # v10: reserved for hold-Q-to-quit
+                        pass  # v10: reserved for hold-Q-to-quit
                     elif event.key == pygame.K_TAB:
-                        self.q_hold_frames = 0        # v14 transition #7 (§V14.5): zero both
+                        self.q_hold_frames = 0  # v14 transition #7 (§V14.5): zero both
                         self.r_hold_frames = 0
                         self.state = GameState.STATS  # §V14.4: Tab opens the ledger
                     else:
-                        self.q_hold_frames = 0        # v10 transition #1 (§V10.4)
-                        self.r_hold_frames = 0        # v12 transition #1 (§V12.4)
+                        self.q_hold_frames = 0  # v10 transition #1 (§V10.4)
+                        self.r_hold_frames = 0  # v12 transition #1 (§V12.4)
                         self.state = GameState.PLAY
-                        self.store.runs += 1          # v14 R93 §runs: a run begins (initial START→PLAY)
+                        self.store.runs += 1  # v14 R93 §runs: a run begins (initial START→PLAY)
                 # v12 §V12.5: the two K_r KEYDOWN restart branches (GAME_OVER + PAUSE) are
                 # REMOVED — a single R press no longer restarts. Restart is now the held
                 # gesture in the main-loop R-hold block (_restart_hold_step, transitions #5/#6).
                 elif self.state is GameState.STATS and event.key == pygame.K_TAB:
-                    self.q_hold_frames = 0            # v14 transition #8 (§V14.5): zero both
+                    self.q_hold_frames = 0  # v14 transition #8 (§V14.5): zero both
                     self.r_hold_frames = 0
-                    self.state = GameState.START      # §V14.3: Tab toggles back out
+                    self.state = GameState.START  # §V14.3: Tab toggles back out
                 elif self.state is GameState.PLAY and event.key == pygame.K_x:
-                    self.bomb_fired = True            # X key-down edge → bomb (§V6.4)
+                    self.bomb_fired = True  # X key-down edge → bomb (§V6.4)
         return True
 
     # ── render one frame for the current state ─────────────────────────────────
@@ -157,22 +164,22 @@ class App:
         render.draw_starfield(self.screen, self.world)
         if self.state is GameState.START:
             hud.draw_start(self.screen, self.frame)
-            hud.draw_start_quit_arc(self.screen, self.q_hold_frames)   # v10: only while Q held
+            hud.draw_start_quit_arc(self.screen, self.q_hold_frames)  # v10: only while Q held
         elif self.state is GameState.PLAY:
             render.draw_world(self.screen, self.world)
             hud.draw_hud(self.screen, self.world)
-            hud.draw_flash(self.screen, self.world)   # v6 flash: above HUD, PLAY-only (§V6.6)
-        elif self.state is GameState.PAUSE:            # v8: frozen world + HUD + pause overlay
+            hud.draw_flash(self.screen, self.world)  # v6 flash: above HUD, PLAY-only (§V6.6)
+        elif self.state is GameState.PAUSE:  # v8: frozen world + HUD + pause overlay
             render.draw_world(self.screen, self.world)
             hud.draw_hud(self.screen, self.world)
             hud.draw_pause(self.screen, self.q_hold_frames, self.r_hold_frames)  # v12: both arcs
-        elif self.state is GameState.STATS:            # v14: lifetime ledger over the starfield
-            hud.draw_stats(self.screen, self.store)    # no world, no in-run HUD (art §V14a.7)
+        elif self.state is GameState.STATS:  # v14: lifetime ledger over the starfield
+            hud.draw_stats(self.screen, self.store)  # no world, no in-run HUD (art §V14a.7)
         else:  # GAME_OVER — frozen field + dim + text
             render.draw_world(self.screen, self.world)
             hud.draw_hud(self.screen, self.world)
             hud.draw_gameover(self.screen, self.world)
-            hud.draw_gameover_quit_arc(self.screen, self.q_hold_frames)     # v10: only while Q held
+            hud.draw_gameover_quit_arc(self.screen, self.q_hold_frames)  # v10: only while Q held
             hud.draw_gameover_restart_arc(self.screen, self.r_hold_frames)  # v12: only while R held
         pygame.display.flip()
 
@@ -182,7 +189,7 @@ class App:
         ordering + budget live in `config.SMOKE_TIMELINE`; this only dispatches the
         action. Replaces the old hand-maintained inline schedule so a new seed is a
         one-row edit in config, not a scattered `if frame ==` here."""
-        self.bomb_fired = False               # reset the per-frame X edge each smoke frame
+        self.bomb_fired = False  # reset the per-frame X edge each smoke frame
         for frame, event, _note in C.SMOKE_TIMELINE:
             if self.frame != frame:
                 continue
@@ -191,7 +198,7 @@ class App:
             elif event == "split":
                 spawning.seed_smoke_split(self.world)
             elif event == "bomb":
-                self.bomb_fired = True         # scripted X edge → bomb flush (AC30/32/33)
+                self.bomb_fired = True  # scripted X edge → bomb flush (AC30/32/33)
             elif event == "boss_target":
                 spawning.seed_smoke_boss_target(self.world)
             elif event == "boss":
@@ -232,12 +239,12 @@ class App:
             self.r_hold_frames += 1
             if self.r_hold_frames >= C.RESTART_HOLD_FRAMES:
                 self.world.reset_run()
-                self.store.runs += 1        # v14 R93 §runs: each hold-R restart is a new run
-                self.q_hold_frames = 0      # transitions #5/#6: zero BOTH atomically
+                self.store.runs += 1  # v14 R93 §runs: each hold-R restart is a new run
+                self.q_hold_frames = 0  # transitions #5/#6: zero BOTH atomically
                 self.r_hold_frames = 0
                 self.state = GameState.PLAY
         else:
-            self.r_hold_frames = 0          # cancel-on-release, no accumulation (§V12.6)
+            self.r_hold_frames = 0  # cancel-on-release, no accumulation (§V12.6)
 
     # ── main loop ──────────────────────────────────────────────────────────────
     def run(self):
@@ -246,9 +253,9 @@ class App:
         running = True
         while running:
             if self.smoke:
-                self._run_smoke_seeds()          # SMOKE_TIMELINE-driven (v9)
+                self._run_smoke_seeds()  # SMOKE_TIMELINE-driven (v9)
                 inp = smoke_input(self.frame)
-                pygame.event.pump()              # drain the queue so the dummy driver is happy
+                pygame.event.pump()  # drain the queue so the dummy driver is happy
             elif self.event_script is not None:
                 # Inject scripted KEYDOWN edges, then run the REAL `_handle_events`
                 # so pause/bomb/quit are exercised through the live code path (v9).
@@ -260,7 +267,7 @@ class App:
                 running = self._handle_events()
                 inp = read_input()
 
-            physics.update_starfield(self.world)     # cosmetic, runs in every state
+            physics.update_starfield(self.world)  # cosmetic, runs in every state
             # v8/v10: Q-hold-to-quit timer — active in START + PAUSE + GAME_OVER, NOT
             # PLAY (R81/§V10.3: a stray Q during a run can never end it). PLAY stays
             # mutually exclusive so the counter is never advanced mid-run.
@@ -271,7 +278,7 @@ class App:
                         # v9: end the loop via a flag instead of sys.exit() inline, so
                         # the quit is observable to a harness; `main()` still exit(0)s
                         # and `pygame.quit()` below still runs — same live behavior.
-                        self._flush_store()     # v14 R95 flush #2: persist before the process exits
+                        self._flush_store()  # v14 R95 flush #2: persist before the process exits
                         self.quit_via_qhold = True
                         running = False
                 else:
@@ -287,7 +294,7 @@ class App:
 
             self._draw()
             if not (self.smoke or self.event_script is not None):
-                self.clock.tick(C.FPS)           # real-time pacing only when live
+                self.clock.tick(C.FPS)  # real-time pacing only when live
 
             # v9: per-frame probe hook for the event-script gate (capture/assert state).
             if self.event_script is not None:
@@ -298,7 +305,9 @@ class App:
             self.frame += 1
             if self.smoke and self.frame >= C.SMOKE_FRAMES:
                 running = False
-            if self.event_script is not None and self.frame >= self.event_script.get("frames", C.SMOKE_FRAMES):
+            if self.event_script is not None and self.frame >= self.event_script.get(
+                "frames", C.SMOKE_FRAMES
+            ):
                 running = False
 
         pygame.quit()
@@ -318,19 +327,33 @@ def run_event_script(script):
 def _built_in_event_script(results):
     """The default --event-script scenario: bomb (X in PLAY) → pause (Esc) → unpause
     (Esc) → re-pause (Esc) → Q-hold quit. Probes write booleans into `results`."""
-    def after_bomb(app):
-        results["bomb"] = (not app.world.enemies and not app.world.asteroids
-                           and app.world.charges == C.BOMB_START - 1
-                           and app.world.flash_timer > 0)
 
-    def paused(app):    results["paused"] = (app.state is GameState.PAUSE)
-    def unpaused(app):  results["unpaused"] = (app.state is GameState.PLAY)
-    def repaused(app):  results["repaused"] = (app.state is GameState.PAUSE)
+    def after_bomb(app):
+        results["bomb"] = (
+            not app.world.enemies
+            and not app.world.asteroids
+            and app.world.charges == C.BOMB_START - 1
+            and app.world.flash_timer > 0
+        )
+
+    def paused(app):
+        results["paused"] = app.state is GameState.PAUSE
+
+    def unpaused(app):
+        results["unpaused"] = app.state is GameState.PLAY
+
+    def repaused(app):
+        results["repaused"] = app.state is GameState.PAUSE
+
     return {
         "frames": 60,
-        "keydowns": {3: [pygame.K_x], 6: [pygame.K_ESCAPE],
-                     8: [pygame.K_ESCAPE], 10: [pygame.K_ESCAPE]},
-        "held": {f: [pygame.K_q] for f in range(11, 55)},   # 30 held PAUSE frames → quit @f40
+        "keydowns": {
+            3: [pygame.K_x],
+            6: [pygame.K_ESCAPE],
+            8: [pygame.K_ESCAPE],
+            10: [pygame.K_ESCAPE],
+        },
+        "held": {f: [pygame.K_q] for f in range(11, 55)},  # 30 held PAUSE frames → quit @f40
         "probes": {3: after_bomb, 6: paused, 8: unpaused, 10: repaused},
     }
 
@@ -343,10 +366,10 @@ def run_event_script_gate():
     results["quit"] = app.quit_via_qhold
     checks = [
         ("bomb: X in PLAY flushes the field, charge 2->1, flash armed", results.get("bomb")),
-        ("pause: Esc PLAY->PAUSE",                                      results.get("paused")),
-        ("unpause: Esc PAUSE->PLAY",                                    results.get("unpaused")),
-        ("re-pause: Esc PLAY->PAUSE",                                   results.get("repaused")),
-        ("quit: Q held 30 f in PAUSE exits the app",                   results.get("quit")),
+        ("pause: Esc PLAY->PAUSE", results.get("paused")),
+        ("unpause: Esc PAUSE->PLAY", results.get("unpaused")),
+        ("re-pause: Esc PLAY->PAUSE", results.get("repaused")),
+        ("quit: Q held 30 f in PAUSE exits the app", results.get("quit")),
     ]
     print("event-script behavioral gate (scripted KEYDOWN -> real _handle_events):")
     for name, ok in checks:
@@ -366,14 +389,14 @@ def balance_probe(runs=None, cap=None):
     times, censored = [], 0
     for i in range(runs):
         app = App()
-        app.world = World(random.Random(C.SMOKE_SEED + i))   # distinct deterministic seed/run
+        app.world = World(random.Random(C.SMOKE_SEED + i))  # distinct deterministic seed/run
         app.state = GameState.PLAY
         app.bomb_fired = False
         f = 0
         while app.state is GameState.PLAY and f < cap:
             app._step_play(smoke_input(f))
             f += 1
-        if app.state is GameState.PLAY:                      # never died → censored at the cap
+        if app.state is GameState.PLAY:  # never died → censored at the cap
             censored += 1
         times.append(app.world.frame / 60.0)
     return times, censored
@@ -398,11 +421,16 @@ def run_balance_probe(runs=None):
     s = sorted(times)
     median, p95 = _percentile(s, 0.5), _percentile(s, 0.95)
     cap_s = C.BALANCE_PROBE_CAP_FRAMES / 60.0
-    print(f"AC13 balance probe - {len(s)} scripted runs "
-          f"(auto-pilot = fixed smoke sweep, naive non-dodging lower bound):")
-    print(f"  survival seconds: min={s[0]:.1f}  median={median:.1f}  "
-          f"p95={p95:.1f}  max={s[-1]:.1f}")
+    print(
+        f"AC13 balance probe - {len(s)} scripted runs "
+        f"(auto-pilot = fixed smoke sweep, naive non-dodging lower bound):"
+    )
+    print(
+        f"  survival seconds: min={s[0]:.1f}  median={median:.1f}  p95={p95:.1f}  max={s[-1]:.1f}"
+    )
     if censored:
-        print(f"  NOTE: {censored}/{len(s)} run(s) hit the {cap_s:.0f}s cap (censored - "
-              f"the naive sweep effectively never dies on that seed).")
+        print(
+            f"  NOTE: {censored}/{len(s)} run(s) hit the {cap_s:.0f}s cap (censored - "
+            f"the naive sweep effectively never dies on that seed)."
+        )
     return median, p95

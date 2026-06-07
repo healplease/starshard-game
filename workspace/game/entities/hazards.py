@@ -17,7 +17,7 @@ class Asteroid:
     r: int
     hits: int
     large: bool
-    flash: int = 0          # white survived-hit flash countdown (R17)
+    flash: int = 0  # white survived-hit flash countdown (R17)
 
     @property
     def score(self):
@@ -36,12 +36,12 @@ class Asteroid:
 class Enemy:
     x: float
     y: float
-    dir: int                # strafe direction (-1 / +1)
-    kind: str = "REGULAR"   # v5 roster key (REGULAR / HEAVY / SCOUT) — branched on for
-    hp: int = C.EN_HP       #   stats/move/fire/render (R36/AC29); hp set per kind in factory
-    phase: str = "A"        # "A" = entry descent, "B" = strafe + fire
+    dir: int  # strafe direction (-1 / +1)
+    kind: str = "REGULAR"  # v5 roster key (REGULAR / HEAVY / SCOUT) — branched on for
+    hp: int = C.EN_HP  #   stats/move/fire/render (R36/AC29); hp set per kind in factory
+    phase: str = "A"  # "A" = entry descent, "B" = strafe + fire
     fire_timer: float = 0.0
-    flash: int = 0          # 1-frame white flash on taking a bullet (R17)
+    flash: int = 0  # 1-frame white flash on taking a bullet (R17)
 
     @property
     def spec(self):
@@ -50,15 +50,15 @@ class Enemy:
 
     @property
     def r(self):
-        return self.spec["r"]          # collision radius (18 / 13 / 10)
+        return self.spec["r"]  # collision radius (18 / 13 / 10)
 
     @property
     def score(self):
-        return self.spec["score"]      # score on kill (80 / 50 / 60)
+        return self.spec["score"]  # score on kill (80 / 50 / 60)
 
     @property
     def ram_dmg(self):
-        return self.spec["ram"]        # contact damage to the player (50 / 40 / 30)
+        return self.spec["ram"]  # contact damage to the player (50 / 40 / 30)
 
 
 def make_asteroid(rng, t):
@@ -68,10 +68,13 @@ def make_asteroid(rng, t):
     lo, hi = C.AST_L_SPD if large else C.AST_S_SPD
     drift = C.AST_L_DRIFT if large else C.AST_S_DRIFT
     return Asteroid(
-        x=rng.uniform(r, C.W - r), y=float(-r),
+        x=rng.uniform(r, C.W - r),
+        y=float(-r),
         vx=rng.uniform(-drift, drift),
-        vy=rng.uniform(lo, hi) + C.hazard_speed_bonus(t),   # ramp speed bonus
-        r=r, hits=2 if large else 1, large=large,
+        vy=rng.uniform(lo, hi) + C.hazard_speed_bonus(t),  # ramp speed bonus
+        r=r,
+        hits=2 if large else 1,
+        large=large,
     )
 
 
@@ -82,8 +85,10 @@ def make_enemy(rng, t, kind="REGULAR"):
     fire_mult (HEAVY fires least often, SCOUT throttled, REGULAR == v1)."""
     spec = C.ENEMY_KINDS[kind]
     return Enemy(
-        x=rng.uniform(40, 560), y=-24.0,
+        x=rng.uniform(40, 560),
+        y=-24.0,
         dir=rng.choice((-1, 1)),
-        kind=kind, hp=spec["hp"],
+        kind=kind,
+        hp=spec["hp"],
         fire_timer=round(C.enemy_fire_interval(t) * spec["fire_mult"]),
     )

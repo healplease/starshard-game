@@ -7,7 +7,7 @@ row when finishing. Status: `todo` | `in-progress` | `done` | `blocked`.
 > `history.md`; the cross-role story is in `handoffs.md`. Full v1–v12 detail (per-version task tables
 > + status prose) is archived → `../archive/backlog-v1-v12.md`. See `../README.md` for the map.
 
-## Current game state — "Starshard" (v1–v14 shipped & passed QA, as of 2026-06-06)
+## Current game state — "Starshard" (v1–v15 shipped & passed QA, as of 2026-06-07)
 
 Top-down auto-scrolling space shooter, modular `pygame-ce` package under `game/`. Shipped capabilities:
 
@@ -32,17 +32,28 @@ Top-down auto-scrolling space shooter, modular `pygame-ce` package under `game/`
   missing/corrupt/unknown-version → zeros. New first-class **STATS** GameState off START (**Tab** toggles
   START⇄STATS, **Esc** backs out; arc-free). AC78–AC85.
 
-Contract totals: **R1–R98**, **AC1–AC85**; regression harness **75/75**. Standing QA docs:
-`qa/feature_inventory.md`, `qa/test_plan.md`. (v3 = KB reorg, v4 = QA docs, v9 = process hardening —
-no game-feature change.)
+Contract totals: **R1–R98**, **AC1–AC85**; **pytest suite 75/75** (43 unit / 32 e2e, `workspace/tests/`,
+root `pyproject.toml` w/ ruff+pyright). Standing QA docs: `qa/feature_inventory.md`, `qa/test_plan.md`.
+(v3 = KB reorg, v4 = QA docs, v9 = process hardening, v15 = test-infra — no game-feature change.)
 
 **Play:** `.\.venv\Scripts\python.exe workspace\game\main.py` — Z fire · X bomb · Esc pause ·
 hold Q quit · hold R restart (on PAUSE/GAME_OVER) · Tab stats (on START).
 
-## Active increment — none
+## No active increment — project complete (v15 shipped & passed QA 2026-06-07)
 
-v14 shipped & passed QA (75/75). Project complete; awaiting next theme/increment from the human.
-Most recent shipped increment (v14: save system + STATS screen) folded into the game-state summary above.
+v15 (pytest suite + ruff/pyright tooling, process-only) is **done** — folded into the game-state summary
+above. The 1,514-line `qa/regression_harness.py` monolith was ported to a modular pytest suite (43 unit /
+32 e2e = 75, zero coverage loss) and deleted; ruff/pyright wired via root `pyproject.toml`. Last delivered
+increment table (all rows `done`/`skipped`):
+
+| # | Role | Task | Owner | Status |
+|---|---|---|---|---|
+| 1 | manager | ✅ `tests/` layout + root `pyproject.toml`, unit-vs-e2e split (43/32), new testing process + doc realignment — contract in `qa/test_plan.md` §2 | manager | done |
+| 2 | programmer | ✅ Scaffolded `pyproject.toml` + `tests/` + `conftest.py` fixtures; ported the 43 unit checks → `tests/unit/`; wired ruff/pyright; unit pytest+smoke green | programmer | done |
+| 3 | qa-tester | ✅ Ported the 32 e2e checks → `tests/e2e/`; full suite 75 (43 unit/32 e2e) green; smoke+compileall exit 0; parity proven; `regression_harness.py` deleted | qa-tester | done |
+| — | business-analyst / lead-game-designer / artist / writer / level-designer | no requirements/design/art/copy/economy change | — | skipped |
+
+Awaiting the human's next theme/increment.
 
 ## Parked (non-blocking)
 

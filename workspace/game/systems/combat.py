@@ -11,9 +11,8 @@ app loop (buffs.tick + the return value).
 """
 
 from .. import config as C
-from ..world import BonusKind
 from ..entities.fx import make_burst
-from . import scoring, buffs, spawning, encounter
+from . import buffs, encounter, scoring, spawning
 
 
 def _hit(x1, y1, r1, x2, y2, r2):
@@ -40,10 +39,12 @@ def resolve(world):
                 if a.hits <= 0:
                     dead_ast.add(id(a))
                     scoring.award(world, a.score)
-                    world.store.asteroids_destroyed += 1   # v14 R93: count at the destroy/award site (1 per rock)
+                    world.store.asteroids_destroyed += (
+                        1  # v14 R93: count at the destroy/award site (1 per rock)
+                    )
                     world.particles += make_burst(world.rng, a.x, a.y, a.color)
                 elif a.large:
-                    a.flash = 5                  # survived hit → white flash (R17)
+                    a.flash = 5  # survived hit → white flash (R17)
                 break
 
     # 2) Player bullets × enemies (+ enemy-drop on a bullet-kill, §V2.5)
@@ -59,8 +60,10 @@ def resolve(world):
                 e.flash = 1
                 if e.hp <= 0:
                     dead_en.add(id(e))
-                    scoring.award(world, e.score)   # minion SCORE on, normal v5 (§V7.3)
-                    world.store.enemies_killed += 1  # v14 R93: count at the destroy/award site (incl. boss minions)
+                    scoring.award(world, e.score)  # minion SCORE on, normal v5 (§V7.3)
+                    world.store.enemies_killed += (
+                        1  # v14 R93: count at the destroy/award site (incl. boss minions)
+                    )
                     world.particles += make_burst(world.rng, e.x, e.y, C.ENEMY)
                     # Minion pickup-DROPS are SUPPRESSED during a boss fight (§V7.3):
                     # no farming charges/buffs off boss-spawned adds (boss-active → skip).
@@ -81,7 +84,7 @@ def resolve(world):
                 boss.hp -= 1
                 boss.flash = 1
                 if boss.hp <= 0:
-                    encounter.on_defeat(world)   # +1000 (×mult), drop boss → freeze lifts
+                    encounter.on_defeat(world)  # +1000 (×mult), drop boss → freeze lifts
                     break
 
     # 3) Player × bonus pickups — collect (independent of invulnerability, §V2.7)
@@ -98,8 +101,7 @@ def resolve(world):
         dmg = 0
         # Boss body ram (R61/§V7.13) — the scariest thing to touch (60 > HEAVY 50);
         # the boss is NOT consumed (it persists), unlike a hazard hit.
-        if world.boss is not None and _hit(p.x, p.y, C.P_R,
-                                           world.boss.x, world.boss.y, C.BOSS_R):
+        if world.boss is not None and _hit(p.x, p.y, C.P_R, world.boss.x, world.boss.y, C.BOSS_R):
             dmg = C.BOSS_RAM_DMG
         for a in world.asteroids:
             if dmg:

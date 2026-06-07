@@ -138,6 +138,13 @@ how to play the game (`.\.venv\Scripts\python.exe workspace\game\main.py`).
   the modular split, and MUST support a `--smoke-test` flag that initializes pygame, runs the main
   loop for exactly 120 frames with simulated input, then exits 0. This is how the QA role verifies it
   headlessly — keep the package importable and the smoke gate green across the refactor.
+- **Tests & tooling (as of v15).** Automated regression lives in a modular **pytest** suite under
+  `workspace/tests/` (`unit/` = Programmer's pure-logic lane, `e2e/` = QA's App/pipeline lane), configured
+  by a root `pyproject.toml` (pytest + **ruff** format/lint-fix + **pyright** "basic"). The **Programmer
+  runs `ruff --fix` + `pyright` + `pytest workspace\tests\unit` + the smoke gate before every handoff**;
+  **QA runs the full `pytest workspace\tests` suite as the regression gate**. Hard gates = **smoke exit 0
+  AND pytest green**; ruff/pyright residuals are non-blocking. The v15 split, config, and process are
+  specified in `workspace/qa/test_plan.md` §2 (it replaced the old `qa/regression_harness.py` monolith).
 - **Tech:** Python 3.14 + `pygame-ce` (already installed in `.venv`). Run things with
   `.\.venv\Scripts\python.exe`. To run the game headless for the smoke test, set
   `SDL_VIDEODRIVER=dummy` and `SDL_AUDIODRIVER=dummy`.

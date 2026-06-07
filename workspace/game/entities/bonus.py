@@ -14,10 +14,10 @@ from .. import config as C
 
 @dataclass
 class Bonus:
-    kind: "BonusKind"        # forward ref (enum lives in world.py)
+    kind: "BonusKind"  # forward ref (enum lives in world.py)
     x: float
     y: float
-    duration_override: Optional[int] = None   # smoke-only short duration
+    duration_override: Optional[int] = None  # smoke-only short duration
 
     @property
     def letter(self):

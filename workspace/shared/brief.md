@@ -22,39 +22,47 @@ asteroids/debris and blast enemy fighters to rack up a score before your ship is
 - Python 3.14 + `pygame-ce` from the `.venv`.
 
 ## Current state & where the detail lives
-v1–v12 shipped & passed QA — see `backlog.md` for the capability summary and the canonical specs in
-each role folder. Closed-increment framings (v2, v5, v7–v12) are archived in
+v1–v14 shipped & passed QA — see `backlog.md` for the capability summary and the canonical specs in
+each role folder. Closed-increment framings (v2, v5, v7–v14) are archived in
 `../archive/brief-increments-*.md`.
 
-## Current increment — v14: save system + lifetime-stats screen
+## Current increment — v15: pytest test-suite + lint/type tooling (process hardening)
 
-**Human's words:** add a **save system** — a single-file **JSON**-based store that currently persists:
-(1) **highscore**, (2) **number of runs**, (3) **number of enemies killed**, (4) **number of asteroids
-destroyed**, (5) **number of bosses killed**. File I/O is expensive, so **keep data in memory and write
-to disk only occasionally**, not every change. The save file lives **somewhere in the user folder, in a
-subfolder for the game**. Plus (confirmed via kickoff Q&A): **surface a lifetime-stats screen** showing
-these values on-screen.
+**Human's words:** programmer and tester spend too much time testing with one-off hand-crafted scripts;
+replace that with a real **pytest suite** (a *set of files*, not one ~1000-line harness that "stuns
+agents"). Set up **fixtures for end-to-end tests** (QA's lane) and **unit tests** (programmer's lane) so
+both work faster. Add a **ruff / pyright lint+format autofixer**, and **tell the programmer they must run
+the unit tests + lint-fix after finishing changes**.
 
-**Decisions locked at kickoff (2026-06-06):**
-- **Display scope:** *Save + full stats screen* — persist all 5 values AND surface a lifetime-stats
-  view (runs, enemies, asteroids, bosses + highscore). So this is NOT invisible persistence; it adds UI.
-- **Write cadence:** *flush on GAME_OVER and on hold-Q quit.* Accumulate stats in memory during a run;
-  write once when the run ends and once on quit. No per-event or timer writes (honors the "writes are
-  expensive" constraint; a hard crash mid-run may lose that run's partial stats — accepted).
-- **File location:** a per-user game subfolder (e.g. Windows `%APPDATA%\Starshard\`). Exact path +
-  cross-platform choice delegated to the Programmer; schema should carry a version field for future migration.
+This is a **process/tooling increment** — *no game-feature change* (like v9). The creative pipeline is
+**skipped entirely** (BA, Designer, Artist, Writer, Level-designer = `skipped`).
 
-**Open questions delegated downstream:**
-- **BA:** lock the exact stat semantics — what counts as an "enemy killed" vs "asteroid destroyed" vs
-  "boss killed" (do GREEN→RED split children count? do bombed/boss-cleared kills count? does a run that
-  quits mid-game still increment "runs"?), the save-file schema (fields + version + corruption/missing-file
-  fallback to zeros), and the flush trigger contract. These are persisted *counts*, so definitions must be exact.
-- **Designer:** decide WHERE the stats screen lives in the state machine (new STATS state reachable from
-  START? a panel on GAME_OVER? toggled by a key?) and how the player navigates to/from it — no new gameplay,
-  just UX placement, keeping keyboard-only + single-screen constraints.
-- **Artist:** layout/placement/colors for the stats screen (reuse existing panel/HUD palette + arc style;
-  no new assets) and the highscore readout.
-- **Writer:** the labels/copy for each stat row + screen title (short, fits the panel).
+**Decisions locked at kickoff (2026-06-06, via Q&A):**
+- **Old harness:** *port all 75 checks, then delete.* Migrate every check in the 1,514-line
+  `qa/regression_harness.py` into the new modular pytest suite (unit + e2e), prove parity (**≥75 tests
+  pass**), then **delete the monolith**. Zero coverage loss is a hard requirement.
+- **Lint/type bar:** ruff **format + check --fix** on every change; **pyright "basic"**. The Programmer
+  *must run* them, but residual warnings are **non-blocking** (don't hard-fail the gate) — pragmatic for
+  the existing codebase. The smoke gate + pytest staying green ARE blocking.
+- **Role realignment:** *involve the Manager.* It owns `workspace/` structure, so it defines the `tests/`
+  layout, the unit-vs-e2e split, the ruff/pyright config approach, and the new per-role testing process —
+  and rewrites `roles/programmer.md`, `roles/qa-tester.md`, `CLAUDE.md`, `workspace/README.md`, and
+  `qa/test_plan.md`. Programmer + QA then build against that contract.
 
-**Scoped roles:** BA → Designer → Artist → Writer → Programmer → QA. **Level-designer skipped** (no
-spawn/wave/difficulty/economy change — stats only *observe* existing events).
+**Work split delegated downstream:**
+- **Manager (first):** design the `tests/` tree + `pyproject.toml` (pytest+ruff+pyright config) location,
+  decide the **unit-vs-e2e boundary** (who ports which of the 75 checks), define the new testing process
+  (Programmer runs `pytest` unit subset + `ruff --fix` + `pyright` before every handoff; QA runs the full
+  suite as the regression gate), and realign all the role/process docs above. Does **not** build the suite.
+- **Programmer:** scaffold `pyproject.toml`, create the `tests/` package + `conftest.py` with shared
+  fixtures, port the **unit-level** checks (pure logic: physics, scoring, save serialization, spawn
+  weights, string-widths) into `tests/unit/`, wire ruff/pyright, run them + smoke, keep everything green.
+- **QA:** port the **e2e/behavioral AC** checks (driven through App/World pipeline, event scripts,
+  render-smoke) into `tests/e2e/` with fixtures, prove parity (≥75 tests, no AC coverage lost), then
+  **delete `qa/regression_harness.py`**. Smoke gate stays green.
+
+**Smoke contract is untouched:** `main.py --smoke-test` (120 frames, simulated input, exit 0) stays the
+first gate and must stay green across the whole refactor.
+
+**Scoped roles:** Manager → Programmer → QA. **BA, Designer, Artist, Writer, Level-designer = skipped**
+(no requirements/design/art/copy/economy change).

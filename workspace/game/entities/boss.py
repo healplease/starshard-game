@@ -20,12 +20,12 @@ class Boss:
     x: float
     y: float
     hp: int = C.BOSS_HP
-    state: str = "ENTRANCE"          # ENTRANCE (descending) → ACTIVE (settled: oscillate + fire)
-    osc_dir: int = 1                 # oscillation ping-pong direction (-1 / +1)
-    step_index: int = 0              # 0..3 → which moveset step fires NEXT (cycles 1→2→3→4)
-    step_timer: int = 0              # frames until the next moveset step fires
-    flash: int = 0                   # 1-frame white hit-feedback tick (cuttable juice)
+    state: str = "ENTRANCE"  # ENTRANCE (descending) → ACTIVE (settled: oscillate + fire)
+    osc_dir: int = 1  # oscillation ping-pong direction (-1 / +1)
+    step_index: int = 0  # 0..3 → which moveset step fires NEXT (cycles 1→2→3→4)
+    step_timer: int = 0  # frames until the next moveset step fires
+    flash: int = 0  # 1-frame white hit-feedback tick (cuttable juice)
     # Per-instance levers so the smoke boss can be compressed (GDD §V7.15):
-    split_dist: float = C.YELLOW_SPLIT_DIST      # frozen yellow-fan "midway" distance
+    split_dist: float = C.YELLOW_SPLIT_DIST  # frozen yellow-fan "midway" distance
     first_step_delay: int = C.BOSS_FIRST_STEP_DELAY  # f after settle before step 1
-    step_interval: int = C.BOSS_STEP_INTERVAL    # f between subsequent steps
+    step_interval: int = C.BOSS_STEP_INTERVAL  # f between subsequent steps

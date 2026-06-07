@@ -19,13 +19,13 @@ import os
 import sys
 import tempfile
 
-SCHEMA_VERSION = 1                          # v14 = version 1 (R92)
-KNOWN_VERSIONS = (1,)                        # versions whose shape we trust (R96)
+SCHEMA_VERSION = 1  # v14 = version 1 (R92)
+KNOWN_VERSIONS = (1,)  # versions whose shape we trust (R96)
 # The five snake_case count fields — frozen keys, code reads/writes exactly these (R92).
 COUNT_FIELDS = ("highscore", "runs", "enemies_killed", "asteroids_destroyed", "bosses_killed")
 
-SAVE_PATH_ENV = "STARSHARD_SAVE_PATH"       # R98 override (smoke/regression → temp)
-APP_DIR_NAME = "Starshard"                  # per-game subfolder
+SAVE_PATH_ENV = "STARSHARD_SAVE_PATH"  # R98 override (smoke/regression → temp)
+APP_DIR_NAME = "Starshard"  # per-game subfolder
 SAVE_FILENAME = "stats.json"
 
 
@@ -34,8 +34,9 @@ class Store:
     Counters accumulate in memory during play; `record_highscore` + `save` run only
     at a flush. Fields match COUNT_FIELDS / the R92 schema exactly."""
 
-    def __init__(self, highscore=0, runs=0, enemies_killed=0,
-                 asteroids_destroyed=0, bosses_killed=0):
+    def __init__(
+        self, highscore=0, runs=0, enemies_killed=0, asteroids_destroyed=0, bosses_killed=0
+    ):
         self.version = SCHEMA_VERSION
         self.highscore = highscore
         self.runs = runs
@@ -63,9 +64,10 @@ def default_save_path():
         base = os.environ.get("APPDATA") or os.path.expanduser("~")
     elif sys.platform == "darwin":
         base = os.path.join(os.path.expanduser("~"), "Library", "Application Support")
-    else:                                   # Linux / other POSIX — XDG base dir
+    else:  # Linux / other POSIX — XDG base dir
         base = os.environ.get("XDG_DATA_HOME") or os.path.join(
-            os.path.expanduser("~"), ".local", "share")
+            os.path.expanduser("~"), ".local", "share"
+        )
     return os.path.join(base, APP_DIR_NAME, SAVE_FILENAME)
 
 
@@ -97,18 +99,18 @@ def load(path=None):
     try:
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
-    except (OSError, ValueError):           # missing / unreadable / unparseable JSON
+    except OSError, ValueError:  # missing / unreadable / unparseable JSON
         return Store()
-    if not isinstance(data, dict):          # root is not a JSON object → corrupt
+    if not isinstance(data, dict):  # root is not a JSON object → corrupt
         return Store()
     version = data.get("version")
     if not isinstance(version, int) or isinstance(version, bool) or version not in KNOWN_VERSIONS:
-        return Store()                      # unknown shape → don't trust it (R96)
+        return Store()  # unknown shape → don't trust it (R96)
     store = Store()
-    for field in COUNT_FIELDS:              # per-field defensive recovery
+    for field in COUNT_FIELDS:  # per-field defensive recovery
         v = data.get(field)
         if _valid_count(v):
-            setattr(store, field, v)        # else keep the 0 default
+            setattr(store, field, v)  # else keep the 0 default
     return store
 
 
@@ -124,4 +126,4 @@ def save(store, path=None):
     tmp = path + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(store.to_dict(), f)
-    os.replace(tmp, path)                   # atomic swap into place
+    os.replace(tmp, path)  # atomic swap into place

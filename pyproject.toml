@@ -1,0 +1,20 @@
+# Root config for the Starshard test/tooling stack (v15 — see qa/test_plan.md §2.2).
+# Run from the repo root so `.venv` + `python -m pytest|ruff|pyright` need no path args.
+
+[tool.pytest.ini_options]
+testpaths = ["workspace/tests"]
+pythonpath = ["workspace"]   # so `import game` resolves (mirrors the old harness sys.path insert)
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+# Lint/format the game package + the test suite only.
+include = ["workspace/game/**/*.py", "workspace/tests/**/*.py", "pyproject.toml"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]   # pycodestyle errors, pyflakes, import-sorting (residuals non-blocking)
+
+[tool.pyright]
+include = ["workspace/game", "workspace/tests"]
+typeCheckingMode = "basic"

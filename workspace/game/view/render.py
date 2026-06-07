@@ -11,7 +11,6 @@ import math
 import pygame
 
 from .. import config as C
-from ..world import GameState
 
 
 def draw_starfield(screen, world):
@@ -33,8 +32,7 @@ def draw_world(screen, world):
         _draw_bonus(screen, bonus)
     # Player bullets
     for b in world.pbullets:
-        pygame.draw.rect(screen, C.BULLET_P,
-                         (b.x - C.PB_W / 2, b.y - C.PB_H / 2, C.PB_W, C.PB_H))
+        pygame.draw.rect(screen, C.BULLET_P, (b.x - C.PB_W / 2, b.y - C.PB_H / 2, C.PB_W, C.PB_H))
     # Enemies — distinct body per kind (art_spec §V5.1); magenta fill, told apart
     # by silhouette + size + outline weight (HEAVY > REGULAR > SCOUT).
     for e in world.enemies:
@@ -54,12 +52,18 @@ def draw_world(screen, world):
 
 def _enemy_pts(kind, cx, cy):
     """Per-kind body polygon (art_spec §V5.1.1). +y is down; offsets from center."""
-    if kind == "HEAVY":      # armored octagon, 36×32 (chamfer 8)
-        return [(cx - 18, cy - 8), (cx - 10, cy - 16),
-                (cx + 10, cy - 16), (cx + 18, cy - 8),
-                (cx + 18, cy + 8), (cx + 10, cy + 16),
-                (cx - 10, cy + 16), (cx - 18, cy + 8)]
-    if kind == "SCOUT":      # small sharp dart, 20×18
+    if kind == "HEAVY":  # armored octagon, 36×32 (chamfer 8)
+        return [
+            (cx - 18, cy - 8),
+            (cx - 10, cy - 16),
+            (cx + 10, cy - 16),
+            (cx + 18, cy - 8),
+            (cx + 18, cy + 8),
+            (cx + 10, cy + 16),
+            (cx - 10, cy + 16),
+            (cx - 18, cy + 8),
+        ]
+    if kind == "SCOUT":  # small sharp dart, 20×18
         return [(cx, cy + 9), (cx + 10, cy - 9), (cx - 10, cy - 9)]
     # REGULAR — downward chevron, 26×24 (unchanged from v1 §2.1)
     return [(cx, cy + 12), (cx + 13, cy - 12), (cx, cy - 5), (cx - 13, cy - 12)]
@@ -78,19 +82,18 @@ def _draw_enemy(screen, e):
 def _draw_enemy_bullet(screen, b):
     """Three families, one collision radius (EB_R=5); draws are render-only (§V5.3)."""
     x, y = int(b.x), int(b.y)
-    if b.family == "GREEN":          # heavy pellet — drawn larger with a hot core
+    if b.family == "GREEN":  # heavy pellet — drawn larger with a hot core
         pygame.draw.circle(screen, C.EB_COLOR_GREEN, (x, y), C.PELLET_DRAW_R)
         pygame.draw.circle(screen, C.FLASH, (x, y), 2)
-    elif b.family == "CYAN":         # scout — a fast streak along its heading
+    elif b.family == "CYAN":  # scout — a fast streak along its heading
         inv = 1.0 / max(1e-6, math.hypot(b.vx, b.vy))
-        tail = (int(b.x - b.vx * inv * C.CYAN_TAIL_LEN),
-                int(b.y - b.vy * inv * C.CYAN_TAIL_LEN))
+        tail = (int(b.x - b.vx * inv * C.CYAN_TAIL_LEN), int(b.y - b.vy * inv * C.CYAN_TAIL_LEN))
         pygame.draw.line(screen, C.EB_COLOR_CYAN, (x, y), tail, 3)
         pygame.draw.circle(screen, C.EB_COLOR_CYAN, (x, y), C.CYAN_HEAD_R)
-    elif b.family == "YELLOW":       # boss fan telegraph — emphasized "charged" round
-        pygame.draw.circle(screen, C.EB_COLOR_YELLOW, (x, y), 6)   # collision still EB_R=5
-        pygame.draw.circle(screen, C.FLASH, (x, y), 2)            # white core = "about to burst"
-    else:                            # RED — regular + every split child (plain dot)
+    elif b.family == "YELLOW":  # boss fan telegraph — emphasized "charged" round
+        pygame.draw.circle(screen, C.EB_COLOR_YELLOW, (x, y), 6)  # collision still EB_R=5
+        pygame.draw.circle(screen, C.FLASH, (x, y), 2)  # white core = "about to burst"
+    else:  # RED — regular + every split child (plain dot)
         pygame.draw.circle(screen, C.EB_COLOR_RED, (x, y), C.EB_R)
 
 
@@ -99,9 +102,16 @@ def _draw_boss(screen, boss):
     + bridge tower + 3 downward prongs, trimmed in enemy magenta, with a yellow
     reactor core. The painted body ⊇ the r=70 collision circle in every direction."""
     cx, cy = boss.x, boss.y
-    hull = [(cx - 70, cy - 48), (cx + 70, cy - 48), (cx + 90, cy - 10),
-            (cx + 60, cy + 40), (cx + 24, cy + 58), (cx - 24, cy + 58),
-            (cx - 60, cy + 40), (cx - 90, cy - 10)]
+    hull = [
+        (cx - 70, cy - 48),
+        (cx + 70, cy - 48),
+        (cx + 90, cy - 10),
+        (cx + 60, cy + 40),
+        (cx + 24, cy + 58),
+        (cx - 24, cy + 58),
+        (cx - 60, cy + 40),
+        (cx - 90, cy - 10),
+    ]
     bridge = [(cx - 28, cy - 48), (cx - 20, cy - 74), (cx + 20, cy - 74), (cx + 28, cy - 48)]
     prong_l = [(cx - 50, cy + 50), (cx - 40, cy + 74), (cx - 30, cy + 50)]
     prong_c = [(cx - 12, cy + 58), (cx, cy + 78), (cx + 12, cy + 58)]
@@ -130,7 +140,7 @@ def _draw_bonus(screen, bonus):
     d = C.BONUS_HALF_DIAG
     pts = [(cx, cy - d), (cx + d, cy), (cx, cy + d), (cx - d, cy)]
     pygame.draw.polygon(screen, bonus.color, pts)
-    pygame.draw.polygon(screen, C.FLASH, pts, 1)        # 1px white outline
+    pygame.draw.polygon(screen, C.FLASH, pts, 1)  # 1px white outline
     glyph = _FONTS["pickup"].render(bonus.letter, True, C.BONUS_INK)
     screen.blit(glyph, glyph.get_rect(center=(int(cx), int(cy))))
 
@@ -140,7 +150,7 @@ def _draw_bonus(screen, bonus):
 # draw and reused every frame — never a per-frame alloc (like the v6 flash surface).
 _PLAYER_SURF = None
 _PLAYER_SURF_SIZE = (32, 34)
-_PLAYER_LOCAL = (16, 17)        # local centre on that surface (= the ship's cx, cy)
+_PLAYER_LOCAL = (16, 17)  # local centre on that surface (= the ship's cx, cy)
 
 
 def _ship_pts(cx, cy):
@@ -163,14 +173,13 @@ def _draw_player(screen, p):
     # tracks the remaining i-frames/Shield and snaps back to solid the instant invuln
     # ends (the not-invulnerable branch above). Never invisible (floor 128) — §V11.3.
     phase = (p.blink_timer % C.INVULN_PULSE_PERIOD) / C.INVULN_PULSE_PERIOD
-    osc = 0.5 + 0.5 * math.cos(2 * math.pi * phase)         # 1.0 bright .. 0.0 dim
-    alpha = int(round(C.INVULN_ALPHA_FLOOR
-                      + (C.INVULN_ALPHA_CEIL - C.INVULN_ALPHA_FLOOR) * osc))
+    osc = 0.5 + 0.5 * math.cos(2 * math.pi * phase)  # 1.0 bright .. 0.0 dim
+    alpha = int(round(C.INVULN_ALPHA_FLOOR + (C.INVULN_ALPHA_CEIL - C.INVULN_ALPHA_FLOOR) * osc))
     global _PLAYER_SURF
     if _PLAYER_SURF is None:
         _PLAYER_SURF = pygame.Surface(_PLAYER_SURF_SIZE, pygame.SRCALPHA)
     surf = _PLAYER_SURF
-    surf.fill((0, 0, 0, 0))                                 # clear the prior frame
+    surf.fill((0, 0, 0, 0))  # clear the prior frame
     lcx, lcy = _PLAYER_LOCAL
     lpts = _ship_pts(lcx, lcy)
     pygame.draw.polygon(surf, C.PLAYER, lpts)

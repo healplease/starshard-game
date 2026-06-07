@@ -31,14 +31,22 @@ workspace/
     history.md
   qa/                  ← qa-tester's scope
     qa_report/           index.md + v1 / v2 / v5 / v6  (per-run verdicts)
-    test_plan.md         standing: smoke + regression plans + per-feature checklists
+    test_plan.md         standing: smoke plan + the v15 pytest/tooling contract (§2) + checklists
     feature_inventory.md standing: 32 features F1–F32 → R#/AC#/module
+    regression_harness.py  LEGACY monolith (75 checks) — being ported to tests/, then deleted (v15)
     history.md
+  tests/               ← the pytest suite (v15; built by Programmer + QA)
+    conftest.py          shared fixtures (headless env, fresh_world, fonts, screen, save path)
+    unit/                Programmer's lane — pure logic (physics/scoring/save/strings)
+    e2e/                 QA's lane — App pipeline / event scripts / render-smoke
   archive/             ← frozen history; you rarely need to open this
     handoffs-v1.md, handoffs-v2-v5.md, handoffs-v6-v12.md, backlog-v1-v12.md,
     brief-increments-v2-v5.md, brief-increments-v7-v12.md, project-log-v1.md, README.md
   game/                ← the programmer's artifact (the actual game; unchanged)
 ```
+> **Note:** `pyproject.toml` (pytest + ruff + pyright config) lives at the **repo root** (one level up
+> from `workspace/`), so `python -m pytest` / `ruff` / `pyright` run from the root with no path args.
+> The pytest contract (layout, unit-vs-e2e split, per-role process) is in `qa/test_plan.md` §2.
 
 ## How to use it (per role)
 

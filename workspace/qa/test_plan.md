@@ -1,15 +1,18 @@
-# Test Plan — "Starshard" (v1 + v2)
+# Test Plan — "Starshard" (standing; test-infrastructure contract @ v15)
 
-Owner: qa-tester · Date: 2026-06-05 · Status: complete · Type: standing doc (not a per-run verdict)
+Owner: qa-tester · Method doc (split/process authored by Manager @ v15, 2026-06-06) · Type: standing doc.
 Companion to: `feature_inventory.md` (Feature IDs F1–F32 are the shared key). Verdicts go in `qa_report/`.
 
 > **What this is.** The reusable procedures for verifying Starshard: a **smoke-test plan** (the headless
-> 120-frame gate), a **regression-test plan** (re-verify all v1+v2 features after any change), and
-> **per-feature checklists** with concrete, observable pass/fail steps. Run the smoke gate on *every*
-> change; run the full regression suite before declaring a version done or after any non-trivial edit.
+> 120-frame gate, §1), the **pytest suite + tooling contract** (§2 — the regression mechanism as of v15:
+> a modular `workspace/tests/` suite + `ruff`/`pyright`, replacing the old 1,514-line
+> `regression_harness.py` monolith), the **regression coverage map** (§2A — *what* must pass), and
+> **per-feature checklists** (§3) with concrete, observable pass/fail steps. Run the smoke gate on *every*
+> change; run the full pytest suite before declaring a version done or after any non-trivial edit.
 >
 > **How to record a run.** Don't edit this plan with results — open a new dated section in `qa_report/`
-> (PASS/FAIL per AC + evidence). This plan is the *method*; `qa_report/` is the *log*.
+> (PASS/FAIL + evidence + the pytest collected/passed count). This plan is the *method*; `qa_report/` is
+> the *log*.
 
 ---
 
@@ -88,12 +91,121 @@ scratch). This is how the v2 report produced `{'collected_frame': 2, 'expired_fr
 
 ---
 
-## 2. REGRESSION-TEST PLAN — full re-verify after any change
+## 2. THE PYTEST SUITE + TOOLING (v15 — the regression mechanism)
+
+The 1,514-line `qa/regression_harness.py` (75 `@test(...)` checks) is replaced by a modular **pytest**
+suite under `workspace/tests/`, plus `ruff` (format + lint-fix) and `pyright` (basic) tooling. Same
+coverage (**≥75 checks, zero loss**), split into a **unit** lane (Programmer) and an **e2e** lane (QA).
+The monolith is deleted **only after** the suite proves parity (§2.6).
+
+### 2.1 Layout
+```
+pyproject.toml              ← repo ROOT — pytest + ruff + pyright config (one file)
+workspace/tests/
+  conftest.py               shared fixtures (headless env, fresh_world, fonts, screen, save path)
+  unit/                     PROGRAMMER's lane — pure logic, no App / no event loop / no blit
+    test_physics.py  test_combat.py  test_buffs.py   test_bombs.py
+    test_enemies.py  test_boss.py    test_save.py     test_strings.py
+    test_world.py    test_smoke_seed.py  test_imports.py
+  e2e/                      QA's lane — App pipeline / event scripts / render-smoke
+    test_app_lifecycle.py  test_pause_quit.py  test_restart_hold.py
+    test_render_smoke.py   test_layout.py      test_event_scripts.py  test_stats.py
+```
+Exact file names are the implementer's call; the **unit/ vs e2e/ boundary and the AC→lane map (§2.4) are
+the contract.** The smoke gate (§1) is unchanged — still `main.py --smoke-test`, still the first gate.
+
+### 2.2 Config — one `pyproject.toml` at the repo root
+- `[tool.pytest.ini_options]`: `testpaths = ["workspace/tests"]`, `pythonpath = ["workspace"]` (so
+  `import game` resolves the way the old harness's `sys.path.insert(0, workspace)` did), `addopts = "-q"`.
+- `[tool.ruff]`: `line-length = 100`; target `workspace/game` + `workspace/tests`; enable at least `E,F,I`;
+  run `ruff format` then `ruff check --fix`. Residual warnings are **non-blocking**.
+- `[tool.pyright]`: `include = ["workspace/game","workspace/tests"]`, `typeCheckingMode = "basic"`. Type
+  warnings are **non-blocking**.
+- **Why root, not `workspace/`:** the `.venv` and the existing "run from repo root" muscle memory live at
+  the root, so a bare `python -m pytest` / `ruff` / `pyright` from the root needs no path args.
+
+### 2.3 Shared fixtures (`conftest.py`) — port the harness helpers
+- **autouse, once:** set `SDL_VIDEODRIVER=dummy` + `SDL_AUDIODRIVER=dummy` **before** `game` is imported,
+  and pin `STARSHARD_SAVE_PATH` to a tmp file (mirror `regression_harness.py` lines 34–46) so **no test
+  ever reads or writes the real save**.
+- `fresh_world(seed=1234)`, `fonts` (the 6-font dict), `pygame_init`/`ensure_pygame`, `screen` (dummy
+  Surface), `tmp_save_path`. These replace the harness's `fresh_world` / `make_fonts` / `ensure_pygame`.
+
+### 2.4 The unit-vs-e2e split — THE CONTRACT (43 unit / 32 e2e = 75)
+**Boundary rule.** A check is **unit** iff it exercises pure logic by constructing
+`World`/entities/systems/`config`/`save` directly and asserting state — **no `App`, no event loop, no
+blitting** (using a font for `.size()` width math is allowed). A check is **e2e** iff it constructs
+`App`, drives `_handle_events`/`_step_play`/`run_event_script`/`App.run`, calls `balance_probe`, **or
+blits / asserts rendered layout** (render-smoke + rect/arc overlap). Implementers may move a check
+between files **within their own lane**; moving one **across** the unit/e2e line needs the other role's
+sign-off (keep the 43/32 totals or the ≥75 floor intact).
+
+**UNIT → `tests/unit/` (Programmer ports these 43):**
+| File | ACs (from the old harness) |
+|---|---|
+| test_physics.py | AC3 |
+| test_combat.py | AC5, AC6, AC7, AC8, AC9, AC14 |
+| test_buffs.py | AC15, AC16, AC17, AC18, AC19 |
+| test_smoke_seed.py | AC2 (smoke consts), AC20 (seeded Rapid lifecycle via systems) |
+| test_world.py | AC11 (reset_run) |
+| test_enemies.py | AC22, AC25, AC27, AC29 |
+| test_bombs.py | AC30, AC31, AC32, AC34, AC35, AC36 |
+| test_boss.py | AC39, AC40, AC41, AC43, AC46, AC48, AC49, AC50 |
+| test_strings.py | AC37, AC47w (string-widths), AC59, AC65 |
+| test_save.py | AC78, AC79, AC80, AC82, AC83 |
+| test_imports.py | AC21 |
+
+**E2E → `tests/e2e/` (QA ports these 32):**
+| File | ACs / checks |
+|---|---|
+| test_app_lifecycle.py | AC1 (smoke run), AC10 (HP≤0→GAME_OVER), AC13 (ramp + `balance_probe`), AC85 (headless save path), v9 `balance` |
+| test_pause_quit.py | AC53, AC56, AC57, AC58, AC66, AC61, AC62, AC63, AC67, R76 (Esc/Q gestures) |
+| test_restart_hold.py | R74, AC72, AC76, AC74, AC69 (R-hold gestures) |
+| test_render_smoke.py | v9 `render`, AC68-render (v10), AC77 (v12), `pulse` (v11), AC84 (STATS render) |
+| test_layout.py | AC47 (HUD rects), AC68-arc-rects (v10), AC71 (R/Q arc co-location) |
+| test_event_scripts.py | v9 `event` (bomb/pause/unpause/re-pause/quit script) |
+| test_stats.py | AC82r (runs count), AC81 (flush triggers), `nav` (Tab/Esc STATS nav) |
+
+**Documented borderline calls (don't re-litigate):** AC10/AC13/AC85 build an `App`/run `balance_probe`
+→ **e2e** even though they assert world/save logic. AC20 uses only `spawning`+`combat`+`buffs` (no App)
+→ **unit**. `pulse` reads alpha off a rendered surface → **e2e**. String-widths (AC47w) is **unit**;
+rect/arc-overlap geometry (AC47, AC68-arc, AC71) is **e2e** (it validates rendered layout).
+
+### 2.5 The per-role testing process (replaces "run the monolith")
+**Programmer — before EVERY handoff, in order:**
+1. `python -m ruff format workspace` → `python -m ruff check --fix workspace` (autofix; residuals **non-blocking**, report the count).
+2. `python -m pyright` (basic; warnings **non-blocking**, report the count).
+3. `python -m pytest workspace/tests/unit` — **BLOCKING: must be green.**
+4. Smoke gate `main.py --smoke-test` exit 0 — **BLOCKING.**
+
+**QA — the regression gate (before any PASS):**
+1. Smoke gate (§1) — **BLOCKING.**
+2. `python -m pytest workspace/tests` — the FULL suite (unit+e2e), **BLOCKING: green AND collects ≥75
+   tests** (the parity floor). Record the collected/passed count in `qa_report/`.
+3. (hygiene, **non-blocking**) `ruff check` / `pyright`.
+
+**Blocking vs non-blocking (locked @ v15 kickoff):** smoke exit 0 **and** pytest green are the only hard
+gates. Ruff/pyright residuals are *reported, never blocking* — pragmatic for the existing codebase.
+
+### 2.6 Migration — port-then-delete, ZERO coverage loss
+1. **Programmer (backlog row 2):** scaffold `pyproject.toml` + `tests/` + `conftest.py`; port the **43
+   unit** checks → `tests/unit/`; wire ruff/pyright; unit pytest + smoke green. **Leave
+   `regression_harness.py` in place** — it stays the safety net until parity is proven.
+2. **QA (backlog row 3):** port the **32 e2e** checks → `tests/e2e/`; run the FULL suite; confirm it
+   **collects ≥75 and all pass**; **only then delete `qa/regression_harness.py`.** Smoke green. Record
+   parity (old 75 ↔ new ≥75) in `qa_report/`.
+3. **Hard rule:** the monolith is deleted **only after** the new suite passes ≥75 tests. If parity can't
+   be shown, the harness stays and QA files a BLOCKER upstream.
+
+---
+
+## 2A. REGRESSION COVERAGE MAP — *what* must pass (executed via §2's pytest suite)
 
 **Purpose.** After *any* code change (a fix, a tuning pass, a refactor), confirm nothing in v1 **or** v2
-broke. Use this before declaring a version done or routing a PASS to the orchestrator.
+broke. Use this before declaring a version done or routing a PASS to the orchestrator. **Mechanism:** the
+pytest suite (§2); this section defines *what* the suite must cover.
 
-### 2.1 Order of operations
+### 2A.1 Order of operations
 1. **Smoke gate first** (§1). If it fails, stop and route to programmer — no point regressing further.
 2. **Code-shape checks** (fast, [Code]): F29 (modular, imports clean), shapes/text-only (no asset files).
 3. **v1 MUST suite** (F1–F14): every MUST must pass — a v1 MUST failure blocks the release.
@@ -105,12 +217,12 @@ broke. Use this before declaring a version done or routing a PASS to the orchest
 7. **Targeted re-check** of whatever the change touched (use `feature_inventory.md` module column to find
    the affected F#s) + its immediate neighbours.
 
-### 2.2 Pass bar (from `requirements/requirements/`)
+### 2A.2 Pass bar (from `requirements/requirements/`)
 - **v1 ships only if R1–R14 all pass** (SHOULD/COULD don't block). **v2 is done when R23–R33 pass AND
   AC14–AC21 pass AND no v1 regression.** R34 is bonus-verify; R35 is intentionally absent.
 - Record one dated verdict section in `qa_report/` with a per-AC PASS/FAIL table + evidence.
 
-### 2.3 Regression coverage map (run every checklist in §3)
+### 2A.3 Feature coverage map (run every checklist in §3)
 | Suite | Features | Gate |
 |---|---|---|
 | Smoke + code-shape | F14, F29, F30 | AC1, AC2, AC20, AC21 — **must pass** |
@@ -120,7 +232,7 @@ broke. Use this before declaring a version done or routing a PASS to the orchest
 | v2 COULD (IN) | F31 | AC16/17/18 — verify (present) |
 | v2 deferred (OUT) | F32 | confirm still intentionally absent |
 
-### 2.4 Known non-blocking item to re-confirm (not re-litigate)
+### 2A.4 Known non-blocking item to re-confirm (not re-litigate)
 - **AC13** (F15) long-run caveat: confirm runs still terminate and the ramp still escalates. Do **not**
   re-fail it for expert-dodger length — that's the documented, parked caveat (`feature_inventory §4`).
 
@@ -303,6 +415,15 @@ $env:SDL_VIDEODRIVER="dummy"; $env:SDL_AUDIODRIVER="dummy"
 .\.venv\Scripts\python.exe workspace\game\main.py --smoke-test ; "EXIT=$LASTEXITCODE"
 .\.venv\Scripts\python.exe -m game.main --smoke-test          ; "EXIT=$LASTEXITCODE"
 .\.venv\Scripts\python.exe -m compileall -q workspace\game
+
+# pytest suite (v15 — the regression mechanism; run from the repo root)
+.\.venv\Scripts\python.exe -m pytest workspace\tests\unit   ; "EXIT=$LASTEXITCODE"  # Programmer gate (BLOCKING)
+.\.venv\Scripts\python.exe -m pytest workspace\tests        ; "EXIT=$LASTEXITCODE"  # QA full gate (BLOCKING, ≥75)
+
+# Lint + types (autofix; residuals NON-blocking — Programmer runs before every handoff)
+.\.venv\Scripts\python.exe -m ruff format workspace
+.\.venv\Scripts\python.exe -m ruff check --fix workspace
+.\.venv\Scripts\python.exe -m pyright
 
 # Play the game (real window — for [Play] checks; run without the dummy drivers)
 .\.venv\Scripts\python.exe workspace\game\main.py

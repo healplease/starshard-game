@@ -10,8 +10,8 @@ restart only wipes the *run*, never the session (R31 / level_spec §2).
 from enum import Enum
 
 from . import config as C
-from .entities.player import Player
 from .entities.fx import make_starfield
+from .entities.player import Player
 from .save import Store
 
 
@@ -19,7 +19,7 @@ class GameState(Enum):
     START = "START"
     PLAY = "PLAY"
     PAUSE = "PAUSE"
-    STATS = "STATS"          # v14: lifetime-stats ledger, reached from START via Tab (GDD §V14.2)
+    STATS = "STATS"  # v14: lifetime-stats ledger, reached from START via Tab (GDD §V14.2)
     GAME_OVER = "GAME_OVER"
 
 
@@ -27,6 +27,7 @@ class BonusKind(Enum):
     """All six bonus kinds. The four *timed* kinds appear in HUD pill order
     (Fan, Rapid, Shield, Score, GDD §V2.6); Repair and BOMB are instant (no pill).
     BOMB (v6, GDD §V6.6) grants +1 bomb charge instead of a buff."""
+
     REPAIR = "REPAIR"
     FAN = "FAN"
     RAPID = "RAPID"
@@ -51,7 +52,7 @@ class World:
         # the session. The App swaps in the disk-loaded store after construction; a bare
         # World (tests) gets a zeroed one so the combat/encounter counters always have a home.
         self.store = Store()
-        self.stars = make_starfield(rng)   # cosmetic; persists across runs
+        self.stars = make_starfield(rng)  # cosmetic; persists across runs
         self.reset_run()
 
     def reset_run(self):
@@ -65,19 +66,19 @@ class World:
         self.bonuses = []
         self.particles = []
         self.score = 0
-        self.frame = 0                 # run frame counter (t = frame / 60)
-        self.sec_score_at = 0          # last whole second credited (survival bonus)
-        self.repair_popup_timer = 0    # transient "+40" popup (R29 / art_spec §V2.4)
+        self.frame = 0  # run frame counter (t = frame / 60)
+        self.sec_score_at = 0  # last whole second credited (survival bonus)
+        self.repair_popup_timer = 0  # transient "+40" popup (R29 / art_spec §V2.4)
         # v6 bomb state (GDD §V6.2) — restart resets to BOMB_START, no leak (AC36).
-        self.charges = C.BOMB_START    # bomb charges, clamped [0, BOMB_CAP]
-        self.flash_timer = 0           # full-screen activation flash countdown (§V6.5)
-        self.bomb_lockout = 0          # frames X is ignored after a bomb (§V6.4)
-        self.bomb_popup_timer = 0      # transient "+1 BOMB" popup (art_spec §V6.4)
+        self.charges = C.BOMB_START  # bomb charges, clamped [0, BOMB_CAP]
+        self.flash_timer = 0  # full-screen activation flash countdown (§V6.5)
+        self.bomb_lockout = 0  # frames X is ignored after a bomb (§V6.4)
+        self.bomb_popup_timer = 0  # transient "+1 BOMB" popup (art_spec §V6.4)
         # v7 boss state (GDD §V7.x) — restart clears any in-progress fight, no leak.
-        self.boss = None               # the active Boss entity, or None (None ⇒ freeze lifted)
-        self.boss_next_mark = C.BOSS_FIRST_MARK   # next TIME mark (s) to fire a boss (75, 165, …)
-        self.boss_defeat_popup_timer = 0          # transient "MOTHERSHIP DOWN" + "+points" popup
-        self.boss_defeat_points = 0               # the actual award shown (1000, or 2000 ×Score×2)
+        self.boss = None  # the active Boss entity, or None (None ⇒ freeze lifted)
+        self.boss_next_mark = C.BOSS_FIRST_MARK  # next TIME mark (s) to fire a boss (75, 165, …)
+        self.boss_defeat_popup_timer = 0  # transient "MOTHERSHIP DOWN" + "+points" popup
+        self.boss_defeat_points = 0  # the actual award shown (1000, or 2000 ×Score×2)
         # Spawn countdowns. The first drip is drawn now so a bonus lands ~10–14 s
         # in (level_spec §V2.1). Asteroid/enemy timers start at their t=0 interval.
         self.ast_timer = C.asteroid_interval(0)

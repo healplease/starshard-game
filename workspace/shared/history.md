@@ -214,6 +214,53 @@
 - **No spec/code touched; all "Read first" paths still resolve** (backlog/handoffs/brief kept their paths,
   just leaner; role folders unmoved).
 
+## v15 — Test-infrastructure contract: pytest suite + ruff/pyright (Manager, 2026-06-06)
+- 2026-06-06 (v15, manager): A **process/tooling** increment (no game change, like v9). Human: the
+  one-off scratch-script testing + the 1,514-line `qa/regression_harness.py` monolith "stuns agents";
+  replace it with a real **pytest** suite (e2e fixtures for QA, unit tests for Programmer) + a
+  **ruff/pyright** autofixer the Programmer runs after changes. Kickoff locked: **port all 75 checks then
+  delete** (zero coverage loss), **pyright "basic"**, **lint non-blocking**, **smoke + pytest blocking**.
+  The Manager owns `workspace/` structure, so it defines the layout/split/process (authorized exception to
+  the usual "don't invent process" guardrail). The full canonical contract is `qa/test_plan.md` §2 — this
+  note is just the *why* behind the load-bearing choices:
+- **`tests/` under `workspace/`, `pyproject.toml` at the repo ROOT.** Tests sit beside `game/` (where they
+  import `from game...`); a single root `pyproject.toml` with `pythonpath=["workspace"]` lets a bare
+  `python -m pytest` / `ruff` / `pyright` run from the root (where `.venv` already is) with no path args,
+  matching existing muscle memory. `conftest.py` ports the harness's headless-env + temp-save pin (lines
+  34–46 — so **no test touches the real save**) and its `fresh_world`/`make_fonts`/`ensure_pygame` helpers.
+- **The unit-vs-e2e boundary (43 unit / 32 e2e = 75).** Discriminator: a check is **unit** iff it asserts
+  pure logic on `World`/entities/systems/`config`/`save` built directly (no `App`, no event loop, no blit;
+  font `.size()` for width math is allowed); **e2e** iff it builds `App`, drives
+  `_handle_events`/`_step_play`/`run_event_script`/`App.run`, calls `balance_probe`, or blits/asserts
+  rendered layout. Derived mechanically from the harness (which markers each `_t_*` touches), so it's
+  reproducible, not taste. Borderline rulings recorded in §2.4 so Programmer/QA don't re-litigate: AC10/
+  AC13/AC85 → e2e (they build App / run balance_probe even though they test world/save logic); AC20 →
+  unit (systems-only seeded lifecycle); `pulse` → e2e (reads alpha off a rendered surface); string-widths
+  → unit but rect/arc-overlap geometry → e2e (it validates *rendered* layout).
+- **Migration is port-then-delete with a hard parity floor.** Programmer ports the 43 unit checks first
+  and **leaves the monolith in place** as the safety net; QA ports the 32 e2e checks, runs the full suite,
+  and deletes `regression_harness.py` **only after** pytest collects ≥75 and all pass. If parity can't be
+  shown, the harness stays and QA files a BLOCKER. **Blocking = smoke exit 0 + pytest green only**;
+  ruff/pyright residuals are reported, never block (pragmatic for the existing untyped codebase).
+- **Realigned docs (no game spec touched):** `roles/programmer.md` (before-handoff ruff+pyright+unit-pytest
+  +smoke gate; DoD adds unit-green + a test for new logic), `roles/qa-tester.md` (full pytest = the
+  regression gate, ≥75 floor, e2e lane ownership), `CLAUDE.md` (new "Tests & tooling" ground rule),
+  `workspace/README.md` (tests/ + root pyproject in the map), `qa/test_plan.md` (§2 = the contract; old
+  regression section renumbered §2A = the *what-must-pass* coverage map; §3 checklists unchanged). No test
+  code built yet — that's Programmer (row 2) then QA (row 3).
+- 2026-06-06 (v15, programmer — row 2): scaffolded the unit lane. **Built:** root `pyproject.toml`
+  (pytest `testpaths`/`pythonpath=["workspace"]`/`-q`; ruff E,F,I @ line-length 100 over game+tests;
+  pyright basic over game+tests), `workspace/tests/conftest.py` (SDL-dummy + `STARSHARD_SAVE_PATH` pinned
+  at import time before `game` loads; `fresh_world`/`fonts`/`pygame_init`/`screen`/`tmp_save_path`
+  fixtures), and 11 unit files porting all 43 checks per the §2.4 map. **Installed** ruff 0.15.16 +
+  pyright 1.1.410 into `.venv` (added to `requirements.txt` with nodeenv/typing_extensions). **Gates:**
+  unit pytest 43/43 green; `main.py --smoke-test` exit 0. **Non-blocking residuals (reported, not fixed):**
+  ruff = 1 (F821 false-positive on the `"BonusKind"` forward-ref string in `game/entities/bonus.py` —
+  pre-existing game code, not touched); pyright = 17 (11 in pre-existing `game/` code, 6 in
+  `test_enemies.py`) — all the same root cause: `config.ENEMY_KINDS` is a heterogeneous dict so its values
+  infer as `float | str`, breaking `>`/`+` on the numeric entries. Left the monolith in place per the
+  port-then-delete rule — QA proves ≥75 parity then deletes it (row 3).
+
 ## v11 — Softer invulnerability pulse (programmer, 2026-06-05)
 - Art-only render tweak per `art_spec/v11.md` — no gameplay/economy/copy change; i-frame & Shield
   durations untouched. `_draw_player` (`game/view/render.py`) no longer early-returns on the "off" half

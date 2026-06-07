@@ -32,9 +32,11 @@ class EnemyBullet:
     y: float
     vx: float
     vy: float
-    family: str = "RED"               # render hue/shape: RED / GREEN / CYAN / YELLOW (§V5.2/§V7.12)
-    split_timer: Optional[int] = None  # frames until a GREEN/YELLOW bullet bursts; None = never splits
-    ring_phase: Optional[int] = None   # v7 YELLOW only: this fan bullet's ring quarter (0/30/60°)
+    family: str = "RED"  # render hue/shape: RED / GREEN / CYAN / YELLOW (§V5.2/§V7.12)
+    split_timer: Optional[int] = (
+        None  # frames until a GREEN/YELLOW bullet bursts; None = never splits
+    )
+    ring_phase: Optional[int] = None  # v7 YELLOW only: this fan bullet's ring quarter (0/30/60°)
 
     @property
     def color(self):
@@ -66,8 +68,8 @@ def make_enemy_bullet(ex, ey, px, py, rng, kind="REGULAR"):
     split_timer = None
     if family == "GREEN":
         d = math.hypot(px - ex, py - ey)
-        s = max(C.SPLIT_FRACTION * d, C.SPLIT_MIN_DIST)   # frozen split distance (§V5.4)
-        split_timer = round(s / speed)                    # distance ÷ speed → frozen timer
+        s = max(C.SPLIT_FRACTION * d, C.SPLIT_MIN_DIST)  # frozen split distance (§V5.4)
+        split_timer = round(s / speed)  # distance ÷ speed → frozen timer
     return EnemyBullet(ex, ey, vx, vy, family=family, split_timer=split_timer)
 
 
@@ -75,7 +77,7 @@ def split_pellet(pellet):
     """Replace a matured GREEN pellet with EXACTLY 3 RED children fanned about its
     own frozen heading at (-18°, 0°, +18°) — center included (GDD §V5.4.3). Each
     child is an ordinary RED enemy bullet (terminal: split_timer stays None)."""
-    base = math.atan2(pellet.vy, pellet.vx)               # the pellet's frozen heading
+    base = math.atan2(pellet.vy, pellet.vx)  # the pellet's frozen heading
     children = []
     for off_deg in (-C.FAN_HALF_ANGLE, 0, C.FAN_HALF_ANGLE):
         theta = base + math.radians(off_deg)

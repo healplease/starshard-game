@@ -43,6 +43,5 @@ def make_starfield(rng):
 def make_burst(rng, x, y, color):
     """6 tiny debris particles at a death/collect point (GDD §6.7 / art_spec §5)."""
     return [
-        Particle(x, y, rng.uniform(-3, 3), rng.uniform(-3, 3), C.PART_LIFE, color)
-        for _ in range(6)
+        Particle(x, y, rng.uniform(-3, 3), rng.uniform(-3, 3), C.PART_LIFE, color) for _ in range(6)
     ]

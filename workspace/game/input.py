@@ -13,8 +13,8 @@ import pygame
 
 @dataclass(frozen=True)
 class InputState:
-    dx: int       # -1 / 0 / +1   (left/right, additive of arrows + WASD)
-    dy: int       # -1 / 0 / +1   (up/down)
+    dx: int  # -1 / 0 / +1   (left/right, additive of arrows + WASD)
+    dy: int  # -1 / 0 / +1   (up/down)
     fire: bool
 
 
@@ -28,8 +28,11 @@ def read_input():
     right = k[pygame.K_RIGHT] or k[pygame.K_d]
     up = k[pygame.K_UP] or k[pygame.K_w]
     down = k[pygame.K_DOWN] or k[pygame.K_s]
-    return InputState(dx=int(right) - int(left), dy=int(down) - int(up),
-                      fire=bool(k[pygame.K_z] or k[pygame.K_SPACE]))
+    return InputState(
+        dx=int(right) - int(left),
+        dy=int(down) - int(up),
+        fire=bool(k[pygame.K_z] or k[pygame.K_SPACE]),
+    )
 
 
 def smoke_input(frame):

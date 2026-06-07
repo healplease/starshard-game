@@ -40,3 +40,14 @@ BLOCKER (route upstream): `<n>. <YYYY-MM-DD> — FROM <role> TO <upstream-role> 
 109. 2026-06-06 — FROM qa-tester TO orchestrator — v14 PASS: harness 75/75, smoke 0/120 f, AC78–AC85 + STATS nav verified, real save provably untouched headlessly, v12-AC71 fix sound; no AC1–AC77 regression.
 
 110. 2026-06-06 — FROM orchestrator TO human — v14 shipped: backlog ticked, project state updated to v1–v14 shipped & passed QA (R1–R98, AC1–AC85, harness 75/75). Project complete; awaiting next theme/increment.
+
+111. 2026-06-06 — FROM human TO orchestrator — v15: replace one-off test scripts with a real pytest suite (e2e fixtures for QA + unit tests for programmer), add ruff/pyright lint+format autofix, and make the programmer run tests+lint-fix after changes.
+112. 2026-06-06 — FROM orchestrator TO manager — v15 (process, no game change): design the tests/ layout + pyproject.toml, set the unit-vs-e2e split, define the new testing process, and realign role/process docs; decisions locked (port-then-delete the 75-check harness, pyright basic + lint non-blocking, smoke+pytest blocking); scoped Manager → Programmer → QA (creative pipeline skipped).
+
+113. 2026-06-06 — FROM manager TO programmer — v15: test-infra contract set (tests/ under workspace, root pyproject, 43 unit / 32 e2e split, ruff+pyright+unit-pytest+smoke before every handoff) in qa/test_plan.md §2 — scaffold pyproject + tests/ + conftest and port the 43 unit checks.
+
+114. 2026-06-06 — FROM programmer TO qa-tester — v15: scaffolded root pyproject + workspace/tests/{conftest,unit/}; ported all 43 unit checks (pytest 43/43 green, smoke exit 0); monolith left in place — port the 32 e2e checks, prove ≥75 parity, then delete regression_harness.py.
+
+115. 2026-06-07 — FROM qa-tester TO orchestrator — v15 PASS: ported the 32 e2e checks → tests/e2e/, full pytest suite 75 (43 unit/32 e2e) green, smoke+compileall exit 0, parity old-75↔new-75 proven, regression_harness.py deleted.
+
+116. 2026-06-07 — FROM orchestrator TO human — v15 shipped: backlog ticked, project state updated to v1–v15 shipped & passed QA (R1–R98, AC1–AC85, pytest 75/75). Project complete; awaiting next theme/increment.

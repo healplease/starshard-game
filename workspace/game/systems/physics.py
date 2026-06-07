@@ -7,8 +7,7 @@ produces honor the v2 Fan/Rapid buffs via the player's accessors.
 """
 
 from .. import config as C
-from ..entities.projectiles import (make_player_shots, make_enemy_bullet,
-                                    split_pellet, split_yellow)
+from ..entities.projectiles import make_enemy_bullet, make_player_shots, split_pellet, split_yellow
 
 
 def update_starfield(world):
@@ -43,8 +42,7 @@ def update_play(world, inp):
     for b in world.pbullets:
         b.x += b.vx
         b.y += b.vy
-    world.pbullets = [b for b in world.pbullets
-                      if -10 <= b.x <= C.W + 10 and b.y > -C.PB_H]
+    world.pbullets = [b for b in world.pbullets if -10 <= b.x <= C.W + 10 and b.y > -C.PB_H]
 
     # --- Asteroids drift down; tick survived-hit flash; despawn off bottom ---
     for a in world.asteroids:
@@ -73,8 +71,7 @@ def update_play(world, inp):
             e.fire_timer -= 1
             if e.fire_timer <= 0:
                 e.fire_timer = round(C.enemy_fire_interval(t) * spec["fire_mult"])
-                world.ebullets.append(
-                    make_enemy_bullet(e.x, e.y, p.x, p.y, world.rng, e.kind))
+                world.ebullets.append(make_enemy_bullet(e.x, e.y, p.x, p.y, world.rng, e.kind))
     world.enemies = [e for e in world.enemies if e.y <= 820]
 
     # --- Enemy bullets: travel along their frozen aim; GREEN pellets count down to
@@ -101,10 +98,11 @@ def update_play(world, inp):
                 world.ebullets.extend(split_pellet(pellet))
     # Despawn off any edge (children included); this also drops a pellet that left
     # the screen before its timer matured — no split, per R39 edge case.
-    world.ebullets = [b for b in world.ebullets
-                      if -10 <= b.x <= C.W + 10 and -10 <= b.y <= C.H + 10]
+    world.ebullets = [
+        b for b in world.ebullets if -10 <= b.x <= C.W + 10 and -10 <= b.y <= C.H + 10
+    ]
     if len(world.ebullets) > C.EB_CAP:
-        world.ebullets = world.ebullets[-C.EB_CAP:]   # drop oldest (safety)
+        world.ebullets = world.ebullets[-C.EB_CAP :]  # drop oldest (safety)
 
     # --- Bonus pickups: flat 2.0 px/f drift, NOT ramp-accelerated (GDD §V2.4) ---
     for bonus in world.bonuses:

@@ -7,10 +7,10 @@ All numbers come from config; this module only decides *when* and *what* to add.
 """
 
 from .. import config as C
-from ..world import BonusKind, rng_drip
+from ..entities.bonus import Bonus
 from ..entities.hazards import make_asteroid, make_enemy
 from ..entities.projectiles import EnemyBullet
-from ..entities.bonus import Bonus
+from ..world import BonusKind, rng_drip
 
 
 def update(world):
@@ -77,8 +77,9 @@ def seed_smoke_bonus(world):
     """Place the guaranteed-lifecycle Rapid pickup (level_spec §V2.5). Called a
     couple of frames into the smoke run so it's seeded mid-loop, not at init."""
     bx, by = C.SMOKE_BONUS_POS
-    spawn_bonus(world, float(bx), float(by),
-                kind=BonusKind[C.SMOKE_BONUS_KIND], duration=C.SMOKE_BONUS_DUR)
+    spawn_bonus(
+        world, float(bx), float(by), kind=BonusKind[C.SMOKE_BONUS_KIND], duration=C.SMOKE_BONUS_DUR
+    )
 
 
 def seed_smoke_boss_target(world):
@@ -101,6 +102,6 @@ def seed_smoke_split(world):
     speed = C.ENEMY_KINDS["HEAVY"]["bspeed"]
     bx, by = C.SMOKE_SPLIT_POS
     timer = round(C.SMOKE_SPLIT_DIST / speed)
-    world.ebullets.append(EnemyBullet(
-        float(bx), float(by), ux * speed, uy * speed,
-        family="GREEN", split_timer=timer))
+    world.ebullets.append(
+        EnemyBullet(float(bx), float(by), ux * speed, uy * speed, family="GREEN", split_timer=timer)
+    )

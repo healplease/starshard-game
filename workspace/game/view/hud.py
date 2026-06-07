@@ -24,11 +24,11 @@ def draw_hud(screen, world):
     _draw_health_bar(screen, p.hp)
     _draw_buff_pills(screen, p)
     _draw_repair_popup(screen, world)
-    _draw_bomb_readout(screen, world)    # v6 — bomb count, top-right under the HP bar
-    _draw_bomb_popup(screen, world)      # v6 — transient "+1 BOMB" on collect
-    _draw_boss_bar(screen, world)        # v7 — boss health bar + label (active boss only)
-    _draw_boss_warn(screen, world)       # v7 — "WARNING / MOTHERSHIP INBOUND" during entrance
-    _draw_boss_defeat(screen, world)     # v7 — "MOTHERSHIP DOWN" + "+points" on defeat
+    _draw_bomb_readout(screen, world)  # v6 — bomb count, top-right under the HP bar
+    _draw_bomb_popup(screen, world)  # v6 — transient "+1 BOMB" on collect
+    _draw_boss_bar(screen, world)  # v7 — boss health bar + label (active boss only)
+    _draw_boss_warn(screen, world)  # v7 — "WARNING / MOTHERSHIP INBOUND" during entrance
+    _draw_boss_defeat(screen, world)  # v7 — "MOTHERSHIP DOWN" + "+points" on defeat
 
 
 def _draw_health_bar(screen, hp):
@@ -73,7 +73,7 @@ def _draw_repair_popup(screen, world):
     age = C.REPAIR_POPUP_LIFE - world.repair_popup_timer
     cx, cy = C.REPAIR_POPUP_POS
     surf = _FONTS["hud"].render(C.REPAIR_POPUP_TEXT, True, C.HP_GREEN)
-    screen.blit(surf, surf.get_rect(center=(cx, cy - 0.5 * age)))   # gentle upward drift
+    screen.blit(surf, surf.get_rect(center=(cx, cy - 0.5 * age)))  # gentle upward drift
 
 
 def _draw_bomb_readout(screen, world):
@@ -88,13 +88,13 @@ def _draw_bomb_readout(screen, world):
     tx = C.BOMB_HUD_RIGHT - count_s.get_width()
     screen.blit(count_s, (tx, C.BOMB_HUD_Y))
     icx, icy = tx - 8 - C.BOMB_ICON_R, C.BOMB_HUD_Y + 11
-    if empty:                                    # hollow violet ring — reads "empty"
+    if empty:  # hollow violet ring — reads "empty"
         pygame.draw.circle(screen, C.BONUS_BOMB, (icx, icy), C.BOMB_ICON_R, 2)
-    else:                                        # filled violet sphere + dark rim + fuse
+    else:  # filled violet sphere + dark rim + fuse
         pygame.draw.circle(screen, C.BONUS_BOMB, (icx, icy), C.BOMB_ICON_R)
         pygame.draw.circle(screen, C.BONUS_INK, (icx, icy), C.BOMB_ICON_R, 1)
         pygame.draw.line(screen, C.TEXT, (icx + 3, icy - 5), (icx + 6, icy - 9), 2)
-        pygame.draw.circle(screen, C.FLASH, (icx + 6, icy - 9), 1)   # spark at the fuse tip
+        pygame.draw.circle(screen, C.FLASH, (icx + 6, icy - 9), 1)  # spark at the fuse tip
 
 
 def _draw_bomb_popup(screen, world):
@@ -115,11 +115,10 @@ def _draw_boss_bar(screen, world):
     if boss is None:
         return
     rect = pygame.Rect(*C.BOSS_BAR)
-    pygame.draw.rect(screen, C.BOSS_BAR_BACK, rect)                 # empty track
+    pygame.draw.rect(screen, C.BOSS_BAR_BACK, rect)  # empty track
     inner_w = int((rect.width - 4) * max(0, boss.hp) / C.BOSS_HP_MAX)
-    pygame.draw.rect(screen, C.BOSS_BAR_FILL,
-                     (rect.x + 2, rect.y + 2, inner_w, rect.height - 4))
-    pygame.draw.rect(screen, C.BOSS_BAR_EDGE, rect, 2)             # frame on top
+    pygame.draw.rect(screen, C.BOSS_BAR_FILL, (rect.x + 2, rect.y + 2, inner_w, rect.height - 4))
+    pygame.draw.rect(screen, C.BOSS_BAR_EDGE, rect, 2)  # frame on top
     label = _FONTS["hud"].render(C.BOSS_LABEL_TEXT, True, C.BOSS_BAR_FILL)
     screen.blit(label, label.get_rect(midbottom=C.BOSS_LABEL_CENTER))
 
@@ -184,7 +183,7 @@ def draw_start(screen, frame):
     # v14 (story §V14.2): teach that Tab opens the STATS screen — FONT_SMALL / TEXT_DIM,
     # y530, between CONTROLS_2 (500) and START_PROMPT (560); same treatment as CONTROLS_2.
     _center(screen, _FONTS["small"].render(C.START_STATS_HINT, True, C.TEXT_DIM), 530)
-    if (frame // 30) % 2 == 0:                    # blink the prompt
+    if (frame // 30) % 2 == 0:  # blink the prompt
         _center(screen, _FONTS["small"].render(C.START_PROMPT, True, C.TEXT), 560)
     # v10: the Q-hold-to-quit hint — always visible (only the arc below is held-gated),
     # FONT_SMALL / TEXT_DIM, top-y 600; the arc sits 56 px below at START_ARC_CENTER.
@@ -207,15 +206,15 @@ def draw_stats(screen, store):
 
     # Ledger rows: (label, value, label_color); field order = art §V14a.1.
     rows = [
-        (C.STATS_LBL_HIGHSCORE, store.highscore,           C.TEXT),       # headline (bright label)
-        (C.STATS_LBL_RUNS,      store.runs,                C.TEXT_DIM),
-        (C.STATS_LBL_ENEMIES,   store.enemies_killed,      C.TEXT_DIM),
+        (C.STATS_LBL_HIGHSCORE, store.highscore, C.TEXT),  # headline (bright label)
+        (C.STATS_LBL_RUNS, store.runs, C.TEXT_DIM),
+        (C.STATS_LBL_ENEMIES, store.enemies_killed, C.TEXT_DIM),
         (C.STATS_LBL_ASTEROIDS, store.asteroids_destroyed, C.TEXT_DIM),
-        (C.STATS_LBL_BOSSES,    store.bosses_killed,       C.TEXT_DIM),
+        (C.STATS_LBL_BOSSES, store.bosses_killed, C.TEXT_DIM),
     ]
     for (label, value, lbl_color), cy in zip(rows, C.STATS_ROW_CY):
         lab = _FONTS["mid"].render(label, True, lbl_color)
-        val = _FONTS["mid"].render(str(value), True, C.TEXT)   # natural int, not zero-padded
+        val = _FONTS["mid"].render(str(value), True, C.TEXT)  # natural int, not zero-padded
         screen.blit(lab, lab.get_rect(midleft=(C.STATS_BAND_L, cy)))
         screen.blit(val, val.get_rect(midright=(C.STATS_BAND_R, cy)))
 
@@ -243,20 +242,22 @@ def draw_pause(screen, q_hold_frames, r_hold_frames=0):
     """
     # ── 1. Full-screen dim (lighter than GAME_OVER's alpha=160) ──────────────
     dim = pygame.Surface((C.W, C.H))
-    dim.set_alpha(C.PAUSE_DIM_ALPHA)   # 110 = temporary-state; game world still legible
+    dim.set_alpha(C.PAUSE_DIM_ALPHA)  # 110 = temporary-state; game world still legible
     dim.fill(C.OVERLAY)
     screen.blit(dim, (0, 0))
 
-    cx = C.W // 2   # 300 — all text and arc are horizontally centred here
+    cx = C.W // 2  # 300 — all text and arc are horizontally centred here
 
     # ── 2. "PAUSED" heading — PLAYER cyan (≠ GAME_OVER's HP_RED) ─────────────
     heading = _FONTS["big"].render(C.PAUSE_TITLE, True, C.PLAYER)
     screen.blit(heading, heading.get_rect(midtop=(cx, C.PAUSE_HEADING_Y)))
 
     # ── 3. Hint lines — TEXT_DIM, FONT_SMALL ─────────────────────────────────
-    for y, text in ((C.PAUSE_HINT_Y1, C.PAUSE_HINT_RESUME),
-                    (C.PAUSE_HINT_Y2, C.PAUSE_HINT_QUIT),
-                    (C.PAUSE_HINT_Y3, C.PAUSE_HINT_RESTART)):
+    for y, text in (
+        (C.PAUSE_HINT_Y1, C.PAUSE_HINT_RESUME),
+        (C.PAUSE_HINT_Y2, C.PAUSE_HINT_QUIT),
+        (C.PAUSE_HINT_Y3, C.PAUSE_HINT_RESTART),
+    ):
         surf = _FONTS["small"].render(text, True, C.TEXT_DIM)
         screen.blit(surf, surf.get_rect(midtop=(cx, y)))
 
@@ -264,8 +265,13 @@ def draw_pause(screen, q_hold_frames, r_hold_frames=0):
     # v13: R arc now co-located on the Q centre (300,483); draw R AFTER Q so the
     # violet R fill renders on top on dual-hold (§V13.4). Q fill amber, R fill violet.
     draw_hold_arc(screen, (cx, C.PAUSE_PANEL_Y + 56), q_hold_frames, C.PAUSE_QUIT_FRAMES)
-    draw_hold_arc(screen, C.PAUSE_RESTART_ARC_CENTER, r_hold_frames,
-                  C.RESTART_HOLD_FRAMES, fill_color=C.BONUS_BOMB)
+    draw_hold_arc(
+        screen,
+        C.PAUSE_RESTART_ARC_CENTER,
+        r_hold_frames,
+        C.RESTART_HOLD_FRAMES,
+        fill_color=C.BONUS_BOMB,
+    )
 
 
 # ── v12: the v8/v10 hold arc generalised — one helper for BOTH gestures ─────────
@@ -277,14 +283,14 @@ def draw_hold_arc(screen, center, hold_frames, threshold, fill_color=C.HP_AMBER)
     HP_AMBER (the Q-quit arc); the R-restart arc passes BONUS_BOMB violet (v13). No new
     constants."""
     cx, cy = center
-    r = C.PAUSE_ARC_R                                  # 22
-    rect = pygame.Rect(cx - r, cy - r, 2 * r, 2 * r)   # 44×44 bounding box
+    r = C.PAUSE_ARC_R  # 22
+    rect = pygame.Rect(cx - r, cy - r, 2 * r, 2 * r)  # 44×44 bounding box
     pygame.draw.arc(screen, C.HP_BACK, rect, 0, 2 * math.pi, C.PAUSE_ARC_STROKE)
-    fill = hold_frames / threshold                     # 0.0 → 1.0
+    fill = hold_frames / threshold  # 0.0 → 1.0
     if fill > 0:
         # CW from 12 o'clock: pygame.draw.arc draws CCW start→end, so fix end=π/2
         # and sweep the start back by fill×2π.
-        end_a   = math.pi / 2
+        end_a = math.pi / 2
         start_a = end_a - fill * 2 * math.pi
         pygame.draw.arc(screen, fill_color, rect, start_a, end_a, C.PAUSE_ARC_STROKE)
 
@@ -313,5 +319,10 @@ def draw_gameover_restart_arc(screen, r_hold_frames):
     mirroring draw_gameover_quit_arc. (PAUSE's R arc is drawn inside draw_pause with its
     track always on, matching the Q arc per screen.)"""
     if r_hold_frames > 0:
-        draw_hold_arc(screen, C.GAMEOVER_RESTART_ARC_CENTER,
-                      r_hold_frames, C.RESTART_HOLD_FRAMES, fill_color=C.BONUS_BOMB)
+        draw_hold_arc(
+            screen,
+            C.GAMEOVER_RESTART_ARC_CENTER,
+            r_hold_frames,
+            C.RESTART_HOLD_FRAMES,
+            fill_color=C.BONUS_BOMB,
+        )

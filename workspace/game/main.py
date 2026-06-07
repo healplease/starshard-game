@@ -42,8 +42,10 @@ def main():
         # v14 R98/AC85: every headless mode targets a throwaway save file so it never
         # mutates the player's real lifetime stats (the balance probe builds a non-headless
         # App, so the env override — not App's headless flag — is what guarantees this).
-        os.environ.setdefault("STARSHARD_SAVE_PATH",
-                              os.path.join(tempfile.gettempdir(), "starshard_headless_stats.json"))
+        os.environ.setdefault(
+            "STARSHARD_SAVE_PATH",
+            os.path.join(tempfile.gettempdir(), "starshard_headless_stats.json"),
+        )
 
     app_mod = _import_app()
 

@@ -33,9 +33,14 @@ from . import bombs, scoring
 def _spawn_boss(world, pos, split_dist, first_step_delay, step_interval):
     """Free+silent arrival clear (reuse the factored v6 flush — NO charge, NO
     score, R57), THEN spawn the boss so it never appears in the cleared lists."""
-    bombs.trigger_flush(world, arm_flash=True)     # free arrival flush + flash (§V7.5)
-    world.boss = Boss(x=float(pos[0]), y=float(pos[1]), split_dist=split_dist,
-                      first_step_delay=first_step_delay, step_interval=step_interval)
+    bombs.trigger_flush(world, arm_flash=True)  # free arrival flush + flash (§V7.5)
+    world.boss = Boss(
+        x=float(pos[0]),
+        y=float(pos[1]),
+        split_dist=split_dist,
+        first_step_delay=first_step_delay,
+        step_interval=step_interval,
+    )
 
 
 def update(world):
@@ -47,9 +52,14 @@ def update(world):
     # TRIGGER — natural TIME breakpoint: t reached the next mark and no boss alive.
     if world.boss is None:
         if world.t >= world.boss_next_mark:
-            _spawn_boss(world, C.BOSS_SPAWN, C.YELLOW_SPLIT_DIST,
-                        C.BOSS_FIRST_STEP_DELAY, C.BOSS_STEP_INTERVAL)
-            world.boss_next_mark += C.BOSS_INTERVAL   # advance to the next absolute mark
+            _spawn_boss(
+                world,
+                C.BOSS_SPAWN,
+                C.YELLOW_SPLIT_DIST,
+                C.BOSS_FIRST_STEP_DELAY,
+                C.BOSS_STEP_INTERVAL,
+            )
+            world.boss_next_mark += C.BOSS_INTERVAL  # advance to the next absolute mark
         return
 
     boss = world.boss
@@ -60,9 +70,9 @@ def update(world):
     if boss.state == "ENTRANCE":
         boss.y += C.BOSS_ENTRY_SPEED
         if boss.y >= C.BOSS_REST_Y:
-            boss.y = float(C.BOSS_REST_Y)             # snap, no overshoot (§V7.7)
+            boss.y = float(C.BOSS_REST_Y)  # snap, no overshoot (§V7.7)
             boss.state = "ACTIVE"
-            boss.step_timer = boss.first_step_delay   # one-beat pause before step 1 (§V7.8)
+            boss.step_timer = boss.first_step_delay  # one-beat pause before step 1 (§V7.8)
         return
 
     # ACTIVE — oscillate about x = W/2, then drive the moveset.
@@ -76,7 +86,7 @@ def update(world):
     boss.step_timer -= 1
     if boss.step_timer <= 0:
         _fire_step(world, boss)
-        boss.step_index = (boss.step_index + 1) % 4   # 1→2→3→4→1 loop (R66)
+        boss.step_index = (boss.step_index + 1) % 4  # 1→2→3→4→1 loop (R66)
         boss.step_timer = boss.step_interval
 
 
@@ -108,16 +118,23 @@ def _fire_yellow_fan(world, boss):
     matures (physics) it bursts into 4 RED children — together the even 12-red 360°
     ring. The yellow bullets are damaging enemy bullets in flight (EB_DMG, r=EB_R)."""
     p = world.player
-    base = math.atan2(p.y - boss.y, p.x - boss.x)        # heading toward the player NOW
+    base = math.atan2(p.y - boss.y, p.x - boss.x)  # heading toward the player NOW
     spread = math.radians(C.YELLOW_FAN_SPREAD)
-    timer = round(boss.split_dist / C.YELLOW_SPEED)       # frozen "midway" (no live re-read)
+    timer = round(boss.split_dist / C.YELLOW_SPEED)  # frozen "midway" (no live re-read)
     # (angle offset, ring quarter): centre→{0,90,180,270}, left→{30,…}, right→{60,…}.
     for off, phase in ((0.0, 0), (-spread, 30), (spread, 60)):
         theta = base + off
-        world.ebullets.append(EnemyBullet(
-            boss.x, boss.y,
-            math.cos(theta) * C.YELLOW_SPEED, math.sin(theta) * C.YELLOW_SPEED,
-            family="YELLOW", split_timer=timer, ring_phase=phase))
+        world.ebullets.append(
+            EnemyBullet(
+                boss.x,
+                boss.y,
+                math.cos(theta) * C.YELLOW_SPEED,
+                math.sin(theta) * C.YELLOW_SPEED,
+                family="YELLOW",
+                split_timer=timer,
+                ring_phase=phase,
+            )
+        )
 
 
 # ── defeat (called by combat when the last hit drops boss.hp ≤ 0) ───────────────
@@ -126,11 +143,11 @@ def on_defeat(world):
     normal loop resumes immediately (R62/§V7.6). The reward flows through
     scoring.award so Score×2 doubles it; the popup tracks the ACTUAL amount."""
     mult = C.SCORE_MULT if world.player.score_mult_active else 1
-    world.boss_defeat_points = C.BOSS_KILL_SCORE * mult   # honest "+points" (1000 or 2000)
-    scoring.award(world, C.BOSS_KILL_SCORE)               # award() applies the same mult
-    world.store.bosses_killed += 1                        # v14 R93: only site a boss dies (never enemies_killed)
+    world.boss_defeat_points = C.BOSS_KILL_SCORE * mult  # honest "+points" (1000 or 2000)
+    scoring.award(world, C.BOSS_KILL_SCORE)  # award() applies the same mult
+    world.store.bosses_killed += 1  # v14 R93: only site a boss dies (never enemies_killed)
     world.boss_defeat_popup_timer = C.BOSS_DEFEAT_POPUP_LIFE
-    world.boss = None                                     # surviving minions persist (§V7.9)
+    world.boss = None  # surviving minions persist (§V7.9)
 
 
 # ── smoke seed (GDD §V7.15) ─────────────────────────────────────────────────────
@@ -140,5 +157,10 @@ def seed_smoke_boss(world):
     with a short entrance + a COMPRESSED moveset + a short split distance so
     arrival-clear + entrance + step 1 + the yellow→12-red split all fire inside the
     120-f budget (§V7.15). The boss is NOT defeated (HP 120 stands)."""
-    _spawn_boss(world, C.SMOKE_BOSS_SPAWN, C.SMOKE_BOSS_SPLIT_DIST,
-                C.SMOKE_BOSS_STEP_DELAY, C.SMOKE_BOSS_STEP_INTERVAL)
+    _spawn_boss(
+        world,
+        C.SMOKE_BOSS_SPAWN,
+        C.SMOKE_BOSS_SPLIT_DIST,
+        C.SMOKE_BOSS_STEP_DELAY,
+        C.SMOKE_BOSS_STEP_INTERVAL,
+    )

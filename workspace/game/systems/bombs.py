@@ -35,7 +35,7 @@ def trigger_flush(world, arm_flash=True):
     boss-arrival clear calls it directly (free & silent, no charge — R57)."""
     _flush(world)
     if arm_flash:
-        world.flash_timer = C.FLASH_FRAMES   # arm the full-screen flash (§V6.5)
+        world.flash_timer = C.FLASH_FRAMES  # arm the full-screen flash (§V6.5)
 
 
 def update(world, fire):
@@ -50,6 +50,6 @@ def update(world, fire):
 
     # Activate: needs a fresh edge, a charge, and no active lockout (R46/R47/R53).
     if fire and world.charges > 0 and world.bomb_lockout == 0:
-        world.charges -= 1                 # −1 (HUD drops by 1 — AC30)
+        world.charges -= 1  # −1 (HUD drops by 1 — AC30)
         trigger_flush(world, arm_flash=True)  # clear lists + arm flash (no score)
-        world.bomb_lockout = C.BOMB_LOCKOUT   # arm the 18-f lockout (§V6.4)
+        world.bomb_lockout = C.BOMB_LOCKOUT  # arm the 18-f lockout (§V6.4)
