@@ -8,7 +8,6 @@ Esc/Q keydowns + held keys — the gesture machinery, not pure logic.
 import random
 
 import pygame
-
 from game import config as C
 from game.app import App, run_event_script
 from game.entities.hazards import Asteroid
@@ -40,12 +39,14 @@ def test_ac53_esc_pauses_and_freezes_clock():
 
         return probe
 
-    run_event_script({
-        "frames": 15,
-        "keydowns": {3: [pygame.K_ESCAPE]},
-        "held": {},
-        "probes": {3: grab("at_pause"), 12: grab("later")},
-    })
+    run_event_script(
+        {
+            "frames": 15,
+            "keydowns": {3: [pygame.K_ESCAPE]},
+            "held": {},
+            "probes": {3: grab("at_pause"), 12: grab("later")},
+        }
+    )
     assert cap["at_pause"][0] is GameState.PAUSE, "Esc did not enter PAUSE"
     assert cap["at_pause"][1] == cap["later"][1], "run clock advanced while paused"
     assert cap["at_pause"][2:] == cap["later"][2:], "player drifted while paused"
@@ -53,12 +54,14 @@ def test_ac53_esc_pauses_and_freezes_clock():
 
 def test_ac56_qhold_quits_from_pause():
     """AC56: Q held PAUSE_QUIT_FRAMES in PAUSE quits the app."""
-    app = run_event_script({
-        "frames": 60,
-        "keydowns": {2: [pygame.K_ESCAPE]},
-        "held": {f: [pygame.K_q] for f in range(3, 40)},
-        "probes": {},
-    })
+    app = run_event_script(
+        {
+            "frames": 60,
+            "keydowns": {2: [pygame.K_ESCAPE]},
+            "held": {f: [pygame.K_q] for f in range(3, 40)},
+            "probes": {},
+        }
+    )
     assert app.quit_via_qhold, "Q-hold did not quit the app"
 
 
@@ -72,12 +75,14 @@ def test_ac57_qhold_resets_on_release():
 
         return probe
 
-    run_event_script({
-        "frames": 20,
-        "keydowns": {2: [pygame.K_ESCAPE]},
-        "held": {f: [pygame.K_q] for f in range(3, 11)},  # 8 held frames (< 30)
-        "probes": {10: grab("held8"), 12: grab("released")},
-    })
+    run_event_script(
+        {
+            "frames": 20,
+            "keydowns": {2: [pygame.K_ESCAPE]},
+            "held": {f: [pygame.K_q] for f in range(3, 11)},  # 8 held frames (< 30)
+            "probes": {10: grab("held8"), 12: grab("released")},
+        }
+    )
     assert cap["held8"] == 8, f"hold counter wrong while held: {cap['held8']}"
     assert cap["released"] == 0, "hold counter did not reset on release"
 
@@ -169,21 +174,27 @@ def test_r76_start_q_carveout(fresh_world):
 
 def test_ac61_qhold_quits_from_start():
     """AC61: holding Q PAUSE_QUIT_FRAMES on START quits the app."""
-    app = _run_from_state(GameState.START, {
-        "frames": 50,
-        "held": {f: [pygame.K_q] for f in range(0, 45)},  # 45 continuous held frames > 30
-        "probes": {},
-    })
+    app = _run_from_state(
+        GameState.START,
+        {
+            "frames": 50,
+            "held": {f: [pygame.K_q] for f in range(0, 45)},  # 45 continuous held frames > 30
+            "probes": {},
+        },
+    )
     assert app.quit_via_qhold, "Q held on START did not quit"
 
 
 def test_ac62_qhold_quits_from_gameover():
     """AC62: holding Q PAUSE_QUIT_FRAMES on GAME_OVER quits the app."""
-    app = _run_from_state(GameState.GAME_OVER, {
-        "frames": 50,
-        "held": {f: [pygame.K_q] for f in range(0, 45)},
-        "probes": {},
-    })
+    app = _run_from_state(
+        GameState.GAME_OVER,
+        {
+            "frames": 50,
+            "held": {f: [pygame.K_q] for f in range(0, 45)},
+            "probes": {},
+        },
+    )
     assert app.quit_via_qhold, "Q held on GAME_OVER did not quit"
 
 
@@ -197,18 +208,23 @@ def test_ac63_release_resets_no_accumulation():
 
         return probe
 
-    app = _run_from_state(GameState.START, {
-        "frames": 30,
-        "held": {
-            **{f: [pygame.K_q] for f in range(0, 10)},  # 10 held (<30)
-            **{f: [pygame.K_q] for f in range(14, 18)},  # then re-press for 4
+    app = _run_from_state(
+        GameState.START,
+        {
+            "frames": 30,
+            "held": {
+                **{f: [pygame.K_q] for f in range(0, 10)},  # 10 held (<30)
+                **{f: [pygame.K_q] for f in range(14, 18)},  # then re-press for 4
+            },
+            "probes": {9: grab("held10"), 12: grab("released"), 17: grab("repress4")},
         },
-        "probes": {9: grab("held10"), 12: grab("released"), 17: grab("repress4")},
-    })
+    )
     assert not app.quit_via_qhold, "a sub-threshold hold wrongly quit"
     assert cap["held10"] == 10, f"counter wrong while held: {cap['held10']}"
     assert cap["released"] == 0, "counter did not reset on release"
-    assert cap["repress4"] == 4, f"re-press accumulated instead of starting from 0: {cap['repress4']}"
+    assert cap["repress4"] == 4, (
+        f"re-press accumulated instead of starting from 0: {cap['repress4']}"
+    )
 
 
 def test_ac67_qhold_excluded_in_play():
@@ -220,12 +236,14 @@ def test_ac67_qhold_excluded_in_play():
         cap["q"] = app.q_hold_frames
 
     # Headless start forces PLAY; hold Q for 40 frames without ever pausing.
-    app = run_event_script({
-        "frames": 45,
-        "keydowns": {},
-        "held": {f: [pygame.K_q] for f in range(0, 40)},
-        "probes": {38: grab},
-    })
+    app = run_event_script(
+        {
+            "frames": 45,
+            "keydowns": {},
+            "held": {f: [pygame.K_q] for f in range(0, 40)},
+            "probes": {38: grab},
+        }
+    )
     assert not app.quit_via_qhold, "Q held in PLAY quit the run (R81 violated)"
     assert cap["state"] is GameState.PLAY, "state left PLAY under a held Q"
     assert cap["q"] == 0, "the hold counter advanced during PLAY (gesture armed mid-run)"

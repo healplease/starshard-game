@@ -9,6 +9,7 @@
 ## Run reports (newest first)
 | File | Increment | Verdict | Covers |
 |------|-----------|---------|--------|
+| `v16.md` | v16 — second boss NOVA + uniform-random extensible boss pool | ✅ PASS | AC86–AC93: extensible length-driven pool (AC86), uniform seedable pick (AC87, probe ≈½/½ over 3000 seeds), cadence unchanged (AC88), shared v7 framing (AC89), NOVA distinct (AC90), **zero ships** across a full fight (AC91, probe max enemies=0), **deadlier** every axis 25>15/80>60/90<150f (AC92); full `pytest` = **91 (75→91, +16)** green, smoke `main.py`+`-m game.main` exit 0 + compileall clean; Mothership parity + no AC1–AC85 regression (AC93) |
 | `v15.md` | v15 — pytest suite + ruff/pyright tooling (port-then-delete the harness) | ✅ PASS | 32 e2e checks ported → `tests/e2e/`; full `pytest workspace/tests` = **75 (43 unit / 32 e2e)** green; smoke `main.py`+`-m game.main` exit 0 + compileall clean; parity old-75 ↔ new-75 proven; `regression_harness.py` deleted (zero coverage loss) |
 | `v14.md` | v14 — one-file JSON save system + lifetime-stats screen | ✅ PASS | AC78–AC85 + STATS nav + 2 QA-authored probes (pause/resume-no-flush, idempotent double-flush) + code reads of every award/flush/runs site; real save provably untouched; harness 75/75; no AC1–AC77 regression |
 | `v12.md` | v12 — hold-R-to-restart on PAUSE + GAME_OVER | ✅ PASS | AC69–AC77 + 11 QA-authored probes (GAME_OVER hold-R e2e, die-with-R-held #1-risk, both-Q+R independence, exact-29/30 boundary, negative PLAY-exclusion); harness 65/65; no AC1–AC68 regression |

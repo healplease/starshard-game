@@ -354,3 +354,37 @@
   R+Q arcs but left the v12 "arcs must not overlap" assertion in place (HEAD was silently 64/65, not the
   backlog's "65/65"). Updated that one sub-assertion to assert **co-location** per the v13 §V13.2 locked
   design. cp1252 console note: kept v14 test labels ASCII (a `→` in a label crashes the Windows print).
+
+## v16 — Second boss NOVA + extensible random boss pool (programmer, 2026-06-07)
+- Refactored boss-spawn from a hard-coded Mothership into a **pool/registry of boss specs** + a uniform
+  random pick, then added **NOVA** as the 2nd entry — the unchanged v7 encounter loop (cadence/freeze/
+  arrival-clear/bomb-immunity/defeat) runs identically for both; only *which* spec it reads differs.
+- **Registry data-shape (the Programmer's call).** `config.BOSS_POOL` = ordered `("MOTHERSHIP","NOVA")`
+  (the single roster source — N is read from its length, nothing hard-codes "two"); `config.BOSS_SPECS`
+  = a per-type **data** dict (hp/r/ram_dmg/kill_score/cadence + bar colors + name/HUD strings). Adding
+  boss #3 = one BOSS_SPECS entry + one BOSS_POOL string — selection + loop need **zero** edits (AC86).
+  Kept the moveset (logic) dispatched by `boss.type` in `encounter` and the body silhouette by type in
+  `render._BOSS_DRAW` (data stays in `config`, pygame stays in `view` — no layer inversion).
+- **Selection.** `config.pick_boss_type(rng)=BOSS_POOL[rng.randrange(len(BOSS_POOL))]` — uniform i.i.d.
+  1/N, repeats allowed, seedable. The natural trigger reads `world.boss_type_override or pick_boss_type`,
+  so play is random but smoke/pytest **force** a boss deterministically (`SMOKE_BOSS_TYPE="NOVA"` drives
+  the headless seed; the override hook drives unit tests). No rng draw added on the smoke path.
+- **Boss became per-instance.** `Boss` gained `type`/`hp_max`/`r`/`ram_dmg`/`kill_score`/`ring_phase`
+  with **Mothership defaults** (a bare `Boss(...)` is still a Mothership → existing tests untouched); a
+  `make_boss(type,pos,**overrides)` factory populates from the spec. `combat` now reads `boss.r`/
+  `boss.ram_dmg`/`b.dmg`; `encounter.on_defeat` awards `boss.kill_score` and captures the defeat
+  text/type onto `World` (the popup outlives the cleared boss). HUD bar/warn/defeat read colors+strings
+  from `BOSS_SPECS[boss.type]` — data-driven, no `if boss is mothership`.
+- **NOVA = projectile-only (R103), deadlier (R104).** 4 bullet-only steps in `_fire_nova_step` — RAKE
+  (5 aimed ±{0,15,30}°), BURST (24 ring, `ring_phase` precesses +9°/step), LANCE (4 aimed @6.0, spaced
+  along the heading == the f/f+4/f+8/f+12 stagger, done statelessly via a spawn-`advance` offset), ARC
+  (9 aimed ±{0..60}°). **Touches NO minion/spawn path** — `enemies` stays empty across a full fight
+  (verified headlessly: 0 ships while NOVA active). NOVA bullets are ordinary `EnemyBullet`s (new family
+  `"NOVA"`, EB_COLORS azure, collision still flat `EB_R=5`); the **only** new per-bullet datum is a
+  `dmg` field (default `EB_DMG=15`, NOVA=25) so combat's damage step is per-bullet — no new collision code.
+- **Art/copy wired.** 3 new colors (`NOVA_BODY/RAY/BULLET`) + the pulsar silhouette `_draw_nova` (disc
+  r=62 ⊇ the r=60 circle + 12 spikes + ring + white-hot core); the v7 boss bar reused verbatim, recolored
+  blue from the spec; NOVA name/label/WARNING/`NOVA DOWN` + live `+{points}` from the spec/story literals.
+- **Gates:** `pytest workspace/tests` **91 passed** (75 → +16 new NOVA/pool unit tests in `test_nova.py`),
+  `--smoke-test` exit 0 (forces NOVA, ≥1 attack step, 0 ships). ruff/pyright residuals unchanged from v15
+  (the same pre-existing F821 forward-ref + `ENEMY_KINDS` `float|str` inferences — none in v16 code).

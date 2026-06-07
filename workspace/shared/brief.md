@@ -22,47 +22,42 @@ asteroids/debris and blast enemy fighters to rack up a score before your ship is
 - Python 3.14 + `pygame-ce` from the `.venv`.
 
 ## Current state & where the detail lives
-v1–v14 shipped & passed QA — see `backlog.md` for the capability summary and the canonical specs in
-each role folder. Closed-increment framings (v2, v5, v7–v14) are archived in
+v1–v15 shipped & passed QA — see `backlog.md` for the capability summary and the canonical specs in
+each role folder. Closed-increment framings (v2, v5, v7–v15) are archived in
 `../archive/brief-increments-*.md`.
 
-## Current increment — v15: pytest test-suite + lint/type tooling (process hardening)
+## Current increment — v16: second boss + random boss pool (new content)
 
-**Human's words:** programmer and tester spend too much time testing with one-off hand-crafted scripts;
-replace that with a real **pytest suite** (a *set of files*, not one ~1000-line harness that "stuns
-agents"). Set up **fixtures for end-to-end tests** (QA's lane) and **unit tests** (programmer's lane) so
-both work faster. Add a **ruff / pyright lint+format autofixer**, and **tell the programmer they must run
-the unit tests + lint-fix after finishing changes**.
+**Human's words:** create a new boss and add it to the game. Whenever a boss spawns, pick **randomly**
+between the Mothership and this new boss — and all **future bosses join the pool** too. One condition:
+the new boss must **NOT spawn any new ships** (that's the Mothership's gimmick) and must have **deadlier
+attacks**.
 
-This is a **process/tooling increment** — *no game-feature change* (like v9). The creative pipeline is
-**skipped entirely** (BA, Designer, Artist, Writer, Level-designer = `skipped`).
+This is a **new-content / mechanic increment** — the **full creative pipeline** runs
+(BA → Designer → Artist → Writer → Level-designer → Programmer → QA).
 
-**Decisions locked at kickoff (2026-06-06, via Q&A):**
-- **Old harness:** *port all 75 checks, then delete.* Migrate every check in the 1,514-line
-  `qa/regression_harness.py` into the new modular pytest suite (unit + e2e), prove parity (**≥75 tests
-  pass**), then **delete the monolith**. Zero coverage loss is a hard requirement.
-- **Lint/type bar:** ruff **format + check --fix** on every change; **pyright "basic"**. The Programmer
-  *must run* them, but residual warnings are **non-blocking** (don't hard-fail the gate) — pragmatic for
-  the existing codebase. The smoke gate + pytest staying green ARE blocking.
-- **Role realignment:** *involve the Manager.* It owns `workspace/` structure, so it defines the `tests/`
-  layout, the unit-vs-e2e split, the ruff/pyright config approach, and the new per-role testing process —
-  and rewrites `roles/programmer.md`, `roles/qa-tester.md`, `CLAUDE.md`, `workspace/README.md`, and
-  `qa/test_plan.md`. Programmer + QA then build against that contract.
+**Decisions locked at kickoff (2026-06-07):**
+- **Selection = uniform random from the boss pool** at each boss-spawn event (today: Mothership + the new
+  boss). The pool must be an **extensible registry** — adding a future boss = one entry, no rework.
+- **New boss hard constraints (from the human, non-negotiable):** (1) spawns **no ships/enemies** of any
+  kind; (2) its attacks are **deadlier** than the Mothership's (higher threat — more damage / denser /
+  harder to dodge, Designer+Level-designer decide the exact lever).
+- **Boss appearance cadence is UNCHANGED** (first ~75 s, then +90 s); only *which* boss appears is
+  randomized. Field-clear + spawn-freeze + reward-on-defeat boss framing stays.
 
-**Work split delegated downstream:**
-- **Manager (first):** design the `tests/` tree + `pyproject.toml` (pytest+ruff+pyright config) location,
-  decide the **unit-vs-e2e boundary** (who ports which of the 75 checks), define the new testing process
-  (Programmer runs `pytest` unit subset + `ruff --fix` + `pyright` before every handoff; QA runs the full
-  suite as the regression gate), and realign all the role/process docs above. Does **not** build the suite.
-- **Programmer:** scaffold `pyproject.toml`, create the `tests/` package + `conftest.py` with shared
-  fixtures, port the **unit-level** checks (pure logic: physics, scoring, save serialization, spawn
-  weights, string-widths) into `tests/unit/`, wire ruff/pyright, run them + smoke, keep everything green.
-- **QA:** port the **e2e/behavioral AC** checks (driven through App/World pipeline, event scripts,
-  render-smoke) into `tests/e2e/` with fixtures, prove parity (≥75 tests, no AC coverage lost), then
-  **delete `qa/regression_harness.py`**. Smoke gate stays green.
+**Open decisions delegated downstream (creative freedom within the constraints):**
+- **BA:** formalize requirements — new boss as content, the random extensible-pool selection rule, and
+  the two hard constraints, as new R#/AC#.
+- **Designer:** invent the boss's **identity/theme + moveset/attack patterns** (deadlier, ship-free),
+  HP, reward, defeat behavior, and the pool-selection concept.
+- **Artist:** placeholder **shapes + palette** for the new boss (clearly distinct from the Mothership)
+  and any new attack/projectile visuals.
+- **Writer:** the boss **name** + any on-screen copy (boss banner / warning), matching the Mothership's
+  treatment.
+- **Level-designer:** the **random-pool selection rule** + extensibility, the new boss's **balance
+  numbers** (HP / damage / fire-rate) so "deadlier" is concrete, and confirm spawn timing is unchanged.
 
-**Smoke contract is untouched:** `main.py --smoke-test` (120 frames, simulated input, exit 0) stays the
-first gate and must stay green across the whole refactor.
+**Smoke + test contract untouched:** `main.py --smoke-test` (120 frames, exit 0) stays the first gate;
+the pytest suite (now 75) stays green and **grows** with new checks for the boss + random pool.
 
-**Scoped roles:** Manager → Programmer → QA. **BA, Designer, Artist, Writer, Level-designer = skipped**
-(no requirements/design/art/copy/economy change).
+**Scoped roles:** full pipeline — **no roles skipped** (new content touches every lane).

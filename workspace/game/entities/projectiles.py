@@ -32,11 +32,14 @@ class EnemyBullet:
     y: float
     vx: float
     vy: float
-    family: str = "RED"  # render hue/shape: RED / GREEN / CYAN / YELLOW (§V5.2/§V7.12)
+    family: str = (
+        "RED"  # render hue/shape: RED / GREEN / CYAN / YELLOW / NOVA (§V5.2/§V7.12/§V16.3)
+    )
     split_timer: Optional[int] = (
         None  # frames until a GREEN/YELLOW bullet bursts; None = never splits
     )
     ring_phase: Optional[int] = None  # v7 YELLOW only: this fan bullet's ring quarter (0/30/60°)
+    dmg: int = C.EB_DMG  # per-hit player damage; default v1/v5/v7 EB_DMG, NOVA overrides (§V16.3)
 
     @property
     def color(self):

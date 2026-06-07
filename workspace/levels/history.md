@@ -58,6 +58,24 @@
   semantics unchanged (same v1 R13 / v8 R74 reset, so fresh-run economy is identical). **AC13 protected:**
   gesture excluded from START + PLAY (R90) so the run clock never advances under it. v1 ramp + v2/v5/v6 economy
   + v7 boss pacing all UNCHANGED. No vN balance lever introduced.
+- 2026-06-07 (v16): level_spec/v16-second-boss.md added — **OWN the pool-selection rule:** uniform **i.i.d. 1/N per
+  spawn event** (today ½ Mothership / ½ NOVA), independent (repeats allowed — no shuffle-bag), picked once at ARRIVAL,
+  **N read from pool length** so boss #3 = one entry with zero selection/loop edits (R99/R100); seedable/forceable so
+  tests pin a boss. **CONFIRM cadence UNCHANGED** — TIME 75 s / +90 s exactly as v7 §V7.1; selection rides the existing
+  breakpoint, adds no timing (R101/AC88). **FINALIZE/LOCK NOVA balance** (all Designer-set, confirmed from the pacing
+  side): `NOVA_HP=120` (= Mothership; deadlier via attacks not HP-sponge), `NOVA_R=60` (tighter target **offset** by
+  no-minion focus-fire → fight stays in the v7 ~12–24 s band), `NOVA_RAM_DMG=80` (>60, <100 HP survivable),
+  `NOVA_BULLET_DMG=25` (>15 — headline AC92 lever, 4 hits from full), speed 5.5/lance 6.0 (>4.5), `NOVA_STEP_INTERVAL=90`
+  (<150 f, 1.67× cadence), densities RAKE5/BURST24/LANCE4/ARC9 (~7/s vs 1.5/s ≈4.7× denser, ring precesses +9°/step),
+  `NOVA_KILL_SCORE=1500` (1.5× Mothership; Score×2→3000). **AC13 held (median, unchanged from v7):** same HP/band; the
+  deadlier attacks bound run length on the **short** side only (more in-fight deaths), never lengthen; cadence + reward
+  AC13-orthogonal (time-gate, points-only). Pool selection is AC13-orthogonal — both entries same fight band, so
+  run-length distribution is independent of the die roll. **Levers if unwinnable** (R104 caveat, deadliest-first per GDD
+  §V16.5): widen `NOVA_STEP_INTERVAL` 90→110 → drop `NOVA_RING_COUNT` 24→18 → lower bullet speed → trim ram (never drop
+  `NOVA_BULLET_DMG` below 16). **Smoke:** TIME gate (f4500) never fires in 120 f → forced `SMOKE_BOSS_TYPE="NOVA"` seed
+  is the sole boss; NOVA's no-minion fight = a *stricter* freeze than the Mothership's (zero hostiles but its bullets);
+  no cadence/economy change. v1 ramp + v2/v5/v6 economy + Mothership v7 values all UNCHANGED (v16 only inserts a
+  selection step + one pool entry).
 - 2026-06-05 (v6): level_spec.md v6 section added — bomb-charge pickup **spawn weight = `BOMB = 6`** (rarest
   kind; 5–8 % band; < Shield/Score 15), folded into the v2 kind table by **re-slicing**, not adding volume:
   Shield 15→12, Score×2 15→12 (Repair/Fan/Rapid untouched) → table still sums 100, so **drip cadence /

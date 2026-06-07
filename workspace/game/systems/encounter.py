@@ -23,24 +23,20 @@ compressed boss in-budget (§V7.15) without touching the play-time constants.
 import math
 
 from .. import config as C
-from ..entities.boss import Boss
+from ..entities.boss import make_boss
 from ..entities.hazards import make_enemy
 from ..entities.projectiles import EnemyBullet
 from . import bombs, scoring
 
 
 # ── arrival / trigger ──────────────────────────────────────────────────────────
-def _spawn_boss(world, pos, split_dist, first_step_delay, step_interval):
-    """Free+silent arrival clear (reuse the factored v6 flush — NO charge, NO
-    score, R57), THEN spawn the boss so it never appears in the cleared lists."""
+def _spawn_boss(world, boss_type, pos, **overrides):
+    """Free+silent arrival clear (reuse the factored v6 flush — NO charge, NO score,
+    R57), THEN spawn the chosen boss so it never appears in the cleared lists. The
+    per-boss stats come from `boss_type`'s spec; `overrides` (first_step_delay /
+    step_interval / split_dist) let the smoke seed compress the fight (§V7.15)."""
     bombs.trigger_flush(world, arm_flash=True)  # free arrival flush + flash (§V7.5)
-    world.boss = Boss(
-        x=float(pos[0]),
-        y=float(pos[1]),
-        split_dist=split_dist,
-        first_step_delay=first_step_delay,
-        step_interval=step_interval,
-    )
+    world.boss = make_boss(boss_type, pos, **overrides)
 
 
 def update(world):
@@ -52,13 +48,10 @@ def update(world):
     # TRIGGER — natural TIME breakpoint: t reached the next mark and no boss alive.
     if world.boss is None:
         if world.t >= world.boss_next_mark:
-            _spawn_boss(
-                world,
-                C.BOSS_SPAWN,
-                C.YELLOW_SPLIT_DIST,
-                C.BOSS_FIRST_STEP_DELAY,
-                C.BOSS_STEP_INTERVAL,
-            )
+            # Selection (v16 §V16.1): pick ONE pool spec uniformly at random (1/N),
+            # independent per event — unless a deterministic override is pinned (tests).
+            boss_type = world.boss_type_override or C.pick_boss_type(world.rng)
+            _spawn_boss(world, boss_type, C.BOSS_SPAWN)  # spec defaults for cadence
             world.boss_next_mark += C.BOSS_INTERVAL  # advance to the next absolute mark
         return
 
@@ -87,18 +80,67 @@ def update(world):
     if boss.step_timer <= 0:
         _fire_step(world, boss)
         boss.step_index = (boss.step_index + 1) % 4  # 1→2→3→4→1 loop (R66)
+        boss.ring_phase = (
+            boss.ring_phase + C.NOVA_RING_PHASE_STEP
+        ) % 360  # NOVA precession (§V16.5)
         boss.step_timer = boss.step_interval
 
 
 # ── moveset ────────────────────────────────────────────────────────────────────
 def _fire_step(world, boss):
-    """Run the current moveset step: steps 1–3 spawn v5 minion waves, step 4 fires
-    the yellow fan (R66–R68). boss.step_index 0/1/2 → waves; 3 → fan."""
+    """Dispatch the current step to the active boss's moveset (v16 §V16.2). The Boss
+    entity is shared; only the per-type pattern differs — selection picked the spec."""
+    if boss.type == "NOVA":
+        _fire_nova_step(world, boss)
+    else:
+        _fire_mothership_step(world, boss)
+
+
+def _fire_mothership_step(world, boss):
+    """Mothership (v7): steps 1–3 spawn v5 minion waves, step 4 fires the yellow fan
+    (R66–R68). boss.step_index 0/1/2 → waves; 3 → fan."""
     if boss.step_index < 3:
         kind, count = C.BOSS_WAVE[boss.step_index + 1]
         _spawn_wave(world, kind, count)
     else:
         _fire_yellow_fan(world, boss)
+
+
+# ── NOVA moveset (projectile-only, deadlier than the Mothership; R103/R104) ──────
+def _nova_bullet(boss, theta, speed, advance=0.0):
+    """One NOVA EnemyBullet on heading `theta` at `speed`: family NOVA (azure plasma
+    render + EB_COLORS), terminal (no split), and `NOVA_BULLET_DMG` (25 > EB_DMG 15).
+    `advance` pre-offsets the spawn along the heading (used by the LANCE stream so its
+    4 same-heading bullets are spaced, not stacked — the spatial equivalent of firing
+    them on frames f, f+GAP, … from a near-stationary boss). No new collision code."""
+    vx, vy = math.cos(theta) * speed, math.sin(theta) * speed
+    x = boss.x + math.cos(theta) * advance
+    y = boss.y + math.sin(theta) * advance
+    return EnemyBullet(x, y, vx, vy, family="NOVA", dmg=C.NOVA_BULLET_DMG)
+
+
+def _fire_nova_step(world, boss):
+    """NOVA's 4-step projectile cycle (GDD §V16.5): 0 RAKE, 1 BURST, 2 LANCE, 3 ARC.
+    Every step is bullets only — NO minion/enemy-spawn path is touched (R103)."""
+    base = math.atan2(world.player.y - boss.y, world.player.x - boss.x)  # aim at fire time
+    if boss.step_index == 0:  # RAKE — tight aimed 5-fan ±{0,15,30}° (60° wide)
+        half = (C.NOVA_SPREAD_COUNT - 1) // 2
+        for i in range(-half, half + 1):
+            theta = base + math.radians(i * C.NOVA_SPREAD_STEP_DEG)
+            world.ebullets.append(_nova_bullet(boss, theta, C.NOVA_BULLET_SPEED))
+    elif boss.step_index == 1:  # NOVA BURST — dense 24-bullet precessing 360° ring
+        for k in range(C.NOVA_RING_COUNT):
+            theta = math.radians(k * C.NOVA_RING_STEP_DEG + boss.ring_phase)
+            world.ebullets.append(_nova_bullet(boss, theta, C.NOVA_BULLET_SPEED))
+    elif boss.step_index == 2:  # LANCE — aimed rapid stream of 4 fastest bullets
+        for k in range(C.NOVA_LANCE_COUNT):
+            advance = C.NOVA_LANCE_SPEED * C.NOVA_LANCE_GAP_F * k  # spacing == GAP_F-frame stagger
+            world.ebullets.append(_nova_bullet(boss, base, C.NOVA_LANCE_SPEED, advance))
+    else:  # ARC WALL — aimed wide 9-bullet 120° wall ±{0,15,30,45,60}°
+        half = (C.NOVA_ARC_COUNT - 1) // 2
+        for i in range(-half, half + 1):
+            theta = base + math.radians(i * C.NOVA_ARC_STEP_DEG)
+            world.ebullets.append(_nova_bullet(boss, theta, C.NOVA_BULLET_SPEED))
 
 
 def _spawn_wave(world, kind, count):
@@ -143,8 +185,13 @@ def on_defeat(world):
     normal loop resumes immediately (R62/§V7.6). The reward flows through
     scoring.award so Score×2 doubles it; the popup tracks the ACTUAL amount."""
     mult = C.SCORE_MULT if world.player.score_mult_active else 1
-    world.boss_defeat_points = C.BOSS_KILL_SCORE * mult  # honest "+points" (1000 or 2000)
-    scoring.award(world, C.BOSS_KILL_SCORE)  # award() applies the same mult
+    kill_score = world.boss.kill_score  # per-boss (Mothership 1000 / NOVA 1500)
+    world.boss_defeat_points = kill_score * mult  # honest "+points" (×Score×2 if active)
+    # Capture the defeated boss's identity for the popup — boss is cleared below, and the
+    # transient popup outlives it, so the HUD reads these (not the now-None boss).
+    world.boss_defeat_text = C.BOSS_SPECS[world.boss.type]["defeat"]
+    world.boss_defeat_type = world.boss.type
+    scoring.award(world, kill_score)  # award() applies the same mult
     world.store.bosses_killed += 1  # v14 R93: only site a boss dies (never enemies_killed)
     world.boss_defeat_popup_timer = C.BOSS_DEFEAT_POPUP_LIFE
     world.boss = None  # surviving minions persist (§V7.9)
@@ -152,15 +199,17 @@ def on_defeat(world):
 
 # ── smoke seed (GDD §V7.15) ─────────────────────────────────────────────────────
 def seed_smoke_boss(world):
-    """Force a boss @ ~f40 (after the v5 f16 + v6 f20 seeds): the free arrival clear
-    (NO charge — residual charge stays at 1 → AC40), then a boss spawned NEAR rest
-    with a short entrance + a COMPRESSED moveset + a short split distance so
-    arrival-clear + entrance + step 1 + the yellow→12-red split all fire inside the
-    120-f budget (§V7.15). The boss is NOT defeated (HP 120 stands)."""
+    """Force the `SMOKE_BOSS_TYPE` boss @ ~f40 (after the v5 f16 + v6 f20 seeds): the
+    free arrival clear (NO charge — residual charge stays at 1 → AC40), then a boss
+    spawned NEAR rest with a short entrance + a COMPRESSED moveset so arrival-clear +
+    entrance + ≥1 attack step all fire inside the 120-f budget (§V7.15/§V16.7). The
+    forced type bypasses the uniform pool draw so coverage is deterministic; the boss
+    is NOT defeated (HP 120 stands)."""
     _spawn_boss(
         world,
+        C.SMOKE_BOSS_TYPE,
         C.SMOKE_BOSS_SPAWN,
-        C.SMOKE_BOSS_SPLIT_DIST,
-        C.SMOKE_BOSS_STEP_DELAY,
-        C.SMOKE_BOSS_STEP_INTERVAL,
+        first_step_delay=C.SMOKE_BOSS_STEP_DELAY,
+        step_interval=C.SMOKE_BOSS_STEP_INTERVAL,
+        split_dist=C.SMOKE_BOSS_SPLIT_DIST,
     )

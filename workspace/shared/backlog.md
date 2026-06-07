@@ -7,7 +7,7 @@ row when finishing. Status: `todo` | `in-progress` | `done` | `blocked`.
 > `history.md`; the cross-role story is in `handoffs.md`. Full v1–v12 detail (per-version task tables
 > + status prose) is archived → `../archive/backlog-v1-v12.md`. See `../README.md` for the map.
 
-## Current game state — "Starshard" (v1–v15 shipped & passed QA, as of 2026-06-07)
+## Current game state — "Starshard" (v1–v16 shipped & passed QA, as of 2026-06-07)
 
 Top-down auto-scrolling space shooter, modular `pygame-ce` package under `game/`. Shipped capabilities:
 
@@ -31,29 +31,36 @@ Top-down auto-scrolling space shooter, modular `pygame-ce` package under `game/`
   bosses killed; counted at the `scoring.award` destroy sites, flushed **only** on GAME_OVER + hold-Q quit;
   missing/corrupt/unknown-version → zeros. New first-class **STATS** GameState off START (**Tab** toggles
   START⇄STATS, **Esc** backs out; arc-free). AC78–AC85.
+- **Second boss + boss pool (v16):** **NOVA**, a projectile-only energy-core boss (4 bullet-only steps;
+  spawns **zero** ships) that is **deadlier** than the Mothership on every axis (per-hit 25>15, ram 80>60,
+  faster cadence/speed, reward 1500). Every boss-spawn now picks **uniformly at random** from an extensible,
+  length-driven registry (`BOSS_POOL`/`BOSS_SPECS`, seedable; future boss = one entry). v7 framing + cadence
+  (≈75 s, +90 s) unchanged. AC86–AC93.
 
-Contract totals: **R1–R98**, **AC1–AC85**; **pytest suite 75/75** (43 unit / 32 e2e, `workspace/tests/`,
+Contract totals: **R1–R105**, **AC1–AC93**; **pytest suite 91/91** (59 unit / 32 e2e, `workspace/tests/`,
 root `pyproject.toml` w/ ruff+pyright). Standing QA docs: `qa/feature_inventory.md`, `qa/test_plan.md`.
 (v3 = KB reorg, v4 = QA docs, v9 = process hardening, v15 = test-infra — no game-feature change.)
 
 **Play:** `.\.venv\Scripts\python.exe workspace\game\main.py` — Z fire · X bomb · Esc pause ·
 hold Q quit · hold R restart (on PAUSE/GAME_OVER) · Tab stats (on START).
 
-## No active increment — project complete (v15 shipped & passed QA 2026-06-07)
+## Last increment — v16: second boss + random boss pool (new content) — ✅ SHIPPED (QA PASS 2026-06-07)
 
-v15 (pytest suite + ruff/pyright tooling, process-only) is **done** — folded into the game-state summary
-above. The 1,514-line `qa/regression_harness.py` monolith was ported to a modular pytest suite (43 unit /
-32 e2e = 75, zero coverage loss) and deleted; ruff/pyright wired via root `pyproject.toml`. Last delivered
-increment table (all rows `done`/`skipped`):
+Add a **second boss** and make every boss-spawn pick **uniformly at random** from an **extensible boss
+pool** (today: Mothership + new boss; future bosses = one registry entry). Human's hard constraints: the
+new boss **spawns no ships/enemies** and has **deadlier attacks** than the Mothership. Boss appearance
+cadence (≈75 s then +90 s) and the field-clear/spawn-freeze/reward framing are **unchanged** — only
+*which* boss appears is randomized. Framing + locked decisions: `brief.md`.
 
 | # | Role | Task | Owner | Status |
 |---|---|---|---|---|
-| 1 | manager | ✅ `tests/` layout + root `pyproject.toml`, unit-vs-e2e split (43/32), new testing process + doc realignment — contract in `qa/test_plan.md` §2 | manager | done |
-| 2 | programmer | ✅ Scaffolded `pyproject.toml` + `tests/` + `conftest.py` fixtures; ported the 43 unit checks → `tests/unit/`; wired ruff/pyright; unit pytest+smoke green | programmer | done |
-| 3 | qa-tester | ✅ Ported the 32 e2e checks → `tests/e2e/`; full suite 75 (43 unit/32 e2e) green; smoke+compileall exit 0; parity proven; `regression_harness.py` deleted | qa-tester | done |
-| — | business-analyst / lead-game-designer / artist / writer / level-designer | no requirements/design/art/copy/economy change | — | skipped |
-
-Awaiting the human's next theme/increment.
+| 1 | business-analyst | Formalize requirements: new boss as content, random extensible-pool selection rule, the 2 hard constraints (no ship spawning, deadlier attacks) → new R#/AC# | business-analyst | done |
+| 2 | lead-game-designer | Design the new boss: identity/theme, moveset/attack patterns (deadlier, ship-free), HP, reward, defeat behavior + the pool-selection concept (GDD vN) | lead-game-designer | done |
+| 3 | artist | Placeholder shapes + palette for the new boss (distinct from Mothership) + any new attack/projectile visuals (art_spec vN) | artist | done |
+| 4 | writer | New boss name + on-screen copy (boss banner / warning), matching Mothership treatment (story vN) | writer | done |
+| 5 | level-designer | Random-pool selection rule + extensibility, new boss balance numbers (HP/damage/fire-rate so "deadlier" is concrete), confirm spawn timing unchanged (level_spec vN) | level-designer | done |
+| 6 | programmer | Implement: new boss entity + attacks, refactor boss spawn → random pick from extensible pool, wire art/copy/balance; ruff+pyright+unit pytest+smoke green | programmer | done |
+| 7 | qa-tester | Full rigor: new boss appears, random selection works & extensible, boss spawns NO ships, attacks deadlier, Mothership parity, no AC1–AC85 regression, suite+smoke green | qa-tester | done |
 
 ## Parked (non-blocking)
 

@@ -93,11 +93,20 @@ def _draw_enemy_bullet(screen, b):
     elif b.family == "YELLOW":  # boss fan telegraph — emphasized "charged" round
         pygame.draw.circle(screen, C.EB_COLOR_YELLOW, (x, y), 6)  # collision still EB_R=5
         pygame.draw.circle(screen, C.FLASH, (x, y), 2)  # white core = "about to burst"
+    elif b.family == "NOVA":  # v16 NOVA — azure plasma round (collision still EB_R=5)
+        pygame.draw.circle(screen, C.NOVA_BULLET, (x, y), C.NOVA_BULLET_DRAW_R)
+        pygame.draw.circle(screen, C.FLASH, (x, y), 2)  # hot white core
     else:  # RED — regular + every split child (plain dot)
         pygame.draw.circle(screen, C.EB_COLOR_RED, (x, y), C.EB_R)
 
 
 def _draw_boss(screen, boss):
+    """Dispatch to the active boss's silhouette by type (v16 §V16.2 — the body is part
+    of each boss's visual key, not a hard-coded shape). Only one boss is ever active."""
+    _BOSS_DRAW[boss.type](screen, boss)
+
+
+def _draw_mothership(screen, boss):
     """The Mothership silhouette (art_spec §V7.2.2): a wide dark blocky hull (8-gon)
     + bridge tower + 3 downward prongs, trimmed in enemy magenta, with a yellow
     reactor core. The painted body ⊇ the r=70 collision circle in every direction."""
@@ -133,6 +142,35 @@ def _draw_boss(screen, boss):
     # Reactor / weapon core (where the yellow fan spawns) — pre-reads attack-4.
     pygame.draw.circle(screen, C.BOSS_CORE, (int(cx), int(cy)), 12)
     pygame.draw.circle(screen, C.FLASH, (int(cx), int(cy)), 12, 2)
+
+
+def _draw_nova(screen, boss):
+    """The NOVA silhouette (art_spec §V16.2.1): a radiant electric-blue pulsar — 12
+    blue spikes behind a solid disc (the disc r=62 ⊇ the r=60 collision circle), an
+    inner energy ring, and a white-hot heart where the bullets originate. Radially
+    symmetric blue star — distinct from the Mothership carrier in shape AND hue."""
+    cx, cy = boss.x, boss.y
+    # 1) radiant spikes FIRST (behind the disc; the disc overlaps their roots)
+    for k in range(C.NOVA_SPIKES):
+        a = math.radians(k * (360.0 / C.NOVA_SPIKES))
+        aL = a - math.radians(C.NOVA_SPIKE_HALF_DEG)
+        aR = a + math.radians(C.NOVA_SPIKE_HALF_DEG)
+        tip = (cx + C.NOVA_SPIKE_R * math.cos(a), cy + C.NOVA_SPIKE_R * math.sin(a))
+        bL = (cx + C.NOVA_DISC_R * math.cos(aL), cy + C.NOVA_DISC_R * math.sin(aL))
+        bR = (cx + C.NOVA_DISC_R * math.cos(aR), cy + C.NOVA_DISC_R * math.sin(aR))
+        pygame.draw.polygon(screen, C.NOVA_RAY, [tip, bL, bR])
+    # 2) solid star disc — guarantees coverage of the r=60 collision circle
+    pygame.draw.circle(screen, C.NOVA_BODY, (int(cx), int(cy)), C.NOVA_DISC_R)
+    # 3) inner energy ring (flavor)
+    pygame.draw.circle(screen, C.NOVA_RAY, (int(cx), int(cy)), C.NOVA_RING_R, 3)
+    # 4) white-hot pulsar core (where bullets spawn) + bright rim; flash on a hit.
+    rim = C.FLASH if boss.flash > 0 else C.STAR_NEAR
+    pygame.draw.circle(screen, C.STAR_NEAR, (int(cx), int(cy)), C.NOVA_HOT_R)
+    pygame.draw.circle(screen, rim, (int(cx), int(cy)), C.NOVA_HOT_R, 2)
+
+
+# Body silhouette per boss type — the visual key picked from the active boss (§V16.2).
+_BOSS_DRAW = {"MOTHERSHIP": _draw_mothership, "NOVA": _draw_nova}
 
 
 def _draw_bonus(screen, bonus):

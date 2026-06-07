@@ -4,11 +4,10 @@ Blits one frame per state / arc combination and reads alpha off rendered surface
 these are e2e (they exercise the view layer, not pure logic).
 """
 
-import pygame
 
 from game import config as C
-from game.entities.boss import Boss
 from game.entities.bonus import Bonus
+from game.entities.boss import Boss
 from game.entities.fx import make_burst
 from game.entities.hazards import make_asteroid, make_enemy
 from game.entities.projectiles import EnemyBullet
@@ -166,12 +165,16 @@ def test_ac84_stats_render_smoke(screen, fonts, fresh_world):
         (C.STATS_LBL_BOSSES, store.bosses_killed),
     ]
     for (label, value), cy in zip(rows, C.STATS_ROW_CY):
-        rects.append(fonts["mid"].render(label, True, C.TEXT).get_rect(midleft=(C.STATS_BAND_L, cy)))
+        rects.append(
+            fonts["mid"].render(label, True, C.TEXT).get_rect(midleft=(C.STATS_BAND_L, cy))
+        )
         rects.append(
             fonts["mid"].render(str(value), True, C.TEXT).get_rect(midright=(C.STATS_BAND_R, cy))
         )
     rects.append(
-        fonts["small"].render(C.STATS_HINT, True, C.TEXT_DIM).get_rect(midtop=(C.W // 2, C.STATS_HINT_Y))
+        fonts["small"]
+        .render(C.STATS_HINT, True, C.TEXT_DIM)
+        .get_rect(midtop=(C.W // 2, C.STATS_HINT_Y))
     )
     for i in range(len(rects)):
         for j in range(i + 1, len(rects)):

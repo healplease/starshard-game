@@ -72,6 +72,26 @@
   render-smoke key-rect check is the gate); the two quit-hint strings → Writer (width-safe, no stale
   "Esc Quit"); economy = confirmed no-op (Level-designer confirm/skip). Smoke stays a no-op (Q never
   held headlessly) — the real new-code gate is the v9 **render-smoke** on START+GAME_OVER (AC68).
+- 2026-06-07 (v16): `requirements/v16.md` added. **R99–R105 MUST**, **AC86–AC93**. Second boss + a
+  **uniform-random pick from an extensible boss pool** at each boss-spawn event, under **two non-negotiable
+  human constraints**. **Key BA stances:** (1) **Extend, don't reinvent** — R101 binds *every* boss to the
+  already-shipped v7 encounter contract (R57–R64) verbatim; v16 adds only a **selection step + one new Boss
+  type**, not a new system. Cadence (~75 s then +90 s) and the arrival-clear/freeze/reward framing are
+  **explicitly locked unchanged** — only *which* boss appears is randomized. (2) **The two hard constraints
+  are the spine** and I wrote them as standalone MUSTs that **override** any conflicting v7 default: **R103
+  no ship/minion spawns of any kind** (a per-boss override of v7 R67, which is Mothership-*only* by
+  definition — adds stay the Mothership's exclusive gimmick), **R104 strictly deadlier attacks** (and I
+  forced "deadlier" to be **concrete with recorded numbers** vs the Mothership so AC92 is measurable, not
+  cosmetic; still must stay winnable/dodgeable). (3) **Selection = pure uniform i.i.d.** (R100) — equal
+  prob, independent per event, **repeats allowed**; explicitly ruled **out** weighted/no-repeat/shuffle-bag
+  as a non-goal. (4) **Testability ruling** — R100/R105 require a **seedable RNG / force-a-boss hook** so
+  smoke + pytest can deterministically exercise the new boss + the no-ship check (random runs may never pick
+  it). (5) **Extensibility is a checked AC** (AC86: adding a 3rd boss = one registry entry, no logic edit) so
+  "the pool must be trivially extensible" doesn't get lost. **Everything creative delegated** via §V16.3:
+  identity/moveset/HP/reward → Designer; shapes/palette/projectiles → Artist; name/copy → Writer; the
+  deadlier-lever numbers + cadence-unchanged confirm → Level-designer; registry shape + seed hook →
+  Programmer. (Also flipped v14 index status to shipped ✅ — v1–v15 are shipped per the backlog.)
+
 - 2026-06-06 (v14): `requirements/v14.md` added. **R92–R98 MUST/SHOULD**, **AC78–AC85**. One-file JSON
   save (versioned schema, per-user folder) + 5 lifetime counts + flush-only-on-GAME_OVER/quit + corrupt
   fallback + lifetime-stats screen. **Key BA stance — one governing principle anchors all five counts:**

@@ -7,7 +7,6 @@ the run-count and save-flush side effects, so these are e2e (App + save side eff
 import os
 
 import pygame
-
 from game import config as C
 from game import save
 from game.app import App
@@ -53,13 +52,17 @@ def test_ac81_flush_only_on_gameover_and_quit(fresh_world, tmp_save_path):
     app.r_hold_frames = C.RESTART_HOLD_FRAMES - 1
     app.event_script = {"held": {app.frame: [pygame.K_r]}}
     app._restart_hold_step()
-    assert app.state is GameState.PLAY and not os.path.exists(path), "restart wrongly flushed the file"
+    assert app.state is GameState.PLAY and not os.path.exists(path), (
+        "restart wrongly flushed the file"
+    )
     # GAME_OVER flushes (writes the file).
     app.world.player.hp = 1
     p = app.world.player
     app.world.asteroids = [Asteroid(p.x, p.y, 0, 0, C.AST_L_R, 2, True)]
     app._step_play(InputState(0, 0, False))
-    assert app.state is GameState.GAME_OVER and os.path.exists(path), "GAME_OVER did not flush the file"
+    assert app.state is GameState.GAME_OVER and os.path.exists(path), (
+        "GAME_OVER did not flush the file"
+    )
 
 
 def test_nav_stats_tab_esc(fresh_world):

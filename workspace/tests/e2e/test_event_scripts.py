@@ -5,7 +5,6 @@ sequence and asserts each beat behaved.
 """
 
 import pygame
-
 from game import config as C
 from game.app import run_event_script
 from game.world import GameState
@@ -29,17 +28,24 @@ def test_event_script_bomb_pause_quit():
 
         return probe
 
-    app = run_event_script({
-        "frames": 60,
-        "keydowns": {3: [pygame.K_x], 6: [pygame.K_ESCAPE], 8: [pygame.K_ESCAPE], 10: [pygame.K_ESCAPE]},
-        "held": {f: [pygame.K_q] for f in range(11, 55)},
-        "probes": {
-            3: after_bomb,
-            6: state_is("paused", GameState.PAUSE),
-            8: state_is("unpaused", GameState.PLAY),
-            10: state_is("repaused", GameState.PAUSE),
-        },
-    })
+    app = run_event_script(
+        {
+            "frames": 60,
+            "keydowns": {
+                3: [pygame.K_x],
+                6: [pygame.K_ESCAPE],
+                8: [pygame.K_ESCAPE],
+                10: [pygame.K_ESCAPE],
+            },
+            "held": {f: [pygame.K_q] for f in range(11, 55)},
+            "probes": {
+                3: after_bomb,
+                6: state_is("paused", GameState.PAUSE),
+                8: state_is("unpaused", GameState.PLAY),
+                10: state_is("repaused", GameState.PAUSE),
+            },
+        }
+    )
     assert results.get("bomb"), "X-in-PLAY bomb did not flush/charge/flash"
     assert results.get("paused"), "Esc did not pause"
     assert results.get("unpaused"), "Esc did not unpause"

@@ -5,7 +5,6 @@ the gesture state machine and its independence from the Q-hold counter.
 """
 
 import pygame
-
 from game import config as C
 from game.app import App, run_event_script
 from game.world import GameState
@@ -94,12 +93,14 @@ def test_ac69_hold_restart_e2e():
         captured["r"] = app.r_hold_frames
 
     # Headless start forces PLAY; Esc@f3 -> PAUSE, then hold R f4..f33 (30 frames) -> restart@f33.
-    run_event_script({
-        "frames": 36,
-        "keydowns": {3: [pygame.K_ESCAPE]},
-        "held": {f: [pygame.K_r] for f in range(4, 34)},
-        "probes": {33: probe},
-    })
+    run_event_script(
+        {
+            "frames": 36,
+            "keydowns": {3: [pygame.K_ESCAPE]},
+            "held": {f: [pygame.K_r] for f in range(4, 34)},
+            "probes": {33: probe},
+        }
+    )
     assert captured.get("state") is GameState.PLAY, (
         "hold-R for 30 f in PAUSE did not restart into PLAY"
     )

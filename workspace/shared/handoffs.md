@@ -51,3 +51,21 @@ BLOCKER (route upstream): `<n>. <YYYY-MM-DD> — FROM <role> TO <upstream-role> 
 115. 2026-06-07 — FROM qa-tester TO orchestrator — v15 PASS: ported the 32 e2e checks → tests/e2e/, full pytest suite 75 (43 unit/32 e2e) green, smoke+compileall exit 0, parity old-75↔new-75 proven, regression_harness.py deleted.
 
 116. 2026-06-07 — FROM orchestrator TO human — v15 shipped: backlog ticked, project state updated to v1–v15 shipped & passed QA (R1–R98, AC1–AC85, pytest 75/75). Project complete; awaiting next theme/increment.
+
+117. 2026-06-07 — FROM human TO orchestrator — v16: create a new boss; each boss-spawn picks randomly between Mothership and the new boss (pool extensible to future bosses); new boss must spawn NO ships and have deadlier attacks.
+118. 2026-06-07 — FROM orchestrator TO business-analyst — v16 (new content, full pipeline): formalize requirements for the second boss + random extensible boss-pool selection, with the 2 hard constraints (no ship spawning, deadlier attacks) as new R#/AC#.
+119. 2026-06-07 — FROM business-analyst TO lead-game-designer — v16: locked R99–R105/AC86–AC93 (extensible boss registry, uniform-random pick per spawn, v7 framing+cadence unchanged, R103 no-ship + R104 deadlier-than-Mothership as hard gates) → requirements/v16.md; design the new boss's identity/moveset/HP/reward + the deadlier lever (concrete numbers).
+
+120. 2026-06-07 — FROM lead-game-designer TO artist — v16: designed NOVA (projectile-only energy-core boss; reuses v7 loop verbatim, picked uniformly from a 2-entry extensible pool) — 4 bullet-only steps RAKE/BURST/LANCE/ARC, deadlier-than-Mothership (dmg 25>15, ram 80>60, cadence 90<150f, ~4.7× density) → gdd/v16-second-boss.md; design NOVA's silhouette + bullet hue + HUD bar (distinct from the Mothership).
+
+121. 2026-06-07 — FROM artist TO writer — v16: NOVA = electric-blue radiant pulsar (disc r=62 + 12 spikes, white-hot core; covers r=60), plasma-azure bullets, blue NOVA boss bar reusing the v7 geometry (vs the magenta Mothership) → art_spec/v16-second-boss.md; supply NOVA's display name + WARNING/banner/defeat copy + HUD label.
+
+122. 2026-06-07 — FROM writer TO level-designer — v16: blessed boss name/HUD label NOVA (4 chars, inside the v7 AC47 label envelope) + WARNING/NOVA INBOUND banner + NOVA DOWN defeat line + live +{points} popup, mirroring the v7 Mothership set → story/v16-second-boss.md; own the pool-selection rule + finalize the deadlier numbers + confirm cadence unchanged.
+
+123. 2026-06-07 — FROM level-designer TO programmer — v16: owned the uniform i.i.d. 1/N pool-selection rule (N-from-length, one-entry extensible, seedable), CONFIRMED cadence unchanged (75 s/+90 s), and LOCKED NOVA's deadlier balance (HP 120, bullet 25>15, ram 80>60, step 90<150 f, densities, kill 1500) vs AC13/fight-length → level_spec/v16-second-boss.md; implement the boss pool + NOVA per the locked specs.
+
+124. 2026-06-07 — FROM programmer TO qa-tester — v16: built the extensible boss pool/registry + uniform-1/N seedable selection and NOVA (projectile-only 4-step moveset, deadlier consts, blue art/copy/HUD); SMOKE_BOSS_TYPE="NOVA" forces NOVA headlessly; pytest 91/91 + smoke exit 0.
+
+125. 2026-06-07 — FROM qa-tester TO orchestrator — v16 PASS: AC86–AC93 verified (extensible length-driven pool, uniform seedable pick ≈½/½, cadence unchanged, NOVA distinct + zero ships + deadlier every axis 25>15, Mothership parity), full pytest 91/91 + smoke exit 0, no AC1–AC85 regression.
+
+126. 2026-06-07 — FROM orchestrator TO human — v16 SHIPPED & DONE: backlog ticked, project state → v1–v16 (R1–R105, AC1–AC93, pytest 91/91); awaiting next theme/increment.

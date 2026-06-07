@@ -17,6 +17,7 @@
 | `v11.md` | v11 | **§V11.2 alpha levers** (`INVULN_ALPHA_FLOOR=128`/~50%, `INVULN_ALPHA_CEIL=255`, `INVULN_PULSE_PERIOD=30 f`) · **§V11.3 cosine curve recipe** (phase→alpha off `blink_timer`) · **§V11.4 Shield ring stays SOLID** (does not pulse; amends §V2.5) · §V11.5 render-mechanism note (per-sprite alpha surface, SRCALPHA `set_alpha` gotcha) · §V11.6 render order unchanged · **no new palette** | spec ✅ |
 | `v12.md` | v12 | **§V12.2 no new palette** (reuse v8 arc verbatim for the R gesture) · **§V12.3 idle visibility** (R matches Q per screen: PAUSE track always-on → two empty tracks; GAME_OVER only-while-held) · ~~**§V12.4 R-arc centres** (`(200,483)`/`(200,545)`, 100 px left)~~ **→ superseded by v13** · ~~§V12.5 R-vs-Q anti-collision~~ **→ void (v13)** · §V12.8 config · §V12.9 draw recipe (`draw_hold_arc` helper) | spec ✅ |
 | `v14.md` | v14 | **§V14a.1 five ledger rows** (= R92 fields) · **§V14a.2 no new palette** (8 reused) · **§V14a.4 exact pixel layout** (title y130, rules y204/304, rows cy 264/344/404/464/524, hint y712; label rail x100 / value rail x500) · §V14a.5 `draw_stats` recipe · §V14a.6 config · **§V14a.7 render order** (STATS over starfield, no dim/arc/in-run HUD) · §V14a.8 render-smoke rects | spec ✅ |
+| `v16-second-boss.md` | v16 | **§V16.1 blue pulsar palette** (`NOVA_BODY`/`NOVA_RAY`/`NOVA_BULLET` + bar colors) · **§V16.2 NOVA silhouette** (disc r=62 + 12 spikes, paste-ready, r=60 coverage) · §V16.3 plasma-azure bullets · **§V16.4 NOVA boss bar** (reuse v7 geometry, recolor blue) · §V16.5 render order · DoD | spec ✅ |
 | `v13.md` | v13 | **§V13.2 R-arc centres = Q-arc centres** (`PAUSE_RESTART_ARC_CENTER=(300,483)`, `GAMEOVER_RESTART_ARC_CENTER=(300,545)`; co-located, supersedes §V12.4) · **§V13.3 R fill recolored violet `BONUS_BOMB #B464F5`** (reused, no new palette; Q stays amber) · **§V13.4 overlap + render order** (R drawn after Q → violet on top; §V12.5 R-vs-Q constraint dropped, human-approved) · §V13.5 config · §V13.6 draw recipe (`fill_color` param) | spec ✅ |
 
 ## Where is …? (topic → file)
@@ -33,6 +34,7 @@
 - **Hold-R-to-restart arc centres on PAUSE + GAME_OVER (reuse the Q arc, two-arc placement)** → `v12.md` (centres + R-vs-Q gap **superseded by `v13.md`**)
 - **R-arc co-located with the Q arc (same centre) + R fill recolored violet `BONUS_BOMB`** → `v13.md`
 - **STATS lifetime-stats screen layout (5-row ledger, pixel coords, no new palette/dim/arc)** → `v14.md`
+- **NOVA (2nd boss) silhouette/blue palette, plasma-azure bullets, blue NOVA boss bar (vs the magenta Mothership)** → `v16-second-boss.md`
 
 ## Updating this spec
 - **New increment:** add `vN-<topic>.md` (`# vN increment — …`) + a row + topic-map entry; flag any

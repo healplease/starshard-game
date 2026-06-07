@@ -5,7 +5,6 @@ are e2e per §2.4 (string-width math alone would be unit).
 """
 
 import pygame
-
 from game import config as C
 
 
@@ -63,8 +62,8 @@ def test_ac47_hud_rects_no_overlap(screen, fonts):
     score_rect = fonts["hud"].render(f"SCORE {0:05d}", True, C.TEXT).get_rect(topleft=(12, 10))
     hp_rect = pygame.Rect(*C.HP_BAR)
     boss_bar_rect = pygame.Rect(*C.BOSS_BAR)
-    label_rect = fonts["hud"].render(C.BOSS_LABEL_TEXT, True, C.TEXT).get_rect(
-        midbottom=C.BOSS_LABEL_CENTER
+    label_rect = (
+        fonts["hud"].render(C.BOSS_LABEL_TEXT, True, C.TEXT).get_rect(midbottom=C.BOSS_LABEL_CENTER)
     )
     count_surf = fonts["hud"].render(f"×{2}", True, C.TEXT)  # '×N' bomb readout
     tx = C.BOMB_HUD_RIGHT - count_surf.get_width()
@@ -87,16 +86,16 @@ def test_ac47_hud_rects_no_overlap(screen, fonts):
 def test_ac68_arc_rects_clear_text(screen, fonts):
     """AC68: arc rect overlaps NO text rect on START or GAME_OVER, stays on-screen."""
     r = C.PAUSE_ARC_R
-    start_arc = pygame.Rect(
-        C.START_ARC_CENTER[0] - r, C.START_ARC_CENTER[1] - r, 2 * r, 2 * r
-    )
-    go_arc = pygame.Rect(
-        C.GAMEOVER_ARC_CENTER[0] - r, C.GAMEOVER_ARC_CENTER[1] - r, 2 * r, 2 * r
-    )
+    start_arc = pygame.Rect(C.START_ARC_CENTER[0] - r, C.START_ARC_CENTER[1] - r, 2 * r, 2 * r)
+    go_arc = pygame.Rect(C.GAMEOVER_ARC_CENTER[0] - r, C.GAMEOVER_ARC_CENTER[1] - r, 2 * r, 2 * r)
     for tr in _start_text_rects(fonts):
-        assert not start_arc.colliderect(tr), f"START arc {tuple(start_arc)} overlaps text {tuple(tr)}"
+        assert not start_arc.colliderect(tr), (
+            f"START arc {tuple(start_arc)} overlaps text {tuple(tr)}"
+        )
     for tr in _gameover_text_rects(fonts):
-        assert not go_arc.colliderect(tr), f"GAME_OVER arc {tuple(go_arc)} overlaps text {tuple(tr)}"
+        assert not go_arc.colliderect(tr), (
+            f"GAME_OVER arc {tuple(go_arc)} overlaps text {tuple(tr)}"
+        )
     assert start_arc.bottom <= C.H and go_arc.bottom <= C.H, "arc rect runs off the bottom edge"
 
 
@@ -123,10 +122,12 @@ def test_ac71_r_arc_colocated_and_clear(screen, fonts):
     )
     # (b) the R arc must clear every text rect on its screen
     for tr in _pause_text_rects(fonts):
-        assert not pause_r.colliderect(tr), f"PAUSE R arc {tuple(pause_r)} overlaps text {tuple(tr)}"
+        assert not pause_r.colliderect(tr), (
+            f"PAUSE R arc {tuple(pause_r)} overlaps text {tuple(tr)}"
+        )
     for tr in _gameover_text_rects(fonts):
         assert not go_r.colliderect(tr), f"GAME_OVER R arc {tuple(go_r)} overlaps text {tuple(tr)}"
     # (c) both R rects stay inside the window
-    assert (
-        pause_r.bottom <= C.H and go_r.bottom <= C.H and pause_r.left >= 0 and go_r.left >= 0
-    ), "R arc rect runs off a screen edge"
+    assert pause_r.bottom <= C.H and go_r.bottom <= C.H and pause_r.left >= 0 and go_r.left >= 0, (
+        "R arc rect runs off a screen edge"
+    )

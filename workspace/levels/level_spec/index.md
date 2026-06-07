@@ -16,6 +16,7 @@
 | `v8-pause.md` | v8 | **§V8.1 verdict** (confirmed no-op — zero spawn/pickup/ramp/timing changes) · §V8.2 edge case (real-world vs in-game time, non-issue) · §V8.3 traceability | confirmed no-op ✅ |
 | `v10.md` | v10 | **§V10.1 verdict** (confirmed no-op — Q-hold-to-quit on START+GAME_OVER, UI-only, no spawn/pickup/ramp/timing change) · §V10.2 edge case (UI counter, not a game clock) · §V10.3 traceability | confirmed no-op ✅ |
 | `v12.md` | v12 | **§V12.1 verdict** (confirmed no-op — hold-R-to-restart on PAUSE+GAME_OVER, UI-only, no spawn/pickup/ramp/timing change) · §V12.2 edge case (second UI hold counter, not a game clock; `reset_run()` unchanged) · §V12.3 traceability | confirmed no-op ✅ |
+| `v16-second-boss.md` | v16 | **§V16.1 pool-selection rule** (uniform i.i.d. 1/N per spawn, N-from-length extensibility, seedable) · **§V16.2 cadence UNCHANGED** (75 s / +90 s CONFIRM) · **§V16.3 NOVA balance LOCK** (HP 120 · bullet 25>15 · ram 80>60 · step 90<150 f · densities · kill 1500) · §V16.4 AC13/fight-length · §V16.5 levers · §V16.6 smoke · §V16.7 traceability | spec ✅ |
 
 ## Where is …? (topic → file)
 - **Difficulty ramp formulas (the curve)** → `v1-base.md` §3 (untouched by v2/v5/v6)
@@ -24,7 +25,9 @@
 - **Bonus pickup spawn rates / kind weights** → `v2-economy.md` §V2.1 → **re-sliced** in `v6-bomb-economy.md` §V6.1 (adds BOMB=6)
 - **Enemy-kind spawn mix + gates (HEAVY@20s/SCOUT@50s)** → `v5-spawn-mix.md` §V5.1
 - **Bomb-pickup scarcity + post-bomb lull** → `v6-bomb-economy.md` §V6.1, §V6.4
-- **Boss breakpoint cadence (when a boss fires)** → `v7-bosses.md` §V7.1 (TIME: 75 s, then +90 s)
+- **Boss breakpoint cadence (when a boss fires)** → `v7-bosses.md` §V7.1 (TIME: 75 s, then +90 s) — **unchanged by v16** (`v16-second-boss.md` §V16.2)
+- **Which boss appears (random pool selection rule + extensibility)** → `v16-second-boss.md` §V16.1 (uniform i.i.d. 1/N per spawn, seedable, boss #3 = one entry)
+- **NOVA balance numbers (HP / deadlier dmg/ram/cadence/density / reward)** → `v16-second-boss.md` §V16.3 (LOCK) + §V16.4 (AC13/fight-length)
 - **Spawn-freeze + resume during a boss fight** → `v7-bosses.md` §V7.2 (skip-no-bank, no resume lull)
 - **Boss-fight economy (drip / minion drops / minion score / +1000 reward)** → `v7-bosses.md` §V7.3, §V7.4
 - **v8 Pause economy impact** → `v8-pause.md` §V8.1 (confirmed no-op — no new spawns/pickups/ramp/timing)

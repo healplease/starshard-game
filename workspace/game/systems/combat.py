@@ -79,7 +79,7 @@ def resolve(world):
         for b in world.pbullets:
             if id(b) in dead_pb:
                 continue
-            if _hit(b.x, b.y, C.PB_H / 2, boss.x, boss.y, C.BOSS_R):
+            if _hit(b.x, b.y, C.PB_H / 2, boss.x, boss.y, boss.r):
                 dead_pb.add(id(b))
                 boss.hp -= 1
                 boss.flash = 1
@@ -101,8 +101,10 @@ def resolve(world):
         dmg = 0
         # Boss body ram (R61/§V7.13) — the scariest thing to touch (60 > HEAVY 50);
         # the boss is NOT consumed (it persists), unlike a hazard hit.
-        if world.boss is not None and _hit(p.x, p.y, C.P_R, world.boss.x, world.boss.y, C.BOSS_R):
-            dmg = C.BOSS_RAM_DMG
+        if world.boss is not None and _hit(
+            p.x, p.y, C.P_R, world.boss.x, world.boss.y, world.boss.r
+        ):
+            dmg = world.boss.ram_dmg
         for a in world.asteroids:
             if dmg:
                 break
@@ -117,7 +119,7 @@ def resolve(world):
         if dmg == 0:
             for b in world.ebullets:
                 if id(b) not in dead_eb and _hit(p.x, p.y, C.P_R, b.x, b.y, C.EB_R):
-                    dmg, _ = C.EB_DMG, dead_eb.add(id(b))
+                    dmg, _ = b.dmg, dead_eb.add(id(b))  # per-bullet dmg (NOVA 25 > EB_DMG 15)
                     break
         if dmg:
             p.hp -= dmg

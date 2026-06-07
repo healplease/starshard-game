@@ -108,42 +108,48 @@ def _draw_bomb_popup(screen, world):
 
 
 def _draw_boss_bar(screen, world):
-    """Boss health bar + label — wide, center-top, magenta (enemy-faction), drains
-    right→left as boss_hp/BOSS_HP_MAX (art_spec §V7.3). Shown only while a boss is
-    active; AC47-clear of the HP bar / pills / bomb readout / score (center-top band)."""
+    """Boss health bar + label — wide, center-top, drains right→left as boss_hp/hp_max
+    (art_spec §V7.3/§V16.4). The track/fill/frame colors + the label string are the
+    ACTIVE boss's visual+name keys (magenta Mothership vs blue NOVA), read from its
+    spec — not hard-coded. AC47-clear of the HP bar / pills / bomb readout / score."""
     boss = world.boss
     if boss is None:
         return
+    spec = C.BOSS_SPECS[boss.type]
     rect = pygame.Rect(*C.BOSS_BAR)
-    pygame.draw.rect(screen, C.BOSS_BAR_BACK, rect)  # empty track
-    inner_w = int((rect.width - 4) * max(0, boss.hp) / C.BOSS_HP_MAX)
-    pygame.draw.rect(screen, C.BOSS_BAR_FILL, (rect.x + 2, rect.y + 2, inner_w, rect.height - 4))
-    pygame.draw.rect(screen, C.BOSS_BAR_EDGE, rect, 2)  # frame on top
-    label = _FONTS["hud"].render(C.BOSS_LABEL_TEXT, True, C.BOSS_BAR_FILL)
+    pygame.draw.rect(screen, spec["bar_back"], rect)  # empty track
+    inner_w = int((rect.width - 4) * max(0, boss.hp) / boss.hp_max)
+    pygame.draw.rect(screen, spec["bar_fill"], (rect.x + 2, rect.y + 2, inner_w, rect.height - 4))
+    pygame.draw.rect(screen, spec["bar_edge"], rect, 2)  # frame on top
+    label = _FONTS["hud"].render(spec["label"], True, spec["bar_fill"])
     screen.blit(label, label.get_rect(midbottom=C.BOSS_LABEL_CENTER))
 
 
 def _draw_boss_warn(screen, world):
-    """Transient arrival klaxon (story §V7.3) — two centred lines while the boss is
-    still gliding in (ENTRANCE); auto-clears the moment it settles to ACTIVE."""
+    """Transient arrival klaxon (story §V7.3/§V16.3) — two centred lines while the boss
+    is still gliding in (ENTRANCE); auto-clears the moment it settles to ACTIVE. Text +
+    color come from the active boss's spec (magenta MOTHERSHIP / blue NOVA INBOUND)."""
     boss = world.boss
     if boss is None or boss.state != "ENTRANCE":
         return
+    spec = C.BOSS_SPECS[boss.type]
     cx, cy = C.BOSS_WARN_CENTER
-    line1 = _FONTS["mid"].render(C.BOSS_WARN_1, True, C.ENEMY)
-    line2 = _FONTS["small"].render(C.BOSS_WARN_2, True, C.ENEMY)
+    line1 = _FONTS["mid"].render(spec["warn1"], True, spec["bar_fill"])
+    line2 = _FONTS["small"].render(spec["warn2"], True, spec["bar_fill"])
     screen.blit(line1, line1.get_rect(center=(cx, cy - 18)))
     screen.blit(line2, line2.get_rect(center=(cx, cy + 16)))
 
 
 def _draw_boss_defeat(screen, world):
-    """Transient defeat copy (story §V7.4): "MOTHERSHIP DOWN" + an honest "+points"
-    that tracks the ACTUAL award (1000, or 2000 under Score×2) — not a hardcoded literal."""
+    """Transient defeat copy (story §V7.4/§V16.4): the active boss's defeat line + an
+    honest "+points" tracking the ACTUAL award (×Score×2 if active) — not a hardcoded
+    literal. The defeat line color is the boss's bar_fill (magenta / blue)."""
     if world.boss_defeat_popup_timer <= 0:
         return
     cx, cy = C.BOSS_DEFEAT_CENTER
     age = C.BOSS_DEFEAT_POPUP_LIFE - world.boss_defeat_popup_timer
-    line1 = _FONTS["mid"].render(C.BOSS_DEFEAT_TEXT, True, C.ENEMY)
+    color = C.BOSS_SPECS[world.boss_defeat_type]["bar_fill"]
+    line1 = _FONTS["mid"].render(world.boss_defeat_text, True, color)
     line2 = _FONTS["hud"].render(f"+{world.boss_defeat_points}", True, C.TEXT)
     screen.blit(line1, line1.get_rect(center=(cx, cy - 18 - 0.4 * age)))
     screen.blit(line2, line2.get_rect(center=(cx, cy + 16 - 0.4 * age)))

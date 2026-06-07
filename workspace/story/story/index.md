@@ -16,6 +16,7 @@
 | `v10.md` | v10 | NEW `START_QUIT_HINT` "Hold Q  Quit" (START line, top-y 600, arc-anchored) · **`GAMEOVER_KEYS` rewrite** (append "Hold Q  Quit", R77) · **`CONTROLS_2` rewrite** (drop duplicate quit clause → "Esc  Pause") · START prompt kept | shipped ✅ |
 | `v12.md` | v12 | **`PAUSE_HINT_RESTART` rewrite** "Hold R  Restart" · **`GAMEOVER_KEYS` rewrite** (R clause → "Hold R  Restart", Q clause kept) — teach the hold-R-to-restart gesture (R85) | spec ready |
 | `v14.md` | v14 | STATS screen: `STATS_TITLE` "LIFETIME STATS" · 5 row labels `STATS_LBL_HIGHSCORE/RUNS/ENEMIES/ASTEROIDS/BOSSES` (single-noun, ≤260 px) · `STATS_HINT` "Tab / Esc  Back" · NEW START `START_STATS_HINT` "Tab  Stats" hint line | spec ready |
+| `v16-second-boss.md` | v16 | Second boss copy: name/HUD label `NOVA` (`NOVA_NAME`/`NOVA_LABEL_TEXT`) · arrival `WARNING`/`NOVA INBOUND` · defeat `NOVA DOWN` + `+{points}` popup — mirrors the v7 Mothership set | spec ready |
 
 ## Where is …? (topic → file)
 - **Start-screen controls line (`CONTROLS_1`)** → `v1-base.md` → **rewritten in** `v6.md` (Z = fire · X = bomb)
@@ -27,7 +28,7 @@
 - **Bonus names + buff-pill letters** → `v2.md`
 - **Enemy kind names** → `v5.md`
 - **Bomb name / glyph / bomb-count label / "+1 BOMB" popup** → `v6.md`
-- **Boss name / HUD label / WARNING intro / defeat line + reward popup** → `v7.md`
+- **Boss name / HUD label / WARNING intro / defeat line + reward popup** → `v7.md` (Mothership); `v16-second-boss.md` (NOVA, second boss)
 - **Pause-screen heading + hints / CONTROLS_2 + GAMEOVER_KEYS rewrites** → `v8.md`
 - **START quit-hint line + GAME_OVER/CONTROLS_2 quit-hint rewrites (Q-hold-to-quit copy)** → `v10.md`
 - **STATS-screen strings (title / 5 row labels / back hint) + START `Tab  Stats` hint line** → `v14.md`
@@ -42,7 +43,7 @@ invalidates and QA can confirm each is on screen. Keep this current when you add
 | `TITLE`, `PITCH`, `CONTROLS_1`, `CONTROLS_2`, `START_STATS_HINT`, start prompt, `START_QUIT_HINT` | START | `view/hud.py` `draw_start()` (`START_STATS_HINT` y≈530; `START_QUIT_HINT` at top-y 600, above the v10 Q-hold arc) |
 | `STATS_TITLE`, `STATS_LBL_HIGHSCORE/RUNS/ENEMIES/ASTEROIDS/BOSSES`, `STATS_HINT` | STATS | `view/hud.py` `draw_stats()` (art_spec §V14a.5; title y130, 5 rows, back hint y712) |
 | score / HP readout, bomb `×N`, active buff pills | PLAY HUD | `view/hud.py` |
-| boss label / `WARNING` / `MOTHERSHIP DOWN` + reward popup | PLAY (boss) | `view/hud.py` |
+| boss label / `WARNING` / `MOTHERSHIP DOWN` / `NOVA DOWN` + reward popup | PLAY (boss) | `view/hud.py` |
 | `PAUSE_TITLE` + 3 pause hints (resume/quit/restart) | PAUSE | `view/hud.py` `draw_pause()` |
 | Game-Over heading / score / best, `GAMEOVER_KEYS` | GAME_OVER | `view/hud.py` |
 | collect popups (`+40`, `+1 BOMB`, `+{points}`) | PLAY (transient) | `view/hud.py` / fx |

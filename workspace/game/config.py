@@ -67,6 +67,25 @@ BOSS_BAR_FILL = ENEMY  # boss health (enemy-faction magenta)
 BOSS_BAR_BACK = HP_BACK  # empty track (reuse dark HP track)
 BOSS_BAR_EDGE = ENEMY_EDGE  # pink enemy-edge frame
 
+# ── Palette — v16 second boss: NOVA, an electric-blue pulsar core (art_spec §V16.1) ──
+# Deliberately the Mothership's opposite: that boss is a DARK indigo carrier trimmed
+# magenta with a YELLOW core; NOVA is a RADIANT electric-BLUE star with a white-hot heart.
+# 3 genuinely new colors; the white-hot core reuses STAR_NEAR + a FLASH rim.
+NOVA_BODY = (60, 90, 255)  # #3C5AFF deep electric blue — the solid star disc (the mass)
+NOVA_RAY = (90, 150, 255)  # #5A96FF lighter blue — radiant spikes + inner ring + bar frame
+NOVA_BULLET = (74, 124, 255)  # #4A7CFF bright plasma azure — NOVA's bullets + its bar fill/label
+NOVA_BAR_FILL = NOVA_BULLET  # draining HP, blue (= NOVA's shot color) — NOT the Mothership magenta
+NOVA_BAR_BACK = HP_BACK  # reuse the dark empty track (same as both HP bars)
+NOVA_BAR_EDGE = NOVA_RAY  # light-blue frame — second NOVA signal (vs pink ENEMY_EDGE)
+NOVA_BULLET_DRAW_R = 6  # plasma body (collision still EB_R = 5) — render-only (art_spec §V16.3)
+# NOVA silhouette draw radii (art_spec §V16.2.1) — painted body ⊇ the r=60 collision circle.
+NOVA_DISC_R = 62  # solid disc (>= NOVA_R collision)
+NOVA_SPIKE_R = 90  # radiant spike tip radius (overall ~180 px)
+NOVA_RING_R = 40  # inner energy ring
+NOVA_HOT_R = 16  # white-hot core
+NOVA_SPIKES = 12
+NOVA_SPIKE_HALF_DEG = 7  # spike half-width at the disc edge
+
 # ── Player (GDD §6.1) ────────────────────────────────────────────────────────
 P_SPEED, P_R = 5, 13
 P_START = (300, 720)
@@ -170,8 +189,9 @@ EB_COLORS = {
     "RED": EB_COLOR_RED,
     "GREEN": EB_COLOR_GREEN,
     "CYAN": EB_COLOR_CYAN,
-    "YELLOW": EB_COLOR_YELLOW,
-}  # v7 boss fan (GDD §V7.12)
+    "YELLOW": EB_COLOR_YELLOW,  # v7 boss fan (GDD §V7.12)
+    "NOVA": NOVA_BULLET,  # v16 NOVA plasma azure (art_spec §V16.3)
+}
 
 # Render-only bullet sizes (collision stays a flat EB_R=5 for every family).
 PELLET_DRAW_R = 8  # GREEN pellet drawn r=8 (collision still 5) — "fat & charged"
@@ -242,6 +262,45 @@ RED_CHILD_SPEED = 4.5  # px/f (= CHILD_SPEED/EB_SPEED); flat EB_DMG=15; terminal
 BOSS_KILL_SCORE = 1000  # flat defeat reward (via scoring.award; Score×2 doubles it)
 BOMB_BOSS_CHIP = 0  # player bomb during fight: clears minions+bullets, boss IMMUNE (§V7.14)
 BOSS_DEFEAT_POPUP_LIFE = 60  # frames the "MOTHERSHIP DOWN" + "+points" popup shows (story §V7.4)
+
+# ── v16 second boss — NOVA (energy-weapon core; projectile-only) — GDD §V16.8 ──
+# NOVA reuses the v7 entrance(300,-80)/2.0, rest y=400, osc ±120@1.5, settle+60 VERBATIM
+# (BOSS_SPAWN/ENTRY_SPEED/REST_Y/OSC_*). Only the per-boss values below differ; the
+# Mothership keeps its v7 numbers untouched. "Deadlier via ATTACKS, not HP-sponge" (R104).
+NOVA_HP = 120  # = Mothership; "large" (R60). Deadlier via attacks (R104).
+NOVA_R = 60  # collision circle (huge → always hittable R60); compact-core silhouette
+NOVA_RAM_DMG = 80  # body contact (> Mothership 60) — deadlier; still < 100 HP (survivable)
+NOVA_KILL_SCORE = (
+    1500  # flat defeat reward (> Mothership 1000); via scoring.award (Score×2 doubles)
+)
+
+# NOVA bullets — ordinary EnemyBullets (existing enemy-bullet × player path), terminal.
+NOVA_BULLET_DMG = 25  # > Mothership EB_DMG 15 — HEADLINE deadlier lever (AC92)
+NOVA_BULLET_SPEED = 5.5  # > Mothership 4.5 — faster, harder to dodge
+NOVA_LANCE_SPEED = 6.0  # px/f, step-3 LANCE (fastest)
+
+# Moveset (R66 structure reused) — 4 steps, fixed order 1→2→3→4 loop. PROJECTILE-ONLY (R103).
+NOVA_STEP_INTERVAL = (
+    90  # f (1.5 s) between steps (< Mothership 150) — deadlier fire-rate; cycle 360 f
+)
+NOVA_FIRST_STEP_DELAY = 60  # f after settle before step 1 (mirrors v7 BOSS_FIRST_STEP_DELAY)
+NOVA_RING_PHASE_STEP = (
+    9  # deg; ring start-angle advances each step → ring precesses (never identical)
+)
+# step 1 RAKE  — aimed spread : boss->player ± {0,15,30}        -> 5 bullets @ NOVA_BULLET_SPEED
+# step 2 BURST — dense ring   : k*15 + ring_phase (k=0..23)     -> 24 bullets @ NOVA_BULLET_SPEED
+# step 3 LANCE — aimed stream : boss->player; 4 spaced by GAP_F -> 4 bullets @ NOVA_LANCE_SPEED
+# step 4 ARC   — aimed wall   : boss->player ± {0,15,30,45,60}  -> 9 bullets @ NOVA_BULLET_SPEED
+NOVA_SPREAD_COUNT = 5
+NOVA_SPREAD_STEP_DEG = 15  # spread bullets at ±15, ±30 about the aim
+NOVA_RING_COUNT = 24
+NOVA_RING_STEP_DEG = 15  # 360/24
+NOVA_LANCE_COUNT = 4
+NOVA_LANCE_GAP_F = 4  # frames between LANCE bullets (realised as a fixed along-heading spacing)
+NOVA_ARC_COUNT = 9
+NOVA_ARC_STEP_DEG = 15  # 9 bullets over ±60 = 120-deg arc, centred on the player
+# The boss pool / registry (BOSS_POOL + BOSS_SPECS) + selection are defined AFTER the
+# boss strings below, since each spec bundles its name/HUD literals.
 
 # ── Particles (GDD §6.7) ─────────────────────────────────────────────────────
 PART_LIFE = 20
@@ -387,6 +446,9 @@ SMOKE_BOSS_SPAWN = (300, 360)  # short entrance → settles (~f60) in-budget
 SMOKE_BOSS_SPLIT_DIST = 45  # px shortened "midway" → split_timer = round(45/4.5) = 10 f
 SMOKE_BOSS_STEP_DELAY = 6  # compressed: first step ~6 f after settle
 SMOKE_BOSS_STEP_INTERVAL = 6  # compressed: steps every 6 f → step 4 ~f84, split ~f94
+# v16: force which boss the smoke (and pytest) drive — bypasses the uniform pool draw so
+# coverage is deterministic (R105/§V16.7). Drives NOVA's projectile-only moveset headlessly.
+SMOKE_BOSS_TYPE = "NOVA"  # the forced boss type for the headless seed (must be in BOSS_POOL)
 
 # ── AC13 balance probe (v9, retro T2/A10) ────────────────────────────────────
 # A headless instrument (NOT a pass/fail gate): run K deterministic scripted runs
@@ -441,6 +503,58 @@ BOSS_LABEL_TEXT = BOSS_NAME  # drawn on the boss bar (FONT_HUD, magenta)
 BOSS_WARN_1 = "WARNING"  # arrival klaxon (ARRIVAL→ENTRANCE, fades before settle)
 BOSS_WARN_2 = "MOTHERSHIP INBOUND"  # intro + name reveal
 BOSS_DEFEAT_TEXT = "MOTHERSHIP DOWN"  # defeat flavor line; "+{points}" tracks the real award
+
+# v16 NOVA copy (story §V16.5). Name blessed verbatim; label == name (4 chars ≪ AC47 envelope).
+NOVA_NAME = "NOVA"  # canonical boss name (code/docs/QA)
+NOVA_LABEL_TEXT = NOVA_NAME  # drawn on the NOVA bar (FONT_HUD, NOVA blue)
+NOVA_WARN_1 = "WARNING"  # klaxon heading — reuse the boss-agnostic literal
+NOVA_WARN_2 = "NOVA INBOUND"  # intro + name reveal (12 chars)
+NOVA_DEFEAT_TEXT = "NOVA DOWN"  # defeat flavor line; "+{points}" tracks the real award
+
+# ── Boss pool / registry + uniform-random selection (R99/R100, level_spec §V16.1) ──
+# BOSS_POOL is the ORDERED roster (the single source of the line-up — nothing hard-codes
+# "two bosses"). A boss SPEC is the per-boss data the unchanged v7 loop reads instead of
+# hard-coded Mothership numbers: stats + bar colors + name/HUD strings. The moveset is
+# dispatched by `type` in systems/encounter; the body silhouette by `type` in view/render.
+# Adding boss #3 = ONE more BOSS_SPECS entry + its type string in BOSS_POOL (N = pool length,
+# selection + loop need zero edits — AC86). The Mothership spec = its existing v7 values.
+BOSS_SPECS = {
+    "MOTHERSHIP": dict(
+        hp=BOSS_HP,
+        r=BOSS_R,
+        ram_dmg=BOSS_RAM_DMG,
+        kill_score=BOSS_KILL_SCORE,
+        step_interval=BOSS_STEP_INTERVAL,
+        first_step_delay=BOSS_FIRST_STEP_DELAY,
+        split_dist=YELLOW_SPLIT_DIST,  # Mothership-only (the yellow-fan frozen midway)
+        bar_fill=BOSS_BAR_FILL,
+        bar_back=BOSS_BAR_BACK,
+        bar_edge=BOSS_BAR_EDGE,
+        name=BOSS_NAME,
+        label=BOSS_LABEL_TEXT,
+        warn1=BOSS_WARN_1,
+        warn2=BOSS_WARN_2,
+        defeat=BOSS_DEFEAT_TEXT,
+    ),
+    "NOVA": dict(
+        hp=NOVA_HP,
+        r=NOVA_R,
+        ram_dmg=NOVA_RAM_DMG,
+        kill_score=NOVA_KILL_SCORE,
+        step_interval=NOVA_STEP_INTERVAL,
+        first_step_delay=NOVA_FIRST_STEP_DELAY,
+        split_dist=YELLOW_SPLIT_DIST,  # unused by NOVA (no yellow fan); kept for a uniform shape
+        bar_fill=NOVA_BAR_FILL,
+        bar_back=NOVA_BAR_BACK,
+        bar_edge=NOVA_BAR_EDGE,
+        name=NOVA_NAME,
+        label=NOVA_LABEL_TEXT,
+        warn1=NOVA_WARN_1,
+        warn2=NOVA_WARN_2,
+        defeat=NOVA_DEFEAT_TEXT,
+    ),
+}
+BOSS_POOL = ("MOTHERSHIP", "NOVA")  # ordered roster; N = len(BOSS_POOL) (today ½/½)
 
 # ── v8 pause: heading + three hint lines (FONT_SMALL / TEXT_DIM, centered at W//2) ──
 PAUSE_TITLE = "PAUSED"  # FONT_BIG 64, PLAYER cyan #50DCFF
@@ -537,6 +651,13 @@ def pick_bonus_kind(rng):
         if r <= threshold:
             return name
     return BONUS_WEIGHTS[-1][1]  # unreachable (last threshold is 99)
+
+
+def pick_boss_type(rng):
+    """Uniform i.i.d. pick of one boss type from BOSS_POOL — probability 1/N for N
+    entries, independent per spawn event (repeats allowed; no no-repeat/shuffle-bag),
+    N read from the pool length so a new boss is one BOSS_POOL entry (R99/R100/§V16.1)."""
+    return BOSS_POOL[rng.randrange(len(BOSS_POOL))]
 
 
 def choose_enemy_kind(t, rng):

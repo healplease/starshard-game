@@ -77,8 +77,15 @@ class World:
         # v7 boss state (GDD §V7.x) — restart clears any in-progress fight, no leak.
         self.boss = None  # the active Boss entity, or None (None ⇒ freeze lifted)
         self.boss_next_mark = C.BOSS_FIRST_MARK  # next TIME mark (s) to fire a boss (75, 165, …)
-        self.boss_defeat_popup_timer = 0  # transient "MOTHERSHIP DOWN" + "+points" popup
-        self.boss_defeat_points = 0  # the actual award shown (1000, or 2000 ×Score×2)
+        # v16 §V16.1: pin the boss-pool pick (a type str) for deterministic smoke/pytest;
+        # None ⇒ the natural uniform 1/N draw. The smoke seed forces NOVA via SMOKE_BOSS_TYPE.
+        self.boss_type_override = None
+        self.boss_defeat_popup_timer = 0  # transient "<BOSS> DOWN" + "+points" popup
+        self.boss_defeat_points = 0  # the actual award shown (1000/1500, doubled ×Score×2)
+        # v16: the defeated boss's defeat line + type, captured at on_defeat so the popup
+        # outlives the (now-None) boss and shows the right copy/color (MOTHERSHIP vs NOVA).
+        self.boss_defeat_text = C.BOSS_DEFEAT_TEXT
+        self.boss_defeat_type = "MOTHERSHIP"
         # Spawn countdowns. The first drip is drawn now so a bonus lands ~10–14 s
         # in (level_spec §V2.1). Asteroid/enemy timers start at their t=0 interval.
         self.ast_timer = C.asteroid_interval(0)
